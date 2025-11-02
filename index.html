@@ -8,6 +8,47 @@
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
 
   <style>
+    /* 耀光装备CD和指示器 */
+    .equipment-slot {
+      position: relative;
+    }
+    
+    .spellblade-cd {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      transition: height 0.1s linear;
+      pointer-events: none;
+    }
+    
+    .spellblade-ready {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #4CAF50;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    
+    .spellblade-ready.active {
+      opacity: 1;
+    }
+    
+    @keyframes spellblade-flash {
+      0% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      100% { filter: brightness(1); }
+    }
+    
+    .spellblade-trigger {
+      animation: spellblade-flash 0.2s ease-out;
+    }
     @font-face {
       font-family: "Zpix";
       src: url("font/zpix.ttf") format("truetype");
@@ -192,6 +233,7 @@
       font-family: "Zpix", monospace;
       font-size: 14px;
       background: rgba(255, 255, 255, 0.05);
+      overflow: hidden;
     }
 
     .skill-label {
@@ -206,21 +248,26 @@
     }
 
     .skill-slot.space .skill-name {
+      position: absolute;
+      bottom: 4px;
+      left: 6px;
       font-size: 12px;
+      pointer-events: none;
     }
 
     .cooldown-overlay {
       position: absolute;
       inset: 0;
-      background: #fff;
+      background: rgba(0, 0, 0, 0.7);
       display: none;
       align-items: center;
       justify-content: center;
       opacity: 1;
+      pointer-events: none;
     }
 
     .cooldown-timer {
-      color: #111;
+      color: #fff;
       font-size: 14px;
       font-weight: bold;
     }
@@ -252,10 +299,37 @@
     .equipment-slot .slot-id {
       position: absolute;
       top: 4px;
-      right: 6px;
+      left: 6px;
       font-size: 10px;
       color: #fff;
       font-family: "Zpix", monospace;
+    }
+
+    .equipment-stack-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      min-width: 16px;
+      padding: 1px 3px;
+      border: 1px solid rgba(0, 0, 0, 0.85);
+      border-radius: 3px;
+      background: rgba(0, 0, 0, 0.9);
+      color: #fff;
+      font-family: "Zpix", monospace;
+      font-size: 10px;
+      line-height: 1.2;
+      text-align: center;
+      display: none;
+      pointer-events: none;
+      text-shadow:
+        -1px 0 0 #000,
+        1px 0 0 #000,
+        0 -1px 0 #000,
+        0 1px 0 #000;
+    }
+
+    .equipment-stack-badge.active {
+      display: inline-block;
     }
 
     .equipment-slot.has-item {
@@ -277,6 +351,16 @@
       object-fit: contain;
       display: none;
       pointer-events: none;
+    }
+
+    /* 技能图标 */
+    .skill-icon {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      display: block;
+      transition: opacity 0.2s linear;
     }
 
     .equipment-slot.has-item .equipment-icon {
@@ -583,7 +667,7 @@
               <span class="sidebar-stat-value" id="sidebar-kill-value">0</span>
             </div>
             <div class="sidebar-stat-row">
-              <span class="sidebar-stat-label">Rank</span>
+              <span class="sidebar-stat-label">关卡</span>
               <span class="sidebar-stat-value" id="sidebar-rank-value">1</span>
             </div>
             <div class="sidebar-stat-row">
@@ -603,20 +687,33 @@
         <div class="bottom-stats-center">
           <div class="skill-resource">
             <div class="skill-row">
-              <div class="skill-slot">
+              <div class="skill-slot" data-skill="Q">
                 <span class="skill-label">Q</span>
+                <img class="skill-icon" data-skill="Q" src="assets/player/reimu/skill/Q.png" alt="Q" />
+                <div class="cooldown-overlay">
+                  <span class="cooldown-timer">0</span>
+                </div>
               </div>
-              <div class="skill-slot">
+              <div class="skill-slot" data-skill="E">
                 <span class="skill-label">E</span>
+                <img class="skill-icon" data-skill="E" src="assets/player/reimu/skill/E.png" alt="E" />
+                <div class="cooldown-overlay">
+                  <span class="cooldown-timer">0</span>
+                </div>
               </div>
-              <div class="skill-slot">
+              <div class="skill-slot" data-skill="R">
                 <span class="skill-label">R</span>
+                <img class="skill-icon" data-skill="R" src="assets/player/reimu/skill/R.png" alt="R" />
+                <div class="cooldown-overlay">
+                  <span class="cooldown-timer">0</span>
+                </div>
               </div>
-              <div class="skill-slot space">
+              <div class="skill-slot space" data-skill="SPACE">
                 <span class="skill-label">Space</span>
                 <span class="skill-name">闪避</span>
-                <div class="cooldown-overlay" id="skill-space-overlay">
-                  <span class="cooldown-timer" id="skill-space-timer">0</span>
+                <img class="skill-icon" data-skill="SPACE" src="assets/player/reimu/skill/SPACE.png" alt="Space" />
+                <div class="cooldown-overlay">
+                  <span class="cooldown-timer">0</span>
                 </div>
               </div>
             </div>
@@ -634,26 +731,32 @@
           <div class="equipment-grid">
             <div class="equipment-slot" data-slot-index="0">
               <span class="slot-id">1</span>
+              <span class="equipment-stack-badge"></span>
               <img class="equipment-icon" alt="" />
             </div>
             <div class="equipment-slot" data-slot-index="1">
               <span class="slot-id">2</span>
+              <span class="equipment-stack-badge"></span>
               <img class="equipment-icon" alt="" />
             </div>
             <div class="equipment-slot" data-slot-index="2">
               <span class="slot-id">3</span>
+              <span class="equipment-stack-badge"></span>
               <img class="equipment-icon" alt="" />
             </div>
             <div class="equipment-slot" data-slot-index="3">
               <span class="slot-id">4</span>
+              <span class="equipment-stack-badge"></span>
               <img class="equipment-icon" alt="" />
             </div>
             <div class="equipment-slot" data-slot-index="4">
               <span class="slot-id">5</span>
+              <span class="equipment-stack-badge"></span>
               <img class="equipment-icon" alt="" />
             </div>
             <div class="equipment-slot" data-slot-index="5">
               <span class="slot-id">6</span>
+              <span class="equipment-stack-badge"></span>
               <img class="equipment-icon" alt="" />
             </div>
             <div class="equipment-preview-slot" id="equipment-slot-1-preview">

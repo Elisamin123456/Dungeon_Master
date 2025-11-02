@@ -1,4 +1,4 @@
-export const ITEM_TIERS = Object.freeze({
+﻿export const ITEM_TIERS = Object.freeze({
   BASIC: "basic",
   MID: "mid",
   LEGENDARY: "legendary",
@@ -17,6 +17,10 @@ export const EQUIPMENT_IDS = Object.freeze({
     sheen: "sheen",
   }),
   mid: Object.freeze({
+    bootsAttackSpeed: "bootsAttackSpeed",
+    bootsMagic: "bootsMagic",
+    bootsArmorPen: "bootsArmorPen",
+    bootsCloth: "bootsCloth",
     bfSword: "bfSword",
     phage: "phage",
     noonquiver: "noonquiver",
@@ -71,6 +75,8 @@ export const EQUIPMENT_IDS = Object.freeze({
     heartsteel: "heartsteel",
     titanicHydra: "titanicHydra",
     sunfireAegis: "sunfireAegis",
+    seraphsEmbrace: "seraphsEmbrace",
+    bailouSword: "bailouSword",
   }),
 });
 
@@ -186,6 +192,110 @@ const RAW_ITEMS = [
       "价格：800 金币",
       "技能急速 +10",
       "被动-咏唱：施放技能后，下次普通攻击额外造成 100% 基础攻击力的物理伤害。",
+    ],
+  },
+  {
+    key: MID.bootsAttackSpeed,
+    tier: ITEM_TIERS.MID,
+    name: "攻速鞋",
+    iconFolder: "boots",
+    iconFile: "攻速鞋.png",
+    cost: 1400,
+    stats: { attackSpeedPct: 0.35, moveSpeedFlat: 45 },
+    buildsFrom: [BASIC.bootsOfSpeed, BASIC.dagger],
+    description: [
+      "攻速% +35%",
+      "速度 +45",
+      "合成：速度之靴 + 短剑 + 500 金币",
+    ],
+  },
+  {
+    key: LEGENDARY.seraphsEmbrace,
+    tier: ITEM_TIERS.LEGENDARY,
+    name: "炽天使之拥",
+    iconFolder: "legendary",
+    iconFile: "炽天使之拥.png",
+    cost: 3000,
+    stats: { abilityPowerFlat: 35, abilityHaste: 20, manaFlat: 900 },
+    buildsFrom: [MID.lostChapter, MID.tearOfTheGoddess],
+    effects: { healPerManaSpent: 1, manaPerCast: 5, manaCapBonus: 1400 },
+    description: [
+      "法术强度 +35",
+      "技能急速 +20",
+      "法力值 +900",
+      "被动：每消耗 1 点法力值，回复 1 点生命值。",
+      "被动：每次释放技能提升 5 点最大法力值（最多 +1400，继承女神泪层数）。",
+      "合成：遗失的章节 + 女神之泪 + 1200 金币",
+    ],
+  },
+  {
+    key: LEGENDARY.bailouSword,
+    tier: ITEM_TIERS.LEGENDARY,
+    name: "白楼剑",
+    iconFolder: "legendary",
+    iconFile: "白楼剑.png",
+    cost: 3000,
+    stats: { attackDamageFlat: 55, abilityHaste: 15, armorPenFlat: 15, moveSpeedPct: 0.25 },
+    buildsFrom: [MID.caulfieldsWarhammer, MID.serratedDirk],
+    effects: { momentumPerKill: 1, momentumSpeedPerStack: 10, momentumDurationMs: 3000, momentumMaxStacks: 10 },
+    description: [
+      "攻击力 +55",
+      "技能急速 +15",
+      "护甲穿透 +15",
+      "速度 +25%",
+      "被动：每击杀一名敌方单位获得 1 层动量（持续 3 秒，最多 10 层），每层提供 +10 速度。",
+      "合成：考尔菲德的战锤 + 锯齿短匕 + 800 金币",
+    ],
+  },
+  {
+    key: MID.bootsMagic,
+    tier: ITEM_TIERS.MID,
+    name: "法穿鞋",
+    iconFolder: "boots",
+    iconFile: "法穿鞋.png",
+    cost: 1400,
+    stats: { abilityPowerFlat: 55, moveSpeedFlat: 45 },
+    buildsFrom: [BASIC.bootsOfSpeed, BASIC.amplifyingTome],
+    effects: { manaRegenMultiplier: 1.5 },
+    description: [
+      "法术强度 +55",
+      "速度 +45",
+      "回蓝效率 +150%",
+      "合成：速度之靴 + 增幅典籍 + 500 金币",
+    ],
+  },
+  {
+    key: MID.bootsArmorPen,
+    tier: ITEM_TIERS.MID,
+    name: "穿甲鞋",
+    iconFolder: "boots",
+    iconFile: "穿甲鞋.png",
+    cost: 1400,
+    stats: { attackDamageFlat: 30, moveSpeedFlat: 45, armorPenFlat: 10 },
+    buildsFrom: [BASIC.bootsOfSpeed, BASIC.longSword],
+    description: [
+      "攻击力 +30",
+      "速度 +45",
+      "护甲穿透 +10",
+      "合成：速度之靴 + 长剑 + 500 金币",
+    ],
+  },
+  {
+    key: MID.bootsCloth,
+    tier: ITEM_TIERS.MID,
+    name: "布甲鞋",
+    iconFolder: "boots",
+    iconFile: "布甲鞋.png",
+    cost: 1400,
+    stats: { arFlat: 35, hpFlat: 150, moveSpeedFlat: 45 },
+    buildsFrom: [BASIC.bootsOfSpeed, BASIC.clothArmor],
+    effects: { hpRegenPerSecond: 10 },
+    description: [
+      "护甲 +35",
+      "生命值 +150",
+      "生命回复 +10/秒",
+      "速度 +45",
+      "合成：速度之靴 + 布甲 + 500 金币",
     ],
   },
   {
@@ -435,10 +545,10 @@ const RAW_ITEMS = [
     cost: 1300,
     stats: { hpFlat: 300 },
     buildsFrom: [BASIC.rubyCrystal, BASIC.rubyCrystal],
-    effects: { auraDamage: 20, auraIntervalMs: 500, auraRadius: 100 },
+    effects: { auraDamage: 20, auraIntervalMs: 500, auraRadius: 25 },
     description: [
       "生命值 +300",
-      "被动：每 0.5 秒对半径 100 内敌人造成 20 点魔法伤害。",
+      "被动：每 0.5 秒对半径 25 内的敌人造成 20 点魔法伤害。",
     ],
   },
   {
@@ -640,7 +750,7 @@ const RAW_ITEMS = [
     effects: { apMultiplier: 0.5 },
     description: [
       "法术强度 +120",
-      "被动：总法术强度提升 50%。",
+      "被动：总法术强度提升 25%。",
     ],
   },
   {
@@ -683,11 +793,12 @@ const RAW_ITEMS = [
     cost: 3100,
     stats: { abilityPowerFlat: 80, abilityHaste: 15, hpFlat: 350 },
     buildsFrom: [MID.hauntingGuise, MID.hextechAlternator],
-    effects: { onHitMagicFlat: 25, apFromHpPct: 0.05 },
+    effects: { onHitMagicFlat: 25, apFromHpPct: 0.05, omniVampPct: 0.10 },
     description: [
       "法术强度 +80",
       "技能急速 +15",
       "生命值 +350",
+      "全能吸血 +10%",
       "被动：技能与普攻额外造成 25 点魔法伤害，并获得等同于 5% 生命值的法术强度。",
     ],
   },
@@ -700,12 +811,12 @@ const RAW_ITEMS = [
     cost: 3000,
     stats: { abilityPowerFlat: 65, abilityHaste: 20, hpFlat: 200 },
     buildsFrom: [MID.fiendishCodex, MID.hextechAlternator],
-    effects: { killCooldownRefundPct: 0.5 },
+    effects: { killCooldownRefundPct: 0.25 },
     description: [
       "法术强度 +65",
       "技能急速 +20",
       "生命值 +200",
-      "被动：击杀单位立刻返还当前技能冷却时间的 50%。",
+      "被动：击杀单位立刻返还当前技能冷却时间的 25%。",
     ],
   },
   {
@@ -717,7 +828,7 @@ const RAW_ITEMS = [
     cost: 3400,
     stats: { attackDamageFlat: 25, abilityHaste: 25, hpFlat: 500 },
     buildsFrom: [BASIC.sheen, MID.phage, MID.kindlegem],
-    effects: { spellbladeBaseAdPct: 1.0, spellbladeMaxHpPct: 0.05, spellbladeMaxDamageBoss: 800 },
+    effects: { spellbladeBaseAdPct: 1.0, spellbladeMaxHpPct: 0.05, spellbladeMaxDamageBoss: 800, spellbladeDamageType: "physical" },
     description: [
       "攻击力 +25",
       "技能急速 +25",
@@ -734,7 +845,7 @@ const RAW_ITEMS = [
     cost: 3333,
     stats: { attackDamageFlat: 30, abilityHaste: 25, attackSpeedPct: 0.30, hpFlat: 250 },
     buildsFrom: [BASIC.sheen, MID.jingshi, MID.stinger],
-    effects: { spellbladeBaseAdPct: 3.0, spellbladeMoveSpeed: 100, spellbladeMoveSpeedDurationMs: 2000 },
+    effects: { spellbladeBaseAdPct: 3.0, spellbladeMoveSpeed: 100, spellbladeMoveSpeedDurationMs: 2000, spellbladeDamageType: "physical" },
     description: [
       "攻击力 +30",
       "技能急速 +25",
@@ -752,7 +863,7 @@ const RAW_ITEMS = [
     cost: 2950,
     stats: { abilityPowerFlat: 80, abilityHaste: 10 },
     buildsFrom: [MID.aetherWisp, BASIC.amplifyingTome, BASIC.sheen],
-    effects: { spellbladeAdRatio: 1.0, spellbladeApRatio: 1.0 },
+    effects: { spellbladeAdRatio: 1.0, spellbladeApRatio: 1.0, spellbladeDamageType: "magic" },
     description: [
       "法术强度 +80",
       "技能急速 +10",
@@ -768,7 +879,7 @@ const RAW_ITEMS = [
     cost: 3000,
     stats: { attackDamageFlat: 35, abilityHaste: 20, critChancePct: 0.25 },
     buildsFrom: [MID.cloakOfAgility, BASIC.longSword, BASIC.sheen],
-    effects: { spellbladeBaseAdPct: 0.7, spellbladeCanCrit: true, onHitMissingManaRestorePct: 0.03 },
+    effects: { spellbladeBaseAdPct: 0.7, spellbladeCanCrit: true, onHitMissingManaRestorePct: 0.03, spellbladeDamageType: "physical" },
     description: [
       "攻击力 +35",
       "技能急速 +20",
@@ -788,6 +899,7 @@ const RAW_ITEMS = [
     effects: {
       spellbladeAdRatio: 1.0,
       spellbladeArmorRatio: 1.0,
+      spellbladeDamageType: "physical",
       frostSlowPct: 0.5,
       frostSlowRadiusBase: 100,
       frostSlowRadiusArmorRatio: 0.10,
@@ -797,7 +909,7 @@ const RAW_ITEMS = [
       "护甲 +50",
       "防御 +20",
       "生命值 +250",
-      "被动：施放技能后，下次普攻额外造成 100% 攻击力 + 100% 护甲的物理伤害，并在半径 (100 + 护甲 ×10%) 内减速敌人 50%。",
+      "被动：施放技能后，下次普攻额外造成 100% 攻击力 + 100% 护甲的物理伤害，并在半径 (100 + 护甲 ×10%) 内减速敌人 25%。",
     ],
   },
   {
@@ -964,11 +1076,11 @@ const RAW_ITEMS = [
     cost: 2900,
     stats: { hpFlat: 500, abilityHaste: 15 },
     buildsFrom: [MID.bamisCinder, MID.kindlegem],
-    effects: { auraDamage: 30, auraDamageHpRatio: 0.008, auraIntervalMs: 500, auraRadius: 200 },
+    effects: { auraDamage: 30, auraDamageHpRatio: 0.008, auraIntervalMs: 500, auraRadius: 50 },
     description: [
       "生命值 +500",
       "技能急速 +15",
-      "被动：每 0.5 秒对半径 200 内的敌人造成 30 + 0.8% 最大生命值的魔法伤害。",
+      "被动：每 0.5 秒对半径 50 内的敌人造成 30 + 0.8% 最大生命值的魔法伤害。",
     ],
   },
 ];
@@ -1014,3 +1126,6 @@ export const EQUIPMENT_DATA = (() => {
 
   return data;
 })();
+
+
+

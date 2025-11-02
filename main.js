@@ -19,12 +19,37 @@ const CAMERA_ZOOM = 2;
 const CAMERA_ZOOM_MIN = 1;
 const CAMERA_ZOOM_MAX = 3.5;
 const CAMERA_ZOOM_STEP = 0.25;
+const Q_TALISMAN_SPEED = 100;
+const Q_TALISMAN_BOUNDARY_PADDING = 16;
 
 const EQUIPMENT_SLOT_COUNT = 6;
 const BROKEN_KINGS_BLADE_ID = "brokenKingsBlade";
 const WITS_END_ID = "witsEnd";
 const NASHORS_TOOTH_ID = "nashorsTooth";
 const GUINSOOS_RAGEBLADE_ID = "guinsosRageblade";
+const HEARTSTEEL_ID = "heartsteel";
+const DARK_SEAL_ID = "darkSeal";
+const THORNMAIL_ID = "thornmail";
+const LOST_CHAPTER_ID = "lostChapter";
+const TEAR_OF_THE_GODDESS_ID = "tearOfTheGoddess";
+const SERAPHS_EMBRACE_ID = "seraphsEmbrace";
+const BAILOU_SWORD_ID = "bailouSword";
+const RUNAANS_HURRICANE_ID = "runaansHurricane";
+const TIAMAT_ID = "tiamat";
+const TITANIC_HYDRA_ID = "titanicHydra";
+const BAMIS_CINDER_ID = "bamisCinder";
+const SUNFIRE_AEGIS_ID = "sunfireAegis";
+// New item IDs used for effects below
+const RECURVE_BOW_ID = "recurveBow";
+const HEXTECH_ALTERNATOR_ID = "hextechAlternator";
+const LIANDRYS_ANGUISH_ID = "liandrysAnguish";
+const INFINITY_ORB_ID = "infinityOrb";
+const RIFTMAKER_ID = "riftmaker";
+// 新增：本次实现涉及的装备 ID
+const RABADONS_DEATHCAP_ID = "rabadonsDeathcap";     // 灭世者的死亡之帽
+const NAVORI_QUICKBLADES_ID = "navoriQuickblades";   // 讯刃
+const THE_COLLECTOR_ID = "theCollector";             // 收集者
+const SOULSTEALER_CODEX_ID = "soulstealerCodex";
 const EQUIPMENT_TOOLTIP_DEFAULT = "查看鼠标移动到的位置";
 const DEBUG_INITIAL_RANK = 100;
 const DEBUG_SCENARIO = (() => {
@@ -128,10 +153,37 @@ const EQUIPMENT_NAME_CACHE = Object.freeze(
   ),
 );
 
-const randomElement = (array, rng = Math.random) => {
+const shopRandom = () => {
+  try {
+    const globalCrypto = typeof crypto !== "undefined" ? crypto : (typeof window !== "undefined" ? window.crypto : undefined);
+    if (globalCrypto?.getRandomValues) {
+      const buffer = new Uint32Array(1);
+      globalCrypto.getRandomValues(buffer);
+      return buffer[0] / 0x100000000;
+    }
+  } catch (_error) {
+    // fall back to Math.random
+  }
+  return Math.random();
+};
+
+const randomElement = (array, rng = shopRandom) => {
   if (!Array.isArray(array) || array.length === 0) return null;
   const index = Math.floor(rng() * array.length);
   return array[index];
+};
+
+const randomSample = (array, count, rng = shopRandom) => {
+  if (!Array.isArray(array) || array.length === 0 || count <= 0) return [];
+  const limit = Math.min(array.length, Math.max(0, count));
+  const pool = array.slice();
+  for (let i = pool.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    const tmp = pool[i];
+    pool[i] = pool[j];
+    pool[j] = tmp;
+  }
+  return pool.slice(0, limit);
 };
 
 /* 原始 dummy Boss（保留以便其他关卡可调用） */
@@ -271,6 +323,11 @@ const setFontSizeByScale = (text, scale) => {
 /* ==== 武器/弹幕/敌人 ==== */
 const WEAPON_ORBIT_RADIUS = 25;
 const WEAPON_ORBIT_SPEED = 180; // deg/s
+// Focus(Shift) 对阴阳玉轨道的影响
+const FOCUS_ORBIT_RADIUS_MULTIPLIER = 0.6; // 按住Shift时：半径缩小为60%
+const FOCUS_ORBIT_SPEED_MULTIPLIER = 2;    // 按住Shift时：转速×2
+// E技能形态加成：远程+20%攻速；近战将这20%转化为阴阳玉的转速
+const E_RANGED_ATTACK_SPEED_MULTIPLIER = 1.2;
 const BULLET_SPEED = 170;
 const BULLET_LIFETIME = 4500; // ms
 
@@ -292,10 +349,10 @@ const ENEMY_RARITY_SEQUENCE = Object.freeze([
 ]);
 
 const ENEMY_RARITY_WEIGHTS = Object.freeze({
-  [ENEMY_RARITIES.BASIC]: 0.6,
-  [ENEMY_RARITIES.MID]: 0.15,
-  [ENEMY_RARITIES.EPIC]: 0.1,
-  [ENEMY_RARITIES.LEGENDARY]: 0.05,
+  [ENEMY_RARITIES.BASIC]: 0.80,
+  [ENEMY_RARITIES.MID]: 0.10,
+  [ENEMY_RARITIES.EPIC]: 0.07,
+  [ENEMY_RARITIES.LEGENDARY]: 0.03,
 });
 
 const ENEMY_SPAWN_RADIUS_MAX = 300;
@@ -303,6 +360,10 @@ const ENEMY_SPAWN_RADIUS_MIN = 20;
 const ENEMY_SPAWN_ATTEMPTS = 36;
 
 const ENEMY_SPAWN_DELAY_MS = 2000;
+
+// —— 地图地点：商店与宝箱 —— //
+const MAP_SHOP_COUNT = 2;
+const MAP_CHEST_COUNT = 10;
 
 const ENEMY_TYPE_CONFIG = Object.freeze({
   kedama: {
@@ -325,10 +386,10 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_basic",
         scale: 0.9,
         hitRadius: 12,
-        dropRange: { min: 10, max: 30 },
+        dropRange: { min: 5, max: 15 },
       },
       [ENEMY_RARITIES.MID]: {
-        unlockRank: 12,
+        unlockRank: 11,
         hp: 200,
         attackDamage: 75,
         abilityPower: 0,
@@ -343,10 +404,10 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_mid",
         scale: 1.0,
         hitRadius: 13,
-        dropRange: { min: 30, max: 50 },
+        dropRange: { min: 15, max: 25 },
       },
       [ENEMY_RARITIES.EPIC]: {
-        unlockRank: 17,
+        unlockRank: 14,
         hp: 400,
         attackDamage: 100,
         abilityPower: 0,
@@ -361,10 +422,10 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_epic",
         scale: 1.15,
         hitRadius: 15,
-        dropRange: { min: 50, max: 100 },
+        dropRange: { min: 25, max: 50 },
       },
       [ENEMY_RARITIES.LEGENDARY]: {
-        unlockRank: 22,
+        unlockRank: 17,
         hp: 800,
         attackDamage: 125,
         abilityPower: 0,
@@ -379,7 +440,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_legendary",
         scale: 1.3,
         hitRadius: 16,
-        dropRange: { min: 100, max: 150 },
+        dropRange: { min: 50, max: 75 },
       },
     },
   },
@@ -388,7 +449,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
     weight: 0.08,
     tiers: {
       [ENEMY_RARITIES.BASIC]: {
-        unlockRank: 15,
+        unlockRank: 12,
         hp: 100,
         attackDamage: 10,
         abilityPower: 30,
@@ -396,20 +457,20 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         defense: 0,
         moveSpeed: 80,
         detectionRadius: 150,
-        moveDurationMs: 2000,
-        attackDurationMs: 2000,
-        shotIntervalMs: 500,
+        moveDurationMs: 0,
+        attackDurationMs: 4000,
+        shotIntervalMs: 200,
         spreadDeg: 30,
-        bulletSpeed: 30,
+        bulletSpeed: 130,
         bulletTextureKey: "enemy_bullet_basic",
         textureKey: "enemy_yousei_basic",
         spawnEffectKey: "enemy_spawn_basic",
         scale: 1.0,
         hitRadius: 12,
-        dropRange: { min: 10, max: 30 },
+        dropRange: { min: 5, max: 15 },
       },
       [ENEMY_RARITIES.MID]: {
-        unlockRank: 20,
+        unlockRank: 15,
         hp: 100,
         attackDamage: 10,
         abilityPower: 50,
@@ -417,20 +478,20 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         defense: 0,
         moveSpeed: 90,
         detectionRadius: 150,
-        moveDurationMs: 2000,
-        attackDurationMs: 2000,
-        shotIntervalMs: 200,
+        moveDurationMs: 0,
+        attackDurationMs: 4000,
+        shotIntervalMs: 100,
         spreadDeg: 30,
-        bulletSpeed: 30,
+        bulletSpeed: 120,
         bulletTextureKey: "enemy_bullet_mid",
         textureKey: "enemy_yousei_mid",
         spawnEffectKey: "enemy_spawn_mid",
         scale: 1.05,
         hitRadius: 12,
-        dropRange: { min: 30, max: 50 },
+        dropRange: { min: 15, max: 25 },
       },
       [ENEMY_RARITIES.EPIC]: {
-        unlockRank: 25,
+        unlockRank: 18,
         hp: 100,
         attackDamage: 10,
         abilityPower: 70,
@@ -438,20 +499,20 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         defense: 0,
         moveSpeed: 95,
         detectionRadius: 150,
-        moveDurationMs: 2000,
-        attackDurationMs: 2000,
-        shotIntervalMs: 100,
+        moveDurationMs: 0,
+        attackDurationMs: 4000,
+        shotIntervalMs: 50,
         spreadDeg: 30,
-        bulletSpeed: 30,
+        bulletSpeed: 130,
         bulletTextureKey: "enemy_bullet_epic",
         textureKey: "enemy_yousei_epic",
         spawnEffectKey: "enemy_spawn_epic",
         scale: 1.1,
         hitRadius: 13,
-        dropRange: { min: 50, max: 100 },
+        dropRange: { min: 25, max: 50 },
       },
       [ENEMY_RARITIES.LEGENDARY]: {
-        unlockRank: 30,
+        unlockRank: 21,
         hp: 100,
         attackDamage: 10,
         abilityPower: 90,
@@ -459,17 +520,17 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         defense: 0,
         moveSpeed: 100,
         detectionRadius: 150,
-        moveDurationMs: 2000,
-        attackDurationMs: 2000,
-        shotIntervalMs: 50,
+        moveDurationMs: 0,
+        attackDurationMs: 4000,
+        shotIntervalMs: 25,
         spreadDeg: 30,
-        bulletSpeed: 30,
+        bulletSpeed: 130,
         bulletTextureKey: "enemy_bullet_legendary",
         textureKey: "enemy_yousei_legendary",
         spawnEffectKey: "enemy_spawn_legendary",
         scale: 1.15,
         hitRadius: 13,
-        dropRange: { min: 100, max: 150 },
+        dropRange: { min: 50, max: 75 },
       },
     },
   },
@@ -478,7 +539,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
     weight: 0.02,
     tiers: {
       [ENEMY_RARITIES.BASIC]: {
-        unlockRank: 18,
+        unlockRank: 13,
         hp: 50,
         attackDamage: 0,
         abilityPower: 50,
@@ -489,17 +550,17 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_basic",
         scale: 1,
         hitRadius: 13,
-        attackIntervalMs: 10000,
-        ringBulletCount: 4,
-        ringBulletSpeed: 60,
+        attackIntervalMs: 5000,
+        ringBulletCount: 8,
+        ringBulletSpeed: 160,
         ringBulletTextureKey: "enemy_bullet_basic",
         proximityRadius: 100,
-        extraRing: { count: 10, speed: 10, textureKey: "enemy_bullet_gun" },
+        extraRing: { count: 20, speed: 10, textureKey: "enemy_bullet_gun" },
         extraKunai: null,
-        dropRange: { min: 10, max: 30 },
+        dropRange: { min: 5, max: 15 },
       },
       [ENEMY_RARITIES.MID]: {
-        unlockRank: 23,
+        unlockRank: 16,
         hp: 200,
         attackDamage: 0,
         abilityPower: 50,
@@ -510,17 +571,17 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_mid",
         scale: 1.5,
         hitRadius: 14,
-        attackIntervalMs: 10000,
-        ringBulletCount: 10,
-        ringBulletSpeed: 60,
+        attackIntervalMs: 5000,
+        ringBulletCount: 20,
+        ringBulletSpeed: 160,
         ringBulletTextureKey: "enemy_bullet_mid",
         proximityRadius: 100,
-        extraRing: { count: 15, speed: 30, textureKey: "enemy_bullet_gun" },
+        extraRing: { count: 30, speed: 30, textureKey: "enemy_bullet_gun" },
         extraKunai: null,
-        dropRange: { min: 30, max: 50 },
+        dropRange: { min: 15, max: 25 },
       },
       [ENEMY_RARITIES.EPIC]: {
-        unlockRank: 28,
+        unlockRank: 19,
         hp: 250,
         attackDamage: 0,
         abilityPower: 50,
@@ -531,22 +592,22 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_epic",
         scale: 1.8,
         hitRadius: 16,
-        attackIntervalMs: 10000,
-        ringBulletCount: 30,
-        ringBulletSpeed: 60,
+        attackIntervalMs: 5000,
+        ringBulletCount: 60,
+        ringBulletSpeed: 160,
         ringBulletTextureKey: "enemy_bullet_epic",
         proximityRadius: 100,
-        extraRing: { count: 15, speed: 30, textureKey: "enemy_bullet_gun" },
+        extraRing: { count: 30, speed: 30, textureKey: "enemy_bullet_gun" },
         extraKunai: {
           textureKey: "enemy_bullet_kunai",
-          intervalMs: 500,
+          intervalMs: 250,
           speed: 15,
           spreadDeg: 30,
         },
-        dropRange: { min: 50, max: 100 },
+        dropRange: { min: 25, max: 50 },
       },
       [ENEMY_RARITIES.LEGENDARY]: {
-        unlockRank: 33,
+        unlockRank: 22,
         hp: 380,
         attackDamage: 0,
         abilityPower: 50,
@@ -557,19 +618,19 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_legendary",
         scale: 1.25,
         hitRadius: 17,
-        attackIntervalMs: 10000,
-        ringBulletCount: 30,
-        ringBulletSpeed: 60,
+        attackIntervalMs: 5000,
+        ringBulletCount: 60,
+        ringBulletSpeed: 160,
         ringBulletTextureKey: "enemy_bullet_legendary",
         proximityRadius: 100,
-        extraRing: { count: 15, speed: 30, textureKey: "enemy_bullet_gun" },
+        extraRing: { count: 30, speed: 30, textureKey: "enemy_bullet_gun" },
         extraKunai: {
           textureKey: "enemy_bullet_kunai",
-          intervalMs: 100,
+          intervalMs: 50,
           speed: 15,
           spreadDeg: 30,
         },
-        dropRange: { min: 100, max: 150 },
+        dropRange: { min: 50, max: 75 },
       },
     },
   },
@@ -598,6 +659,9 @@ const PLAYER_BASE_STATS = {
 class PreloadScene extends Phaser.Scene {
   constructor() { super("PreloadScene"); }
   preload() {
+    // 加载冰拳效果
+    this.load.image("ice_effect", "assets/item/effect/ice.png");
+    
     this.load.image("floor", "assets/ground/defultground.png");
     this.load.image("wall", "assets/ground/defultwall.png");
     [
@@ -630,6 +694,10 @@ class PreloadScene extends Phaser.Scene {
     this.load.image("enemy_spawn_mid", "assets/enemy/spawn/mid_spawn.png");
     this.load.image("enemy_spawn_epic", "assets/enemy/spawn/epic_spawn.png");
     this.load.image("enemy_spawn_legendary", "assets/enemy/spawn/legendary.png");
+
+    // 地图地点：商店与宝箱
+    this.load.image("place_shop", "assets/place/shop.png");
+    this.load.image("place_chest", "assets/place/chest.png");
     this.load.image("enemy_bullet_basic", "assets/enemy/bullets/basic.png");
     this.load.image("enemy_bullet_mid", "assets/enemy/bullets/mid.png");
     this.load.image("enemy_bullet_epic", "assets/enemy/bullets/epic.png");
@@ -640,14 +708,42 @@ class PreloadScene extends Phaser.Scene {
     this.load.image("itemWitsEnd", "assets/item/legendary/智慧末刃.png");
     this.load.image("itemNashorsTooth", "assets/item/legendary/纳什之牙.png");
     this.load.image("itemGuinsoosRageblade", "assets/item/legendary/鬼索的狂暴之刃.png");
+    this.load.image("item_effect_arrow", "assets/item/effect/arrow.png");
+    this.load.image("item_effect_sunfire", "assets/item/effect/sunfire.png");
+    this.load.image("item_effect_tiamat", "assets/item/effect/tiamat.png");
+    this.load.image("item_effect_titanic", "assets/item/effect/Titanichydra.png");
     this.load.audio("utsuho_bgm", "music/boss.mp3"); 
     this.load.audio("battle_bgm", "music/battle.mp3");
-    this.load.audio("enemycharge", "se/enemycharge.wav");
+    // 移除敌人charge音效加载
     this.load.audio("enemyexploded", "se/enemyexploded.wav");
     this.load.audio("itempick", "se/itempick.wav");
     this.load.audio("pause", "se/pause.wav");
     this.load.audio("playershoot", "se/playershoot.wav");
     this.load.audio("pldead", "se/pldead.wav");
+    // 新增：玩家技能与受伤、普攻命中音效（不硬编码角色名，使用通用key）
+    this.load.audio("player_castQ", "se/Reimu_castQ.wav");
+    this.load.audio("player_castE", "se/Reimu_castE.wav");
+    this.load.audio("player_castR", "se/Reimu_castR.wav");
+    // Space 闪避音效
+    this.load.audio("player_dash", "se/Flash.wav");
+    this.load.audio("player_gethit", "se/gethit.wav");
+    this.load.audio("enemyhit", "se/enemyhit.wav");
+    // PreloadScene.preload 内其它 this.load.* 之后追加：预载技能图（包含闪避 SPACE）
+    [
+      "Q","E","R","SPACE",
+      "Qmelee","Qspell",
+      "R1","R2","R3","R4","R5","R6","R7","R8"
+    ].forEach(k=>{
+      // 使用统一 key: skill_<KEY>
+      try {
+        this.load.image(`skill_${k}`, `assets/player/reimu/skill/${k}.png`);
+      } catch (e) {
+        // 忽略加载错误（路径缺失时浏览器 img fallback 仍可工作）
+        // eslint-disable-next-line no-console
+        console.warn("Failed to queue skill preload", k, e);
+      }
+    });
+
 
     /* 预载 dummy Boss 资源与BGM（保留） */
     this.load.image(BOSS_TEST_CONFIG.textureKey, BOSS_TEST_CONFIG.spritePath);
@@ -706,6 +802,8 @@ class GameScene extends Phaser.Scene {
     this.debugMode = DEBUG_SCENARIO;
     this.debugBossMode = DEBUG_BOSS;
     this.debugShopMode = DEBUG_SHOP;
+    // 关卡：Boss关卡模式（每20关）
+    this.isBossStage = false;
 
     this.playerStats = { ...PLAYER_BASE_STATS };
     this.currentHp = this.playerStats.maxHp;
@@ -743,32 +841,115 @@ class GameScene extends Phaser.Scene {
     this.pauseOverlayElements = [];
     this.pauseOverlayBackground = null;
     this.pauseDecisionHandler = null;
+    // —— Game Over 覆盖层 —— //
+    this.isGameOver = false;
+    this.gameOverOverlayElements = [];
+    this.gameOverOverlayBackground = null;
+    this.gameOverDecisionHandler = null;
+    this.qTalismans = null;
+    this.lastAimAngle = Math.PI / 2;
     this.playerFacing = "down";
     this.playerAnimationKeys = { down: "player-down", left: "player-left", right: "player-left", up: "player-up" };
     this.playerIdleFrames = { down: "reimu_11", left: "reimu_21", right: "reimu_21", up: "reimu_31" };
     this.playerEquipmentSlots = new Array(EQUIPMENT_SLOT_COUNT).fill(null);
     this.playerEquipmentStats = { physicalLifeSteal: 0 };
     this.playerOnHitEffects = [];
+    this.heartsteelStacks = 0;
+    this.heartsteelBonusHp = 0;
+    this.heartsteelGainPerKill = 0;
+    // —— 杀人书（层数与进度） —— //
+    this.darkSealStacks = 0;            // 当前杀人书层数
+    this.darkSealKillProgress = 0;      // 小兵击杀计数（每100换1层）
+    // —— 女神泪/炽天使 层数（释放技能叠层） —— //
+    this.manaStackCount = 0;            // 当前已叠的“层数”（每层+manaPerCast 最大到cap）
+    this.manaStackPerCast = 0;          // 每层提供的法力值（通常5）
+    this.manaStackCap = 0;              // 可叠加的最大法力（tear=700，seraph=1400）
+    this.manaSpendHealPerPoint = 0;     // 消耗法力时的治疗量/点（炽天使=1）
+    // —— 白楼剑动量 —— //
+    this.bailouMomentumStacks = 0;      // 当前动量层数
+    this.bailouMomentumExpires = [];    // 每层过期时间戳（ms）
+    this.bailouMomentumSpeedPerStack = 0; // 每层提供的平直移速
     this.playerSpeedBuffMultiplier = 1;
     this.playerSpeedBuffExpiresAt = 0;
+    this.lastSpellbladeUsedAt = 0;  // 追踪耀光装备的冷却时间
+    this.equipmentCooldowns = {};    // 追踪所有装备CD: { slotIndex: { expiresAt: number, duration: number } }
+    this.equipmentTriggers = {};     // 追踪装备触发状态: { slotIndex: { active: boolean, expiresAt: number } }
     this.draggedEquipmentSlot = null;
     this.equipmentUi = null;
     this.equipmentUiHandlers = [];
     this.activeEquipmentTooltipIndex = null;
     this.sfxConfig = {
-      enemycharge: { volume: 0.25 },
       enemyexploded: { volume: 0.325 },
       itempick: { volume: 0.1 },
       pause: { volume: 0.25 },
       playershoot: { volume: 0.4 },
       pldead: { volume: 0.25 },
+      // 新增音效默认音量
+      player_castQ: { volume: 2.5 },
+      player_castE: { volume: 2.5 },
+      player_castR: { volume: 2.5 },
+      player_dash: { volume: 0.8 },
+      player_gethit: { volume: 2.5 },
+      enemyhit: { volume: 0.8 },
     };
+    // 同一种音效素材触发最小间隔（ms）
+    this.sfxLastPlayed = {};
+    this.sfxMinIntervalMs = 200;
+// —— 技能形态与数值 —— //
+this.playerCombatMode = "ranged";   // ranged | melee（E切换），初始远程
+this.modeAttackSpeedMultiplier = 1; // 远程+20%攻速
+this.weaponHitbox = null;           // 近战模式下，阴阳宝玉的物理判定体
+
+// —— 技能CD/蓝耗配置 —— //
+this.skillConfig = {
+  Q: { baseCd: 10000, mana: 60 },
+  E: { baseCd: 5000,  mana: 0  },
+  R: { baseCd: 58000, mana: 180 },
+  DASH: { baseCd: 5000, mana: 0, distance: 50, durationMs: 120 }
+};
+this.skillReadyAt = { Q:0, E:0, R:0, DASH:0 };
+this.skillCooldownDuration = { Q:0, E:0, R:0, DASH:0 };
+
+// —— 预览提示（复用已有区域，不新增 UI） —— //
+this.skillTooltipTarget = null; // 复用：优先技能面板，其次 equipmentDetails
+
+// —— R 技能：梦想妙珠 —— //
+    this.mikoOrbsGroup = null;      // 物理组
+    this.mikoOrbs = [];             // 实例列表
+
+    // —— 地图地点组（商店等） —— //
+    this.places = null;             // 静态物体组（商店放这里）
+    this.shopPlaces = [];           // 场上商店引用
+
+// —— 闪避与无敌 —— //
+this.playerInvulnerableUntil = 0;
+this.playerWallCollider = null; // 保存玩家-墙体碰撞体
 
     // 鬼索叠层相关
     this.guinsooStacks = 0;
     this.guinsooStacksExpireAt = 0;
     this.guinsooFullProcCounter = 0;
     this.hasGuinsoo = false;
+
+    this.hasRunaan = false;
+    this.runaanConfig = null;
+    this.hasTiamat = false;
+    this.tiamatCleaveRadius = 0;
+    this.hasTitanicHydra = false;
+    this.titanicCleaveRadius = 0;
+    this.titanicCleaveBonus = 0;
+    this.auraEffect = null;
+    this.auraNextTickAt = 0;
+    this.auraSprite = null;
+    this.auraTween = null;
+
+    // —— 基础与装备驱动的资源回复 —— //
+    this.baseManaRegenPerSecond = 5;   // 基础回蓝：5 mana/s
+    this.manaRegenFlatPerSecond = 0;   // 装备提供的平直回蓝（/s）
+    this.manaRegenMultiplier = 1;      // 装备提供的回蓝倍率（相乘）
+    this.hpRegenPerSecondFlat = 0;     // 装备提供的生命回复（/s）
+    this._manaRegenCarry = 0;          // 小数累加避免抖动
+    this._hpRegenCarry = 0;            // 小数累加避免抖动
 
     // Boss相关
     this.boss = null;
@@ -804,6 +985,9 @@ class GameScene extends Phaser.Scene {
     this.updateResourceBars();
     this.initializeShopSystem();
 
+    // 地图随机放置：商店与宝箱
+    this.spawnMapPlaces();
+
     /* ==== 新增：Boss弹幕分组与碰撞 ==== */
     this.bossBullets = this.physics.add.group();
     // 自机与Boss子弹判定：法术伤害（按Boss配置）
@@ -814,6 +998,12 @@ class GameScene extends Phaser.Scene {
       if (dmg > 0) this.applyMagicDamageToPlayer(dmg);
       this.destroyBossBullet(bullet);
     });
+    // 敌/Boss子弹与墙体发生碰撞时销毁子弹，避免穿墙
+    if (this.wallGroup) {
+      this.physics.add.collider(this.bossBullets, this.wallGroup, (bullet, _wall) => {
+        this.destroyBossBullet(bullet);
+      });
+    }
 
     const now = this.time.now;
     this.lastDamageTimestamp = now;
@@ -823,6 +1013,210 @@ class GameScene extends Phaser.Scene {
     this.roundAwaitingDecision = false;
     this.updateOverlayScale();
     this.updateHUD();
+// 近战命中体（与 weaponSprite 同位）
+this.weaponHitbox = this.physics.add.image(this.player.x, this.player.y, "weapon").setVisible(false).setDepth(8);
+this.weaponHitbox.body.setAllowGravity(false);
+this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.height/2-8);
+this.physics.add.overlap(this.weaponHitbox, this.enemies, (hitbox, enemy)=>{
+  if (!enemy.active || this.playerCombatMode!=="melee") return;
+  const now = this.time.now;
+  if (!enemy.lastOrbHitAt || now - enemy.lastOrbHitAt >= 300) {
+    // 将 E 的近战命中视为“普攻”：可触发攻击特效与法术暴击
+    this.playSfx("enemyhit");
+
+    const preHp = enemy.hp;
+    const baseAD = PLAYER_BASE_STATS.attackDamage; // 基础AD
+    const ap = this.playerStats.abilityPower || 0;
+    const baseMagic = Math.max(0, Math.round(baseAD + ap)); // 100%基础AD + 100%AP（魔法）
+
+    // 普通暴击率影响（对该基础魔法伤害生效）
+    const critChanceRaw = this.playerStats?.critChance ?? 0;          // 可能是0–1或0–100
+    const critChance01 = critChanceRaw > 1 ? critChanceRaw / 100 : critChanceRaw;
+    const critChance = Math.min(1, Math.max(0, critChance01));
+    const critDamagePct = this.playerStats?.critDamage ?? 150;        // 150% = 1.5倍
+    const baseIsCrit = Math.random() < critChance;
+    const baseMagicFinal = baseIsCrit ? Math.round(baseMagic * (critDamagePct / 100)) : baseMagic;
+
+    // 构建伤害条目（与远程普攻一致的归并/展示流程）
+    const entries = [];
+
+    // 基础伤害（按魔法结算，定义为 basic，不走普通暴击）
+    entries.push({ type: "magic", amount: baseMagicFinal, source: baseIsCrit ? "basic_crit" : "basic", isOnHit: false, isCrit: baseIsCrit });
+
+    // 耀光（若有）
+    let spellbladeHit = null;
+    if (this.nextAttackTriggersSpellblade) {
+      spellbladeHit = this.consumeSpellbladeIfReady(enemy);
+    }
+
+    // 通用 on-hit 平直伤害
+    const flatOnHitPhys = Math.max(0, Math.round(this.playerEquipmentStats?.onHitPhysicalFlat || 0));
+    if (flatOnHitPhys > 0) entries.push({ type: "physical", amount: flatOnHitPhys, source: "onhit_phys_flat", isOnHit: true });
+    const flatOnHitMagic = Math.max(0, Math.round(this.playerEquipmentStats?.onHitMagicFlat || 0));
+    if (flatOnHitMagic > 0) entries.push({ type: "magic", amount: flatOnHitMagic, source: "onhit_magic_flat", isOnHit: true });
+
+    // 破败王者之刃：百分比生命（按 on-hit 处理）
+    if (this.hasItemEquipped(BROKEN_KINGS_BLADE_ID)) {
+      const blade = EQUIPMENT_DATA[BROKEN_KINGS_BLADE_ID];
+      const eff = blade.effects;
+      const rawPercent = preHp * eff.percentCurrentHp;
+      let percentDmg = Math.max(eff.percentMinDamage, rawPercent);
+      if (enemy.isBoss) percentDmg = Math.min(percentDmg, eff.percentMaxDamageBoss);
+      else percentDmg = Math.min(percentDmg, eff.percentMaxDamageNonBoss);
+      entries.push({ type: "physical", amount: Math.round(percentDmg), source: "bork_percent", isOnHit: true });
+      if (enemy.hitComboCount >= eff.tripleHitThreshold) {
+        entries.push({ type: "magic", amount: Math.round(eff.tripleHitMagicDamage), source: "bork_triple", isOnHit: false });
+        enemy.slowPct = Math.max(enemy.slowPct || 0, eff.tripleHitSlowPct);
+        enemy.slowUntil = now + eff.tripleHitSlowMs;
+        this.playerSpeedBuffMultiplier = Math.max(this.playerSpeedBuffMultiplier || 1, 1 + eff.selfHastePct);
+        this.playerSpeedBuffExpiresAt = now + eff.selfHasteMs;
+        enemy.hitComboCount = 0;
+        enemy.hitComboExpireAt = 0;
+      }
+    }
+
+    // 智慧末刃、纳什、鬼索、巨九（与远程普攻相同）
+    let witsOnHitDamagePerProc = 0;
+    if (this.hasItemEquipped(WITS_END_ID)) {
+      const eff = EQUIPMENT_DATA[WITS_END_ID].effects;
+      witsOnHitDamagePerProc = Math.round(eff.witsMagicOnHit);
+      entries.push({ type: "magic", amount: witsOnHitDamagePerProc, source: "wits", isOnHit: true });
+    }
+    if (this.hasItemEquipped(NASHORS_TOOTH_ID)) {
+      const eff = EQUIPMENT_DATA[NASHORS_TOOTH_ID].effects;
+      const bonusAD = Math.max(0, this.playerStats.attackDamage - PLAYER_BASE_STATS.attackDamage);
+      const nashorDmg = Math.round(eff.nashorBase + eff.nashorBonusAdRatio * bonusAD + eff.nashorApRatio * ap);
+      entries.push({ type: "magic", amount: nashorDmg, source: "nashor", isOnHit: true });
+    }
+    let extraProcMultiplier = 1;
+    if (this.hasItemEquipped(GUINSOOS_RAGEBLADE_ID)) {
+      const eff = EQUIPMENT_DATA[GUINSOOS_RAGEBLADE_ID].effects;
+      entries.push({ type: "magic", amount: Math.round(eff.ragebladeMagicOnHit), source: "guinsoo", isOnHit: true });
+      this.guinsooStacks = Math.min((this.guinsooStacks || 0) + 1, eff.ragebladeMaxStacks || 4);
+      this.guinsooStacksExpireAt = now + (eff.ragebladeStackDurationMs || 5000);
+      if (this.guinsooStacks >= (eff.ragebladeMaxStacks || 4)) {
+        this.guinsooFullProcCounter = (this.guinsooFullProcCounter || 0) + 1;
+        if (this.guinsooFullProcCounter % (eff.ragebladeExtraProcEvery || 3) === 0) {
+          extraProcMultiplier = 1 + (eff.ragebladeExtraProcsAtFull || 2);
+        }
+      } else {
+        this.guinsooFullProcCounter = 0;
+      }
+      this.rebuildAttackTimer();
+    }
+    if (this.hasTitanicHydra && this.titanicCleaveBonus > 0) {
+      const maxHpStat = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
+      const bonusDamage = Math.round(maxHpStat * this.titanicCleaveBonus);
+      if (bonusDamage > 0) entries.push({ type: "physical", amount: bonusDamage, source: "titanic_primary", isOnHit: true });
+    }
+
+    // 归并并套减伤
+    const damageGroups = { basic: { physical: 0, magic: 0 }, onHit: { physical: 0, magic: 0 } };
+    for (const e of entries) {
+      const times = e.isOnHit ? extraProcMultiplier : 1;
+      for (let k = 0; k < times; k += 1) {
+        const dealt = this.applyMitigationToTarget(e.amount, enemy, this.playerStats, e.type, 1);
+        if (dealt <= 0) continue;
+        const group = e.isOnHit ? damageGroups.onHit : damageGroups.basic;
+        group[e.type] += dealt;
+        // 智慧末刃：阈值治疗
+        if (e.source === "wits") {
+          const hpPct = this.currentHp / this.playerStats.maxHp;
+          if (hpPct < (EQUIPMENT_DATA[WITS_END_ID].effects.witsHealThresholdHpPct || 0.5)) {
+            this.currentHp = Math.min(this.currentHp + dealt, this.playerStats.maxHp);
+            this.showHealNumber(this.player.x, this.player.y - 28, dealt);
+            this.updateResourceBars();
+          }
+        }
+      }
+    }
+
+    // 低血法暴（无穷法球）
+    let magicBasicWasSpellCrit = false;
+    const baseWasNormalCrit = baseIsCrit;
+    let magicOnHitWasSpellCrit = false;
+    if (this.hasItemEquipped(INFINITY_ORB_ID)) {
+      const eff = EQUIPMENT_DATA[INFINITY_ORB_ID]?.effects || {};
+      const threshold = Number.isFinite(eff.executeHpPct) ? eff.executeHpPct : 0.5;
+      const mult = Number.isFinite(eff.magicCritMultiplier) ? eff.magicCritMultiplier : 1.5;
+      if ((enemy.hp / (enemy.maxHp || 1)) <= threshold) {
+        if (damageGroups.basic.magic > 0) {
+          damageGroups.basic.magic = Math.max(0, Math.round(damageGroups.basic.magic * mult));
+          magicBasicWasSpellCrit = true;
+        }
+        if (damageGroups.onHit.magic > 0) {
+          damageGroups.onHit.magic = Math.max(0, Math.round(damageGroups.onHit.magic * mult));
+          magicOnHitWasSpellCrit = true;
+        }
+      }
+    }
+
+    // 显示（与远程普攻一致样式）：先 basic，再 on-hit
+    let displayOrder = 0;
+    if (damageGroups.basic.physical > 0) this.displayDamageWithSeparation(enemy.x, enemy.y, damageGroups.basic.physical, "physical", displayOrder++);
+    if (damageGroups.basic.magic > 0) {
+      const typeToShow = (magicBasicWasSpellCrit || baseWasNormalCrit) ? "spellcrit" : "magic";
+      this.displayDamageWithSeparation(enemy.x, enemy.y, damageGroups.basic.magic, typeToShow, displayOrder++);
+    }
+    if (damageGroups.onHit.physical > 0) this.displayDamageWithSeparation(enemy.x, enemy.y, damageGroups.onHit.physical, "physical", displayOrder++);
+    if (damageGroups.onHit.magic > 0) this.displayDamageWithSeparation(enemy.x, enemy.y, damageGroups.onHit.magic, magicOnHitWasSpellCrit ? "spellcrit" : "magic", displayOrder++);
+
+    // 独立显示：耀光（带 S 前缀）
+    let spellbladeDamage = 0;
+    if (spellbladeHit && spellbladeHit.amount > 0) {
+      spellbladeDamage = spellbladeHit.amount;
+      const stype = (spellbladeHit.type === "magic" && spellbladeHit.isSpellCrit) ? "spellcrit" : spellbladeHit.type;
+      this.showDamageNumber(enemy.x, enemy.y, spellbladeDamage, stype, { isSpellblade: true });
+    }
+
+    // 实扣血
+    const totalDamage =
+      damageGroups.basic.physical + damageGroups.basic.magic +
+      damageGroups.onHit.physical + damageGroups.onHit.magic +
+      spellbladeDamage;
+    enemy.hp = Math.max(0, (enemy.hp ?? 0) - totalDamage);
+    if (enemy.isBoss && typeof enemy.setData === "function") enemy.setData("hp", enemy.hp);
+    if (enemy.isBoss) this.updateBossUI(enemy);
+
+    // 劈砍与后续：定义为普攻
+    const meleeAngle = Phaser.Math.Angle.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+    this.triggerCleaveEffects(enemy, { angle: meleeAngle, scale: 1 });
+    enemy.lastOrbHitAt = now;
+
+    if (enemy.hp <= 0) {
+      this.killEnemy(enemy);
+    } else {
+      this.maybeExecuteTheCollector(enemy);
+    }
+    // 讯刃：普攻命中返还
+    this.applyNavoriQuickbladesOnHitRefund();
+
+    // 物理吸血（只对物理总额）
+    const ls = this.playerEquipmentStats.physicalLifeSteal ?? 0;
+    if (ls > 0) {
+      const physicalTotal = damageGroups.basic.physical + damageGroups.onHit.physical;
+      if (physicalTotal > 0) {
+        const heal = Math.max(0, Math.round(physicalTotal * ls));
+        if (heal > 0) {
+          this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
+          this.showHealNumber(this.player.x, this.player.y - 14, heal);
+          this.updateResourceBars();
+        }
+      }
+    }
+
+    // Omnivamp（任意伤害）
+    const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
+    if (omni > 0) {
+      const healAny = Math.max(0, Math.round(totalDamage * omni));
+      if (healAny > 0) {
+        this.currentHp = Math.min(this.currentHp + healAny, this.playerStats.maxHp);
+        this.showHealNumber(this.player.x, this.player.y - 18, healAny);
+        this.updateResourceBars();
+      }
+    }
+  }
+});
 
     if (this.debugShopMode) {
       this.playerPoints = Math.max(this.playerPoints, SHOP_DEBUG_START_GOLD);
@@ -832,7 +1226,7 @@ class GameScene extends Phaser.Scene {
     }
 
     if (!this.battleBgm) {
-      this.battleBgm = this.sound.add("battle_bgm", { loop: true, volume: 0.6 });
+      this.battleBgm = this.sound.add("battle_bgm", { loop: true, volume: 0.4 });
       this.battleBgm.play();
       this.events.once("shutdown", () => { if (this.battleBgm?.isPlaying) this.battleBgm.stop(); });
       this.events.once("destroy", () => { if (this.battleBgm) { this.battleBgm.stop(); this.battleBgm.destroy(); this.battleBgm = null; } });
@@ -872,8 +1266,6 @@ class GameScene extends Phaser.Scene {
       mpBar: document.getElementById("mp-bar"),
       mpLabel: document.getElementById("mp-bar-label"),
       statContainer: document.getElementById("stat-lines"),
-      skillOverlay: document.getElementById("skill-space-overlay"),
-      skillTimer: document.getElementById("skill-space-timer"),
       timerValue: document.getElementById("sidebar-timer-value"),
       killValue: document.getElementById("sidebar-kill-value"),
       rankValue: document.getElementById("sidebar-rank-value"),
@@ -892,6 +1284,104 @@ class GameScene extends Phaser.Scene {
       shopTitle: document.querySelector("#shop-overlay .shop-title"),
       shopGoldLabel: document.querySelector("#shop-overlay .shop-gold"),
     };
+    const selectFirst = (selectors) => selectors.map((s) => document.querySelector(s)).find(Boolean);
+    const skillSelectors = {
+      Q: ['.skill-slot[data-skill="Q"]', '[data-skill="Q"]', '#skill-q', '.skill-q'],
+      E: ['.skill-slot[data-skill="E"]', '[data-skill="E"]', '#skill-e', '.skill-e'],
+      R: ['.skill-slot[data-skill="R"]', '[data-skill="R"]', '#skill-r', '.skill-r'],
+      DASH: ['.skill-slot[data-skill="SPACE"]', '[data-skill="SPACE"]', '#skill-space', '.skill-space'],
+    };
+
+    const iconMap = { Q: "skill_Q", E: "skill_E", R: "skill_R", DASH: "skill_SPACE" };
+
+    this.ui.skillUi = {};
+
+    Object.entries(skillSelectors).forEach(([key, selectors]) => {
+      const slotCandidate = selectFirst(selectors);
+      if (!slotCandidate) return;
+      const slot = slotCandidate.classList?.contains("skill-slot")
+        ? slotCandidate
+        : slotCandidate.closest?.(".skill-slot") || slotCandidate;
+      if (!slot) return;
+
+      const iconEl = slot.querySelector?.(".skill-icon") ?? null;
+      if (iconEl && !iconEl.getAttribute("src")) {
+        const texKey = iconMap[key];
+        let src = null;
+        if (texKey && this.textures && this.textures.exists(texKey)) {
+          try {
+            src = this.textures.getBase64(texKey);
+          } catch (_) {
+            src = null;
+          }
+        }
+        if (!src) {
+          const fileName = texKey ? texKey.replace(/^skill_?/, "") : key;
+          src = `assets/player/reimu/skill/${fileName}.png`;
+        }
+        iconEl.src = src;
+      }
+
+      const overlayEl = slot.querySelector?.(".cooldown-overlay") ?? null;
+      const timerEl = overlayEl?.querySelector?.(".cooldown-timer") ?? null;
+
+      this.ui.skillUi[key] = {
+        slot,
+        icon: iconEl,
+        overlay: overlayEl,
+        timer: timerEl,
+      };
+
+      if (overlayEl) {
+        overlayEl.style.display = "none";
+        overlayEl.style.opacity = "1";
+      }
+      if (timerEl) timerEl.textContent = "";
+      if (iconEl) iconEl.style.opacity = "1";
+    });
+
+    if (!this.skillTooltipTarget) this.skillTooltipTarget = this.ui.equipmentDetails;
+
+    const descriptions = {
+      Q: "Q「妖怪破坏者」\nCD 10s  消耗 60MP\n近战：按贴图物理碰撞判定（4格大小），造成法伤(100%AP)。\n远程：正前方30°三枚穿透符札（物伤=100%AD+50%AP）。",
+      E: "E「阴阳鬼神玉」切换（CD 5s）\n远程：诱导护符，半径600普攻，攻速+20%。\n近战：阴阳宝玉巨化与半径×2旋转，接触造成(100%基础AD+100%AP)法伤。",
+      R: "R「梦想封印」\nCD 58s  消耗 180MP\n立即治疗(500%AP+500)。召唤6枚梦想妙珠，先围绕2秒，再追最近敌人接触爆炸；接触与爆炸各造成100%AP法伤，并清除敌方子弹。",
+      DASH: "闪避（Space）\nCD 5s\n向前位移50，短暂无敌；忽略地形碰撞（边界除外）。",
+    };
+
+    const showTip = (key) => {
+      if (!this.skillTooltipTarget) return;
+      const text = descriptions[key];
+      if (!text) return;
+      if (this.skillTooltipTarget === this.ui.equipmentDetails) {
+        this.skillTooltipTarget.innerHTML = "";
+        text.split("\n").forEach((line) => {
+          const span = document.createElement("span");
+          span.textContent = line;
+          this.skillTooltipTarget.appendChild(span);
+        });
+      } else {
+        this.skillTooltipTarget.textContent = text;
+      }
+    };
+
+    const clearTip = () => {
+      if (!this.skillTooltipTarget) return;
+      if (this.skillTooltipTarget === this.ui.equipmentDetails) {
+        this.refreshEquipmentTooltip(this.activeEquipmentTooltipIndex ?? null);
+      } else {
+        this.skillTooltipTarget.textContent = "";
+      }
+    };
+
+    Object.entries(this.ui.skillUi).forEach(([key, entry]) => {
+      const targetEl = entry?.slot || entry?.icon;
+      if (!targetEl) return;
+      targetEl.addEventListener("mouseenter", () => showTip(key));
+      targetEl.addEventListener("mouseleave", clearTip);
+    });
+
+
   }
   showBossHeader(name, title) {
       if (!this.ui.bossHeader || !this.ui.bossName || !this.ui.bossTitle) return;
@@ -949,6 +1439,7 @@ enemyFireAimedSpread(enemy, baseSpeed, textureKey, spreadDeg, fixedOffsetDeg = n
     forwardSpeed: baseSpeed,
     accel: 0,
     sideSpeed: 0,
+    owner: enemy,
   }, enemy.abilityPower ?? 0, true);
 }
 
@@ -970,6 +1461,7 @@ enemyFireRing(enemy, {
     forwardSpeed: speed,
     accel: 0,
     sideSpeed: 0,
+    owner: enemy,
   }, enemy.abilityPower ?? 0);
 }
 
@@ -995,7 +1487,6 @@ updateChargerAI(enemy, now, delta) {
         enemy.chargeTargetX = this.player.x;
         enemy.chargeTargetY = this.player.y;
         enemy.body.setVelocity(0, 0);
-        this.playSfx("enemycharge");
         return;
       }
       // 普通追击：自动寻路
@@ -1128,6 +1619,11 @@ updateCasterAI(enemy, now, _delta) {
    1) 触发一次性额外环（朝向自机相位、gun.png、速度/数量按 tier）；
    2) epic/legendary 期间持续发出 kunai 随机 ±30° 散射（间隔按 tier），离开近身范围暂停。 */
 updateTurretAI(enemy, now, _delta) {
+  // 宝箱：标记 isChest 则完全不执行炮台发弹逻辑
+  if (enemy.isChest) {
+    enemy.body.setVelocity(0, 0);
+    return;
+  }
   // 保持静止
   enemy.body.setVelocity(0, 0);
 
@@ -1197,10 +1693,12 @@ updateTurretAI(enemy, now, _delta) {
       slots: slotElements.map((element) => ({
         element,
         icon: element.querySelector(".equipment-icon"),
+        badge: element.querySelector(".equipment-stack-badge"),
       })),
       previewElement,
       previewImage,
     };
+    this.previewSlotIndex = null;
     this.bindPreviewRepositionEvents();
     this.events.once("shutdown", () => this.unbindPreviewRepositionEvents());
     this.events.once("destroy", () => this.unbindPreviewRepositionEvents());
@@ -1257,23 +1755,102 @@ updateTurretAI(enemy, now, _delta) {
     this.equipmentUi = null;
     this.draggedEquipmentSlot = null;
     this.activeEquipmentTooltipIndex = null;
+    this.previewSlotIndex = null;
   }
 
   getEquipmentDefinition(itemId) {
     if (!itemId) return null;
     return EQUIPMENT_DATA[itemId] ?? null;
   }
+  
+isSpellbladeItem(itemId) {
+  if (!itemId) return false;
+  const item = this.getEquipmentDefinition(itemId);
+  if (item?.spellblade === true) return true;
+  const knownSheenIds = new Set(["sheen", "divineSunderer", "trinityForce", "lichBane", "manamune", "frostfireGauntlet"]);
+  return knownSheenIds.has(itemId);
+}
+
+updateSpellbladeOverlays() {
+  if (!this.equipmentUi?.slots) return;
+  const now = this.time?.now ?? Date.now();
+  const CD = 1500;
+
+  this.equipmentUi.slots.forEach(({ element }, index) => {
+    const itemId = this.playerEquipmentSlots[index];
+    if (!this.isSpellbladeItem(itemId)) {
+      // 清理残留
+      element?.querySelectorAll('.spellblade-cd, .spellblade-ready')?.forEach(el => el.remove());
+      return;
+    }
+
+    let cdMask = element.querySelector('.spellblade-cd');
+    if (!cdMask) {
+      cdMask = document.createElement('div');
+      cdMask.className = 'spellblade-cd';
+      element.appendChild(cdMask);
+    }
+
+    let ready = element.querySelector('.spellblade-ready');
+    if (!ready) {
+      ready = document.createElement('div');
+      ready.className = 'spellblade-ready';
+      element.appendChild(ready);
+    }
+
+    const remain = Math.max(0, (this.lastSpellbladeUsedAt + CD) - now);
+    if (remain > 0) {
+      const ratio = remain / CD;
+      cdMask.style.display = 'block';
+      cdMask.style.height = `${(ratio * 100).toFixed(1)}%`;
+      ready.classList.remove('active');
+    } else {
+      cdMask.style.display = 'none';
+      ready.classList.add('active');
+    }
+  });
+}
 
   refreshEquipmentUI() {
     if (!this.equipmentUi?.slots) return;
-    this.equipmentUi.slots.forEach(({ element, icon }, index) => {
+    const now = this.time.now;
+    
+    this.equipmentUi.slots.forEach(({ element, icon, badge }, index) => {
       const itemId = this.playerEquipmentSlots[index];
       const item = this.getEquipmentDefinition(itemId);
+      
+      // 清理之前的CD和指示器元素
+      element.querySelectorAll('.spellblade-cd, .spellblade-ready').forEach(el => el.remove());
+      
       if (item && icon) {
         icon.src = item.icon;
         icon.alt = item.name;
         element.classList.add("has-item");
         element.setAttribute("draggable", "true");
+        
+        // 处理耀光装备
+        if (this.isSpellbladeItem(itemId)) {
+          const isOnCooldown = !this.canTriggerSpellblade(now);
+          
+          // 添加CD遮罩
+          const cdMask = document.createElement('div');
+          cdMask.className = 'spellblade-cd';
+          if (isOnCooldown) {
+            const remainingTime = Math.max(0, (this.lastSpellbladeUsedAt + 1500) - now);
+            const progress = remainingTime / 1500;
+            cdMask.style.height = `${progress * 100}%`;
+            cdMask.classList.add('active');
+          }
+          element.appendChild(cdMask);
+          
+          // 添加就绪指示器
+          const readyIndicator = document.createElement('div');
+          readyIndicator.className = 'spellblade-ready';
+          if (!isOnCooldown) {
+            readyIndicator.classList.add('active');
+          }
+          element.appendChild(readyIndicator);
+        }
       } else {
         if (icon) {
           icon.removeAttribute("src");
@@ -1284,27 +1861,37 @@ updateTurretAI(enemy, now, _delta) {
         element.classList.remove("dragging");
         element.classList.remove("drag-over");
       }
+      
+      if (badge) {
+        const stackText = this.getEquipmentStackBadgeText(item);
+        if (stackText != null) {
+          badge.textContent = stackText;
+          badge.classList.add("active");
+        } else {
+          badge.textContent = "";
+          badge.classList.remove("active");
+        }
+      }
     });
 
-    const previewElement = this.equipmentUi.previewElement;
-    const previewImage = this.equipmentUi.previewImage;
-    const previewItem = this.getEquipmentDefinition(this.playerEquipmentSlots[0]);
+    this.updateEquipmentPreview(this.activeEquipmentTooltipIndex ?? null);
+  }
 
-    if (previewElement && previewImage) {
-      if (previewItem) {
-        previewElement.classList.add("active");
-        previewImage.src = previewItem.icon;
-        previewImage.alt = previewItem.name;
-        this.positionPreviewUnderSlot1();
-      } else {
-        previewElement.classList.remove("active");
-        previewElement.style.background = "transparent";
-        previewElement.style.backgroundImage = "none";
-        previewImage.removeAttribute("src");
-        previewImage.alt = "";
-      }
+  getEquipmentStackBadgeText(item) {
+    if (!item) return null;
+    if (item.id === HEARTSTEEL_ID) {
+      const stacks = Number.isFinite(this.heartsteelStacks) ? this.heartsteelStacks : 0;
+      return `${stacks}`;
     }
-
+    if (item.id === DARK_SEAL_ID) {
+      const stacks = Number.isFinite(this.darkSealStacks) ? this.darkSealStacks : 0;
+      return `${stacks}`;
+    }
+    if (item.id === TEAR_OF_THE_GODDESS_ID || item.id === LOST_CHAPTER_ID || item.id === SERAPHS_EMBRACE_ID) {
+      const stacks = Number.isFinite(this.manaStackCount) ? this.manaStackCount : 0;
+      return `${stacks}`;
+    }
+    return null;
   }
 
   refreshEquipmentTooltip(slotIndex = null) {
@@ -1319,6 +1906,7 @@ updateTurretAI(enemy, now, _delta) {
       hint.className = "sidebar-equipment-hint";
       hint.textContent = EQUIPMENT_TOOLTIP_DEFAULT;
       container.appendChild(hint);
+      this.updateEquipmentPreview(null);
       return;
     }
 
@@ -1331,6 +1919,44 @@ updateTurretAI(enemy, now, _delta) {
       row.textContent = line;
       container.appendChild(row);
     });
+    this.updateEquipmentPreview(slotIndex);
+  }
+
+  updateEquipmentPreview(slotIndex) {
+    const ui = this.equipmentUi;
+    if (!ui || !ui.previewElement || !ui.previewImage) return;
+
+    const previewEl = ui.previewElement;
+    const previewImage = ui.previewImage;
+
+    const hidePreview = () => {
+      this.previewSlotIndex = null;
+      previewEl.classList.remove("active");
+      previewEl.style.background = "transparent";
+      previewEl.style.backgroundImage = "none";
+      previewEl.style.left = "-9999px";
+      previewEl.style.top = "-9999px";
+      previewImage.removeAttribute("src");
+      previewImage.alt = "";
+    };
+
+    if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= this.playerEquipmentSlots.length) {
+      hidePreview();
+      return;
+    }
+
+    const itemId = this.playerEquipmentSlots[slotIndex];
+    const item = this.getEquipmentDefinition(itemId);
+    if (!item) {
+      hidePreview();
+      return;
+    }
+
+    this.previewSlotIndex = slotIndex;
+    previewEl.classList.add("active");
+    previewImage.src = item.icon;
+    previewImage.alt = item.name;
+    this.positionPreviewUnderSlot(slotIndex);
   }
 
   equipItem(slotIndex, itemId) {
@@ -1361,6 +1987,19 @@ updateTurretAI(enemy, now, _delta) {
   recalculateEquipmentEffects() {
     this.playerEquipmentStats = { physicalLifeSteal: 0 };
     this.playerOnHitEffects = [];
+    this.hasRunaan = false;
+    this.runaanConfig = null;
+    this.hasTiamat = false;
+    this.tiamatCleaveRadius = 0;
+    this.hasTitanicHydra = false;
+    this.titanicCleaveRadius = 0;
+    this.titanicCleaveBonus = 0;
+    this.auraEffect = null;
+
+    // 资源回复重置（将由装备叠加）
+    let manaRegenFlatPerSecond = 0; // /s 平直回蓝（装备累计）
+    let manaRegenMultiplier = 1;    // 回蓝倍率（装备累计，相乘）
+    let hpRegenPerSecondFlat = 0;   // /s 平直回血（装备累计）
 
     const prevStats = this.playerStats ?? PLAYER_BASE_STATS;
     const prevMaxHp = prevStats.maxHp ?? PLAYER_BASE_STATS.maxHp;
@@ -1384,7 +2023,25 @@ updateTurretAI(enemy, now, _delta) {
     let moveSpeedPct = 0;
     let abilityHaste = 0;
     let armorPenFlat = 0;
+    // New aggregated equipment-driven effects
+    let onHitPhysicalFlat = 0;
+    let onHitMagicFlat = 0;           // for items that add magic on-hit (e.g., Riftmaker)
+    let spellBonusMagicFlat = 0;      // flat magic added to spells (e.g., Hextech Alternator, Riftmaker)
+    let omniVampPct = 0;              // omnivamp (e.g., Riftmaker)
+    let apFromHpPctSum = 0;           // % of Max HP converted to AP (Riftmaker)
+    let apMultiplierSum = 0;          // total AP multiplier (e.g., Deathcap)
     let hasGuinsoo = false;
+    let heartsteelGainPerKill = 0;
+    // 反甲：反伤数值
+    let thornsBase = 0;
+    let thornsArmorRatio = 0;
+    // 女神泪/炽天使：叠层参数
+    let manaPerCast = 0;     // 取最大
+    let manaCapBonus = 0;    // 取最大
+    let healPerManaSpent = 0; // 累加
+    // 白楼剑：动量（平直速度/最大层数）
+    let bailouSpeedPerStack = 0;
+    let bailouMaxStacks = 0;
 
     const appliedUniques = new Set();
     for (let i = 0; i < this.playerEquipmentSlots.length; i += 1) {
@@ -1410,11 +2067,130 @@ updateTurretAI(enemy, now, _delta) {
       if (stats.abilityHaste) abilityHaste += stats.abilityHaste;
       if (stats.armorPenFlat) armorPenFlat += stats.armorPenFlat;
 
+      const effects = item.effects ?? {};
+
+      // —— 回蓝/回血类效果 —— //
+      if (Number.isFinite(effects.manaRegenPerSecond)) {
+        manaRegenFlatPerSecond += Math.max(0, effects.manaRegenPerSecond);
+      }
+      if (Number.isFinite(effects.hpRegenPerSecond)) {
+        hpRegenPerSecondFlat += Math.max(0, effects.hpRegenPerSecond);
+      }
+      if (Number.isFinite(effects.manaRegenMultiplier)) {
+        const m = Math.max(0, effects.manaRegenMultiplier);
+        manaRegenMultiplier *= (m || 1);
+      }
+
+      if (item.id === RUNAANS_HURRICANE_ID) {
+        const boltCount = Number.isFinite(effects.boltCount) ? Math.max(0, effects.boltCount) : 0;
+        const damageMultiplier = Number.isFinite(effects.boltDamageMultiplier)
+          ? Math.max(0, effects.boltDamageMultiplier)
+          : 0.55;
+        const boltsTriggerOnHit = effects.boltsTriggerOnHit !== false;
+        this.hasRunaan = boltCount > 0 && damageMultiplier > 0;
+        if (this.hasRunaan) {
+          this.runaanConfig = {
+            boltCount,
+            damageMultiplier,
+            boltsTriggerOnHit,
+          };
+        }
+      }
+      if (item.id === TIAMAT_ID) {
+        this.hasTiamat = true;
+        this.tiamatCleaveRadius = Math.max(
+          this.tiamatCleaveRadius,
+          Number.isFinite(effects.cleaveRadius) ? effects.cleaveRadius : 0,
+        );
+      }
+      if (item.id === TITANIC_HYDRA_ID) {
+        this.hasTitanicHydra = true;
+        this.titanicCleaveRadius = Math.max(
+          this.titanicCleaveRadius,
+          Number.isFinite(effects.cleaveRadius) ? effects.cleaveRadius : 0,
+        );
+        this.titanicCleaveBonus = Math.max(
+          this.titanicCleaveBonus,
+          Number.isFinite(effects.cleavePercentMaxHp) ? effects.cleavePercentMaxHp : 0,
+        );
+      }
+      // Aggregate on-hit flats (recurve bow & similar)
+      if (Number.isFinite(effects.onHitPhysicalFlat)) {
+        onHitPhysicalFlat += Math.max(0, effects.onHitPhysicalFlat);
+      }
+      // Magic on-hit + spell bonus (Riftmaker explicitly affects both; Hextech affects spells / empowered hits)
+      if (Number.isFinite(effects.onHitMagicFlat)) {
+        const v = Math.max(0, effects.onHitMagicFlat);
+        if (item.id === RIFTMAKER_ID) {
+          onHitMagicFlat += v;
+          spellBonusMagicFlat += v;
+        } else if (item.id === HEXTECH_ALTERNATOR_ID) {
+          // Alternator: apply to spells only
+          spellBonusMagicFlat += v;
+        }
+      }
+      // 反伤（反甲/荆棘之甲）
+      if (Number.isFinite(effects.thornsBase)) thornsBase += Math.max(0, effects.thornsBase);
+      if (Number.isFinite(effects.thornsArmorRatio)) thornsArmorRatio += Math.max(0, effects.thornsArmorRatio);
+      // 女神泪/炽天使叠层参数
+      if (Number.isFinite(effects.manaPerCast)) manaPerCast = Math.max(manaPerCast, Math.max(0, effects.manaPerCast));
+      if (Number.isFinite(effects.manaCapBonus)) manaCapBonus = Math.max(manaCapBonus, Math.max(0, effects.manaCapBonus));
+      if (Number.isFinite(effects.healPerManaSpent)) healPerManaSpent += Math.max(0, effects.healPerManaSpent);
+      // 白楼剑：动量参数
+      if (item.id === BAILOU_SWORD_ID) {
+        const sp = Number.isFinite(effects.momentumSpeedPerStack) ? Math.max(0, effects.momentumSpeedPerStack) : 0;
+        const mx = Number.isFinite(effects.momentumMaxStacks) ? Math.max(0, effects.momentumMaxStacks) : 0;
+        bailouSpeedPerStack = Math.max(bailouSpeedPerStack, sp);
+        bailouMaxStacks = Math.max(bailouMaxStacks, mx);
+      }
+      // Omnivamp
+      if (Number.isFinite(effects.omniVampPct)) omniVampPct += Math.max(0, effects.omniVampPct);
+      // AP from Max HP
+      if (Number.isFinite(effects.apFromHpPct)) apFromHpPctSum += Math.max(0, effects.apFromHpPct);
+      // Total AP multiplier (e.g., Rabadon's Deathcap)
+      if (Number.isFinite(effects.apMultiplier)) apMultiplierSum += Math.max(0, effects.apMultiplier);
+      if (effects.auraDamage != null || effects.auraDamageHpRatio != null) {
+        const auraDamage = Number.isFinite(effects.auraDamage) ? effects.auraDamage : 0;
+        const auraRatio = Number.isFinite(effects.auraDamageHpRatio) ? effects.auraDamageHpRatio : 0;
+        const auraInterval = Number.isFinite(effects.auraIntervalMs) ? effects.auraIntervalMs : 1000;
+        const auraRadius = Number.isFinite(effects.auraRadius)
+          ? effects.auraRadius
+          : (item.id === SUNFIRE_AEGIS_ID ? 50 : 25);
+        const priority = item.id === SUNFIRE_AEGIS_ID ? 2 : 1;
+        const candidate = {
+          damageFlat: auraDamage,
+          damageRatio: auraRatio,
+          intervalMs: Math.max(50, auraInterval),
+          radius: Math.max(0, auraRadius),
+          priority,
+          textureKey: "item_effect_sunfire",
+        };
+        const currentAura = this.auraEffect;
+        if (
+          !currentAura ||
+          candidate.priority > currentAura.priority ||
+          (candidate.priority === currentAura.priority && candidate.radius >= currentAura.radius)
+        ) {
+          this.auraEffect = candidate;
+        }
+      }
+
       if (item.id === BROKEN_KINGS_BLADE_ID && !appliedUniques.has(item.id)) {
         this.playerOnHitEffects.push((context) => this.handleBrokenKingsBladeOnHit(context));
         appliedUniques.add(item.id);
       }
       if (item.id === GUINSOOS_RAGEBLADE_ID) hasGuinsoo = true;
+      if (effects.maxHpPerKill) heartsteelGainPerKill += effects.maxHpPerKill;
+
+      // 杀人书：根据当前层数增加AP与移速
+      if (item.id === DARK_SEAL_ID) {
+        const apPer = Number.isFinite(effects.stackApPerKill) ? effects.stackApPerKill : 5;
+        const msThreshold = Number.isFinite(effects.msBonusThreshold) ? effects.msBonusThreshold : 10;
+        const msBonusPct = Number.isFinite(effects.msBonusPct) ? effects.msBonusPct : 0.10;
+        const stacks = Math.max(0, this.darkSealStacks || 0);
+        addAP += apPer * stacks;
+        if (stacks >= msThreshold) moveSpeedPct += msBonusPct;
+      }
     }
 
     base.attackDamage = Math.max(1, Math.round(base.attackDamage + addAD));
@@ -1422,9 +2198,24 @@ updateTurretAI(enemy, now, _delta) {
     base.abilityPower = Math.max(0, Math.round((base.abilityPower ?? 0) + addAP));
     base.armor = Math.max(0, Math.round((base.armor ?? 0) + addAR));
     base.defense = Math.max(0, Math.round((base.defense ?? 0) + addDEF));
-    base.maxHp = Math.max(1, Math.round((base.maxHp ?? PLAYER_BASE_STATS.maxHp) + addHp));
+    const baseMaxHpValue = base.maxHp ?? PLAYER_BASE_STATS.maxHp;
+    const heartsteelBonusHp = heartsteelGainPerKill > 0 ? this.heartsteelBonusHp : 0;
+    base.maxHp = Math.max(1, Math.round(baseMaxHpValue + addHp + heartsteelBonusHp));
     const baseMaxMana = base.maxMana ?? PLAYER_MANA_MAX;
-    base.maxMana = Math.max(0, Math.round(baseMaxMana + addMana));
+    // 女神泪/炽天使叠层生效
+    this.manaStackPerCast = Math.max(0, manaPerCast);
+    this.manaStackCap = Math.max(0, manaCapBonus);
+    this.manaSpendHealPerPoint = Math.max(0, healPerManaSpent);
+    const maxStackCount = (this.manaStackPerCast > 0 && this.manaStackCap > 0)
+      ? Math.floor(this.manaStackCap / this.manaStackPerCast)
+      : 0;
+    if (maxStackCount === 0) {
+      this.manaStackCount = Math.max(0, Math.min(this.manaStackCount || 0, 0));
+    } else {
+      this.manaStackCount = Math.max(0, Math.min(this.manaStackCount || 0, maxStackCount));
+    }
+    const bonusManaFromStacks = (this.manaStackCount || 0) * (this.manaStackPerCast || 0);
+    base.maxMana = Math.max(0, Math.round(baseMaxMana + addMana + bonusManaFromStacks));
     // 支持装备给到 30 或 0.30 两种写法，统一为 [0,1]
     {
       const add01 = addCritChancePct > 1 ? addCritChancePct / 100 : addCritChancePct;
@@ -1432,8 +2223,12 @@ updateTurretAI(enemy, now, _delta) {
     }
     base.critDamage = Math.max(0, Math.round((base.critDamage ?? 0) + addCritDamageBonusPct * 100));
 
+    // 白楼剑动量：将当前层数换算为平直移速
+    this.bailouMomentumSpeedPerStack = Math.max(0, bailouSpeedPerStack);
+    if (bailouMaxStacks > 0) this.bailouMomentumStacks = Math.min(this.bailouMomentumStacks || 0, bailouMaxStacks);
+    const bailouFlat = (this.bailouMomentumStacks || 0) * (this.bailouMomentumSpeedPerStack || 0);
     const baseMoveSpeed = base.moveSpeed ?? PLAYER_BASE_SPEED;
-    const computedMoveSpeed = (baseMoveSpeed + moveSpeedFlat) * (1 + moveSpeedPct);
+    const computedMoveSpeed = (baseMoveSpeed + moveSpeedFlat + bailouFlat) * (1 + moveSpeedPct);
     base.moveSpeed = Math.max(0, Number(computedMoveSpeed.toFixed(3)));
 
     abilityHaste = Math.max(0, abilityHaste);
@@ -1441,12 +2236,40 @@ updateTurretAI(enemy, now, _delta) {
     base.cooldownReduction = abilityHaste > 0 ? 1 - (100 / (100 + abilityHaste)) : 0;
     base.armorPenFlat = Math.max(0, (base.armorPenFlat ?? 0) + armorPenFlat);
 
+    // Apply AP from HP conversion after maxHp is settled
+    if (apFromHpPctSum > 0) {
+      const hpForAp = base.maxHp ?? PLAYER_BASE_STATS.maxHp;
+      const apBonusFromHp = Math.max(0, Math.round(hpForAp * apFromHpPctSum));
+      base.abilityPower = Math.max(0, Math.round((base.abilityPower ?? 0) + apBonusFromHp));
+    }
+
+    // Apply total AP multiplier at the end (Rabadon's Deathcap)
+    if (apMultiplierSum > 0) {
+      const mult = 1 + apMultiplierSum; // e.g. 0.25 => 1.25
+      base.abilityPower = Math.max(0, Math.round((base.abilityPower ?? 0) * mult));
+    }
+
     this.playerStats = base;
+    this.heartsteelGainPerKill = heartsteelGainPerKill;
+
+    // Store aggregated effects for use in damage resolution
+    this.playerEquipmentStats.onHitPhysicalFlat = onHitPhysicalFlat;
+    this.playerEquipmentStats.onHitMagicFlat = onHitMagicFlat;
+    this.playerEquipmentStats.spellBonusMagicFlat = spellBonusMagicFlat;
+    this.playerEquipmentStats.omniVampPct = omniVampPct;
+    this.playerEquipmentStats.thornsBase = Math.max(0, thornsBase);
+    this.playerEquipmentStats.thornsArmorRatio = Math.max(0, thornsArmorRatio);
 
     const newMaxHp = this.playerStats.maxHp ?? prevMaxHp;
     const newMaxMana = this.playerStats.maxMana ?? prevMaxMana;
     this.currentHp = Math.min(newMaxHp, Math.max(0, Math.round(newMaxHp * hpRatio)));
     this.currentMana = Math.min(newMaxMana, Math.max(0, Math.round(newMaxMana * manaRatio)));
+
+    if (!this.auraEffect) {
+      this.stopAuraVisual();
+    } else {
+      this.auraNextTickAt = 0;
+    }
 
     this.hasGuinsoo = hasGuinsoo;
     if (!this.hasGuinsoo) {
@@ -1455,9 +2278,79 @@ updateTurretAI(enemy, now, _delta) {
       this.guinsooFullProcCounter = 0;
     }
 
+    // 将装备汇总的资源回复生效
+    this.manaRegenFlatPerSecond = Math.max(0, manaRegenFlatPerSecond);
+    this.manaRegenMultiplier = Math.max(0, manaRegenMultiplier);
+    this.hpRegenPerSecondFlat = Math.max(0, hpRegenPerSecondFlat);
+
     this.rebuildAttackTimer();
     this.updateStatPanel();
     this.updateResourceBars();
+  }
+
+  applyHeartsteelKillStack() {
+    const gainPerKill = this.heartsteelGainPerKill ?? 0;
+    if (gainPerKill <= 0) return;
+    this.heartsteelStacks = (this.heartsteelStacks ?? 0) + 1;
+    this.heartsteelBonusHp = (this.heartsteelBonusHp ?? 0) + gainPerKill;
+
+    const prevMaxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
+    const prevHp = this.currentHp ?? prevMaxHp;
+    const newMaxHp = prevMaxHp + gainPerKill;
+    const ratio = prevMaxHp > 0 ? prevHp / prevMaxHp : 1;
+
+    if (this.playerStats) this.playerStats.maxHp = newMaxHp;
+    this.currentHp = Math.min(newMaxHp, Math.max(0, Math.round(newMaxHp * ratio)));
+
+    this.updateStatPanel();
+    this.updateResourceBars();
+    this.refreshEquipmentUI();
+  }
+
+  // 杀人书：按击杀叠层；100小兵=1层，击杀Boss额外+1层。
+  applyDarkSealKillProgress(enemy) {
+    if (!this.hasItemEquipped(DARK_SEAL_ID)) return;
+    const eff = EQUIPMENT_DATA[DARK_SEAL_ID]?.effects || {};
+    const maxStacks = Number.isFinite(eff.maxStacks) ? Math.max(0, eff.maxStacks) : 0;
+    if (maxStacks <= 0) return;
+    const killsPerStack = Number.isFinite(eff.killsPerStack) ? Math.max(1, eff.killsPerStack) : 100;
+    const bossBonus = Number.isFinite(eff.bossStackBonus) ? Math.max(0, eff.bossStackBonus) : 1;
+    let stacks = this.darkSealStacks || 0;
+    let prog = this.darkSealKillProgress || 0;
+    if (enemy?.isBoss) {
+      stacks += bossBonus;
+    } else {
+      prog += 1;
+      if (prog >= killsPerStack) {
+        const gained = Math.floor(prog / killsPerStack);
+        stacks += gained; prog = prog % killsPerStack;
+      }
+    }
+    stacks = Math.min(stacks, maxStacks);
+    this.darkSealStacks = stacks;
+    this.darkSealKillProgress = prog;
+    this.recalculateEquipmentEffects();
+    this.refreshEquipmentUI();
+  }
+
+  // 白楼剑：击杀叠加动量层数（持续3秒，最多10层）
+  applyBailouMomentumOnKill() {
+    if (!this.hasItemEquipped(BAILOU_SWORD_ID)) return;
+    const eff = EQUIPMENT_DATA[BAILOU_SWORD_ID]?.effects || {};
+    const maxStacks = Number.isFinite(eff.momentumMaxStacks) ? Math.max(0, eff.momentumMaxStacks) : 10;
+    const dur = Number.isFinite(eff.momentumDurationMs) ? Math.max(0, eff.momentumDurationMs) : 3000;
+    const now = this.time.now;
+    // 移除已过期层
+    this.bailouMomentumExpires = (this.bailouMomentumExpires || []).filter((t) => t > now);
+    // 增加一层；若已满，刷新最早过期层
+    if ((this.bailouMomentumExpires.length || 0) < maxStacks) {
+      this.bailouMomentumExpires.push(now + dur);
+    } else {
+      this.bailouMomentumExpires.sort((a, b) => a - b);
+      this.bailouMomentumExpires[0] = now + dur;
+    }
+    this.bailouMomentumStacks = this.bailouMomentumExpires.length;
+    this.recalculateEquipmentEffects();
   }
 
   getAttackSpeedBonusMultiplier() {
@@ -1472,7 +2365,9 @@ updateTurretAI(enemy, now, _delta) {
       this.attackTimer.remove();
       this.attackTimer = null;
     }
-    const effAS = this.playerStats.attackSpeed * this.getAttackSpeedBonusMultiplier();
+    // 远程形态：攻速+20%；近战：停火（但计时器仍在，tryFireBullet 会早退）
+    const modeASMult = (this.playerCombatMode === "ranged") ? E_RANGED_ATTACK_SPEED_MULTIPLIER : 1;
+    const effAS = this.playerStats.attackSpeed * this.getAttackSpeedBonusMultiplier() * modeASMult;
     const attackDelay = 1000 / Math.max(0.1, effAS);
     this.attackTimer = this.time.addEvent({
       delay: attackDelay,
@@ -1515,8 +2410,8 @@ updateTurretAI(enemy, now, _delta) {
     for (let x = 0; x < width; x += 1) { markWall(x, 0, true); markWall(x, height-1, true); }
     for (let y = 1; y < height-1; y += 1) { markWall(0, y, true); markWall(width-1, y, true); }
 
-    // ? 仅 Boss 房间：渲染边框后直接返回（不在中间生成任何墙）
-    if (this.debugBossMode) {
+    // ? Boss 房间：仅保留边框（调试Boss模式或正式Boss关卡）
+    if (this.debugBossMode || this.isBossStage) {
       this.wallGrid = isWall.map((row) => row.slice());
       for (let y=0;y<height;y+=1) {
         for (let x=0;x<width;x+=1) {
@@ -1950,7 +2845,8 @@ updateTurretAI(enemy, now, _delta) {
     this.rangeGraphics = this.add.graphics().setDepth(2);
     this.rangeGraphics.clear();
 
-    this.physics.add.collider(this.player, this.wallGroup);
+    this.playerWallCollider = this.physics.add.collider(this.player, this.wallGroup);
+
   }
 
   configurePlayerHitbox() {
@@ -2123,14 +3019,18 @@ updateTurretAI(enemy, now, _delta) {
   createGroups() {
     this.enemies = this.physics.add.group();
     this.bullets = this.physics.add.group();
+    this.qTalismans = this.physics.add.group();
     this.loot = this.physics.add.group();
+    this.places = this.physics.add.staticGroup();
 
     this.physics.add.collider(this.enemies, this.wallGroup);
     this.physics.add.collider(this.enemies, this.enemies);
 
     this.physics.add.overlap(this.bullets, this.enemies, this.handleBulletEnemyOverlap, null, this);
+    this.physics.add.overlap(this.qTalismans, this.enemies, this.handleQTalismanEnemyOverlap, null, this);
     this.physics.add.overlap(this.player, this.enemies, this.handlePlayerEnemyContact, null, this);
     this.physics.add.overlap(this.player, this.loot, this.collectPoint, null, this);
+    this.physics.add.overlap(this.player, this.places, this.handlePlaceOverlap, null, this);
   }
 
   /* ==== 相机 ==== */
@@ -2155,6 +3055,8 @@ updateTurretAI(enemy, now, _delta) {
     this.scaleOverlayElement(this.roundOverlayElements, overlayScale);
     this.scaleOverlayElement(this.pauseOverlayBackground, overlayScale);
     this.scaleOverlayElement(this.pauseOverlayElements, overlayScale);
+    this.scaleOverlayElement(this.gameOverOverlayBackground, overlayScale);
+    this.scaleOverlayElement(this.gameOverOverlayElements, overlayScale);
   }
   scaleOverlayElement(target, scale) {
     if (!target) return;
@@ -2166,13 +3068,18 @@ updateTurretAI(enemy, now, _delta) {
   /* ==== 声音与暂停 ==== */
   playSfx(key, overrides = {}) {
     if (!this.sound) return;
+    // 触发节流：同一素材最小间隔 0.2s
+    const now = this.time?.now ?? performance.now();
+    const last = this.sfxLastPlayed?.[key] ?? 0;
+    if (now - last < (this.sfxMinIntervalMs ?? 200)) return;
+    this.sfxLastPlayed[key] = now;
     const baseConfig = this.sfxConfig?.[key] ?? {};
     this.sound.play(key, { ...baseConfig, ...overrides });
   }
   handlePauseKey(event) {
     if (!event || event.code !== "Escape") return;
     if (event.repeat) { event.preventDefault(); return; }
-    if (this.roundAwaitingDecision || (this.roundComplete && !this.isPaused)) return;
+    if (this.isGameOver || this.roundAwaitingDecision || (this.roundComplete && !this.isPaused)) return;
     event.preventDefault();
     if (this.isPaused) this.resumeGame();
     else this.pauseGame();
@@ -2255,6 +3162,21 @@ updateTurretAI(enemy, now, _delta) {
       right: Phaser.Input.Keyboard.KeyCodes.D,
       focus: Phaser.Input.Keyboard.KeyCodes.SHIFT,
     });
+// 技能键
+this.input.keyboard.on("keydown-Q", ()=> this.castQ());
+this.input.keyboard.on("keydown-E", ()=> this.castE());
+this.input.keyboard.on("keydown-R", ()=> this.castR());
+this.input.keyboard.on("keydown-SPACE", ()=> this.castDash());
+
+// 退出时清理
+const offSkills = ()=> {
+  this.input.keyboard.off("keydown-Q", undefined, this);
+  this.input.keyboard.off("keydown-E", undefined, this);
+  this.input.keyboard.off("keydown-R", undefined, this);
+  this.input.keyboard.off("keydown-SPACE", undefined, this);
+};
+this.events.once("shutdown", offSkills);
+this.events.once("destroy", offSkills);
 
     this.movementDirectionOrder = this.movementDirectionOrder ?? [];
     this.movementKeyHandlers = [];
@@ -2279,6 +3201,7 @@ updateTurretAI(enemy, now, _delta) {
         this.movementKeyHandlers = [];
       }
       this.movementDirectionOrder = [];
+      this.stopAuraVisual();
       this.clearPauseOverlay();
     };
     this.events.once("shutdown", offAll);
@@ -2291,7 +3214,7 @@ updateTurretAI(enemy, now, _delta) {
     this.scheduleSpawnTimer();
   }
   scheduleSpawnTimer() {
-    if (this.debugBossMode) {
+    if (this.debugBossMode || this.isBossStage) {
       if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
       return;
     }
@@ -2311,6 +3234,131 @@ updateTurretAI(enemy, now, _delta) {
 
   /* ==== HUD ==== */
   setupHUD() { this.updateOverlayScale(); this.updateHUD(); }
+
+  /* ==== 地点：商店/宝箱 ==== */
+  handlePlaceOverlap(_player, place) {
+    if (!place || !place.active) return;
+    if (place.placeType === "shop") {
+      if (place._consumed) return;
+      if (this.isShopOpen()) return;
+      place._consumed = true;
+      // 打开商店（不停止音乐）
+      this.openShop("inRun");
+      // 进入后商店贴图消失：移除并销毁
+      if (this.places) this.places.remove(place, true, true);
+      else place.destroy();
+      if (Array.isArray(this.shopPlaces)) {
+        const i = this.shopPlaces.indexOf(place);
+        if (i >= 0) this.shopPlaces.splice(i, 1);
+      }
+    }
+  }
+
+  spawnMapPlaces() {
+    if (!this.places) this.places = this.physics.add.staticGroup();
+    this.shopPlaces = [];
+    // 先放商店
+    this.spawnRandomShops(MAP_SHOP_COUNT);
+    // 再放宝箱
+    this.spawnRandomChests(MAP_CHEST_COUNT);
+  }
+
+  spawnRandomShops(count = 2) {
+    let placed = 0, attempts = 0;
+    while (placed < count && attempts < count * 200) {
+      attempts += 1;
+      const pos = this.findClearPosition(32, { avoidPlayer: true });
+      if (!pos) continue;
+      const shop = this.places.create(pos.x, pos.y, "place_shop");
+      if (!shop) continue;
+      shop.setDepth(5);
+      // 贴图宽度按 1 tile 缩放，保持原始纵横比（1*2），不压缩
+      this.setDisplayWidthByTilesKeepAspect(shop, 1);
+      if (typeof shop.refreshBody === "function") shop.refreshBody();
+      shop.placeType = "shop";
+      this.shopPlaces.push(shop);
+      placed += 1;
+    }
+  }
+
+  spawnRandomChests(count = 10) {
+    let placed = 0, attempts = 0;
+    while (placed < count && attempts < count * 300) {
+      attempts += 1;
+      const pos = this.findClearPosition(TILE_SIZE, { avoidPlayer: false });
+      if (!pos) continue;
+      const chest = this.spawnChestAt(pos.x, pos.y);
+      if (chest) placed += 1;
+    }
+  }
+
+  findClearPosition(radius = 16, opts = {}) {
+    const avoidPlayer = opts?.avoidPlayer !== false;
+    const maxAttempts = 60;
+    const px = this.player?.x ?? WORLD_SIZE / 2;
+    const py = this.player?.y ?? WORLD_SIZE / 2;
+    for (let i = 0; i < maxAttempts; i += 1) {
+      const x = Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE);
+      const y = Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE);
+      // 避开墙
+      if (!this.isWithinWorldBounds(x, y)) continue;
+      if (!this.isPositionWalkable(x, y)) continue;
+      // 可选：避开玩家附近
+      if (avoidPlayer && Phaser.Math.Distance.Between(x, y, px, py) < 80) continue;
+      // 避开其它敌人与地点
+      if (this.isPositionOccupied(x, y, radius)) continue;
+      // 简单检查现有商店位置
+      if (Array.isArray(this.shopPlaces)) {
+        let tooClose = false;
+        for (let j = 0; j < this.shopPlaces.length; j += 1) {
+          const s = this.shopPlaces[j];
+          if (!s?.active) continue;
+          if (Phaser.Math.Distance.Between(x, y, s.x, s.y) < radius * 2) { tooClose = true; break; }
+        }
+        if (tooClose) continue;
+      }
+      return { x, y };
+    }
+    return null;
+  }
+
+  spawnChestAt(x, y) {
+    if (!this.enemies) return null;
+    const chest = this.enemies.create(x, y, "place_chest");
+    if (!chest) return null;
+    chest.setDepth(6);
+    chest.body.setAllowGravity(false);
+    chest.enemyType = "chest";
+    chest.isChest = true;
+    chest.enemyKind = "chest"; // 专用类别，用于跳过AI
+    chest.body.moves = false;
+    if (typeof chest.body.setImmovable === "function") chest.body.setImmovable(true);
+    // 数值：HP 300 护甲 50
+    chest.maxHp = 300;
+    chest.hp = 300;
+    chest.armor = 50;
+    chest.def = 0;
+    chest.attackDamage = 0;
+    chest.contactDamage = 0;
+    chest.abilityPower = 0;
+    chest.dropRange = { min: 0, max: 0 }; // 不走普通掉落
+    chest.state = "idle";
+
+    // 外观 1 tile，判定半径=8
+    this.setDisplaySizeByTiles(chest, 1);
+    const radiusPx = TILE_SIZE / 2; // 8
+    const frameW = chest.displayWidth || chest.width || TILE_SIZE;
+    const frameH = chest.displayHeight || chest.height || TILE_SIZE;
+    const offsetX = frameW / 2 - radiusPx;
+    const offsetY = frameH / 2 - radiusPx;
+    if (typeof chest.body.setCircle === "function") {
+      chest.body.setCircle(radiusPx, offsetX, offsetY);
+    } else if (chest.body.setSize) {
+      chest.body.setSize(radiusPx * 2, radiusPx * 2);
+      chest.body.setOffset(offsetX, offsetY);
+    }
+    return chest;
+  }
   update(time, delta) {
     if (this.boss) this.updateBossUI(this.boss);
     if (this.isPaused) return;
@@ -2327,18 +3375,75 @@ updateTurretAI(enemy, now, _delta) {
     this.updatePlayerMovement();
     this.updateWeapon(delta);
     this.updateBullets(delta);
+    this.updateQTalismanProjectiles(delta);
     this.updateEnemies();
     this.updateLoot(delta);
+    this.updateAura(delta);
 
     /* ==== 新增：更新 Boss 弹幕与Utsuho AI ==== */
     this.updateBossBullets(delta);
     if (this.boss && this.boss.isBoss && this.boss.bossKind === "Utsuho") {
       this.updateUtsuhoAI(delta);
     }
+this.updateMikoOrbs(delta);
+
+    // —— 基础与装备回复 —— //
+    this.updateRegen(delta);
+
+    // 白楼剑动量过期处理
+    this.updateBailouMomentum(delta);
 
     this.updateRoundTimer(delta);
     this.checkNoDamageRankBonus();
     this.updateHUD();
+  }
+
+  // 定时清理白楼剑动量层数（过期移除并重算移速）
+  updateBailouMomentum(_delta) {
+    if (!this.hasItemEquipped(BAILOU_SWORD_ID)) return;
+    if (!Array.isArray(this.bailouMomentumExpires) || this.bailouMomentumExpires.length === 0) return;
+    const now = this.time.now;
+    const before = this.bailouMomentumExpires.length;
+    this.bailouMomentumExpires = this.bailouMomentumExpires.filter((t) => t > now);
+    const after = this.bailouMomentumExpires.length;
+    if (after !== before) {
+      this.bailouMomentumStacks = after;
+      this.recalculateEquipmentEffects();
+    }
+  }
+
+  // —— 每帧更新基础/装备带来的生命与法力回复 —— //
+  updateRegen(delta) {
+    const dt = Math.max(0, delta) / 1000; // 秒
+    // 法力回复： (基础 + 装备平直) * 装备倍率
+    const maxMana = this.playerStats?.maxMana ?? PLAYER_BASE_STATS.maxMana ?? PLAYER_MANA_MAX;
+    if (maxMana > 0) {
+      const perSecond = Math.max(0, (this.baseManaRegenPerSecond || 0) + (this.manaRegenFlatPerSecond || 0)) * (this.manaRegenMultiplier || 1);
+      if (perSecond > 0 && (this.currentMana ?? 0) < maxMana) {
+        const gainRaw = perSecond * dt + (this._manaRegenCarry || 0);
+        const gain = Math.floor(gainRaw);
+        this._manaRegenCarry = gainRaw - gain;
+        if (gain > 0) {
+          this.currentMana = Math.min(maxMana, (this.currentMana || 0) + gain);
+          this.updateResourceBars();
+        }
+      }
+    }
+
+    // 生命回复：装备平直（可扩展倍率）
+    const maxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
+    if (maxHp > 0) {
+      const perSecondHp = Math.max(0, this.hpRegenPerSecondFlat || 0); // 目前仅平直回复
+      if (perSecondHp > 0 && (this.currentHp ?? 0) < maxHp) {
+        const gainRaw = perSecondHp * dt + (this._hpRegenCarry || 0);
+        const gain = Math.floor(gainRaw);
+        this._hpRegenCarry = gainRaw - gain;
+        if (gain > 0) {
+          this.currentHp = Math.min(maxHp, (this.currentHp || 0) + gain);
+          this.updateResourceBars();
+        }
+      }
+    }
   }
 
   updatePlayerMovement() {
@@ -2399,12 +3504,75 @@ updateTurretAI(enemy, now, _delta) {
   }
 
   updateWeapon(delta) {
-    const angleDelta = Phaser.Math.DegToRad((WEAPON_ORBIT_SPEED * delta) / 1000);
+    // Focus(Shift)与形态对阴阳玉的半径/速度影响
+    const focusDown = this.keys?.focus?.isDown === true;
+    let orbitSpeed = WEAPON_ORBIT_SPEED;
+    // 近战：将所有额外攻速转换为转速（装备与特效），但不包含远程形态下的+20%
+    if (this.playerCombatMode === "melee") {
+      const baseAS = Math.max(0.1, PLAYER_BASE_STATS.attackSpeed || 0.1);
+      const effAS = Math.max(0.1, (this.playerStats?.attackSpeed || baseAS)) * this.getAttackSpeedBonusMultiplier();
+      const extraASMult = Math.max(0.1, effAS / baseAS);
+      orbitSpeed *= extraASMult;
+    }
+    if (focusDown) orbitSpeed *= FOCUS_ORBIT_SPEED_MULTIPLIER; // Focus：转速×2
+
+    // 推进角度
+    const angleDelta = Phaser.Math.DegToRad((orbitSpeed * delta) / 1000);
     this.weaponAngle = (this.weaponAngle + angleDelta) % Phaser.Math.PI2;
-    const offsetX = Math.cos(this.weaponAngle) * WEAPON_ORBIT_RADIUS;
-    const offsetY = Math.sin(this.weaponAngle) * WEAPON_ORBIT_RADIUS;
+
+    // 半径：近战×2；Focus压缩半径
+    let orbitRadius = WEAPON_ORBIT_RADIUS * (this.playerCombatMode === "melee" ? 2 : 1);
+    if (focusDown) orbitRadius *= FOCUS_ORBIT_RADIUS_MULTIPLIER;
+
+    // 设定位置（统一用当前半径）
+    const offsetX = Math.cos(this.weaponAngle) * orbitRadius;
+    const offsetY = Math.sin(this.weaponAngle) * orbitRadius;
     this.weaponSprite.setPosition(this.player.x + offsetX, this.player.y + offsetY);
     if (this.rangeVisible) this.drawRangeCircle();
+
+    // 形态外观与命中体跟随
+    if (this.playerCombatMode === "melee") {
+      const bigScale = 2;
+      this.weaponSprite.setScale(bigScale);
+      // 命中体同步
+      if (this.weaponHitbox) {
+        this.weaponHitbox.setPosition(this.weaponSprite.x, this.weaponSprite.y);
+        const r = 16 * bigScale; // 命中半径
+        this.weaponHitbox.setCircle(r, this.weaponHitbox.width/2 - r, this.weaponHitbox.height/2 - r);
+        this.weaponHitbox.setVisible(false);
+        this.weaponHitbox.active = true;
+        this.weaponHitbox.body.enable = true;
+      }
+    } else {
+      this.weaponSprite.setScale(0.5);
+      if (this.weaponHitbox) {
+        this.weaponHitbox.active = false;
+        this.weaponHitbox.body.enable = false;
+      }
+    }
+  }
+
+  updateQTalismanProjectiles(_delta) {
+    if (!this.qTalismans) return;
+    const projectiles = this.qTalismans.getChildren();
+    for (let i = projectiles.length - 1; i >= 0; i -= 1) {
+      const projectile = projectiles[i];
+      if (!projectile || !projectile.active) continue;
+      const body = projectile.body;
+      if (body) {
+        const vx = body.velocity?.x ?? 0;
+        const vy = body.velocity?.y ?? 0;
+        if (vx !== 0 || vy !== 0) projectile.rotation = Math.atan2(vy, vx) + Math.PI / 2;
+      }
+      if (
+        projectile.x < -Q_TALISMAN_BOUNDARY_PADDING
+        || projectile.y < -Q_TALISMAN_BOUNDARY_PADDING
+        || projectile.x > WORLD_SIZE + Q_TALISMAN_BOUNDARY_PADDING
+        || projectile.y > WORLD_SIZE + Q_TALISMAN_BOUNDARY_PADDING
+      ) {
+        this.destroyQTalisman(projectile);
+      }
+    }
   }
 
   updateBullets(delta) {
@@ -2425,6 +3593,105 @@ updateTurretAI(enemy, now, _delta) {
       }
     }
   }
+
+getEffectiveCooldown(baseMs) {
+  const cdr = this.playerStats?.cooldownReduction ?? 0; // 0~1
+  return Math.max(0, Math.round(baseMs * (1 - cdr)));
+}
+
+onSpellCastComplete() {
+  // 检查是否可以激活耀光效果
+  const now = this.time.now;
+  if (!this.canTriggerSpellblade(now)) return;
+
+  // 查找耀光装备
+  const spellbladeItem = this.playerEquipmentSlots.find(id => this.isSpellbladeItem(id));
+  if (!spellbladeItem) return;
+
+  const item = this.getEquipmentDefinition(spellbladeItem);
+  if (!item) return;
+
+  // 设置耀光效果标记，表示下次普攻将触发耀光效果
+  this.nextAttackTriggersSpellblade = true;
+
+  // 更新装备栏显示
+
+  this.refreshEquipmentUI();
+
+  // 标记可以对下一个攻击目标触发耀光伤害
+  this.nextAttackTriggersSpellblade = true;
+
+  // 找到触发的装备槽并添加动画效果
+  const slotIndex = this.playerEquipmentSlots.indexOf(spellbladeItem);
+  if (slotIndex >= 0) {
+    const slot = this.equipmentUi?.slots[slotIndex]?.element;
+    if (slot) {
+      slot.classList.add('spellblade-trigger');
+      setTimeout(() => {
+        slot.classList.remove('spellblade-trigger');
+      }, 200);
+    }
+  }
+}
+
+canCast(key) {
+  const now = this.time.now;
+  const cfg = this.skillConfig[key];
+  if (!cfg) return false;
+  if (now < (this.skillReadyAt[key] || 0)) return false;
+  if ((cfg.mana || 0) > (this.currentMana || 0)) return false;
+  return true;
+}
+spendCostAndStartCd(key) {
+  const now = this.time.now;
+  const cfg = this.skillConfig[key];
+  const cd = this.getEffectiveCooldown(cfg.baseCd);
+  const mana = cfg.mana || 0;
+  this.currentMana = Math.max(0, this.currentMana - mana);
+  if (this.skillCooldownDuration && Object.prototype.hasOwnProperty.call(this.skillCooldownDuration, key)) {
+    this.skillCooldownDuration[key] = cd;
+  }
+  this.skillReadyAt[key] = now + cd;
+  this.updateResourceBars();
+  this.updateSkillCooldownUI();
+  // 炽天使：按消耗的法力值进行治疗
+  if (mana > 0 && (this.manaSpendHealPerPoint || 0) > 0) {
+    const heal = Math.max(0, Math.round(mana * this.manaSpendHealPerPoint));
+    if (heal > 0) {
+      this.currentHp = Math.min(this.playerStats.maxHp, (this.currentHp || 0) + heal);
+      this.showHealNumber(this.player.x, this.player.y - 18, heal);
+      this.updateResourceBars();
+    }
+  }
+  // 女神泪/炽天使：释放技能叠层
+  this.applyManaCastStack();
+}
+
+// 女神泪/炽天使：释放技能叠层（提升最大法力），并按炽天使的被动进行治疗
+applyManaCastStack() {
+  const perCast = this.manaStackPerCast || 0;
+  const cap = this.manaStackCap || 0;
+  if (perCast > 0 && cap > 0) {
+    const maxCount = Math.floor(cap / perCast);
+    if ((this.manaStackCount || 0) < maxCount) {
+      this.manaStackCount = (this.manaStackCount || 0) + 1;
+      const prevMax = this.playerStats?.maxMana ?? PLAYER_MANA_MAX;
+      const prevCur = Math.min(this.currentMana ?? prevMax, prevMax);
+      const ratio = prevMax > 0 ? (prevCur / prevMax) : 1;
+      const bonus = perCast;
+      if (this.playerStats) this.playerStats.maxMana = prevMax + bonus;
+      this.currentMana = Math.min(this.playerStats.maxMana, Math.max(0, Math.round(this.playerStats.maxMana * ratio)));
+      this.updateResourceBars();
+      // 叠层后刷新装备栏徽标（女神泪/炽天使层数显示）
+      this.refreshEquipmentUI();
+    }
+  }
+}
+isPlayerInvulnerable() {
+  return this.time.now <= (this.playerInvulnerableUntil || 0);
+}
+
+
 
 updateEnemies() {
   const enemies = this.enemies.getChildren();
@@ -2449,6 +3716,9 @@ updateEnemies() {
 
     // Boss 由专属逻辑驱动
     if (enemy.isBoss) continue;
+
+    // 宝箱：不参与任何 AI（不移动不攻击）
+    if (enemy.isChest) { enemy.body.setVelocity(0, 0); continue; }
 
     // 分派到三类 AI
     const delta = this.game.loop.delta; // ms
@@ -2482,8 +3752,121 @@ updateEnemies() {
     }
   }
 
+  updateAura(_delta) {
+    const effect = this.auraEffect;
+    if (!effect || effect.radius <= 0) {
+      this.stopAuraVisual();
+      return;
+    }
+    if (!this.player || !this.player.active) {
+      this.stopAuraVisual();
+      return;
+    }
+
+    this.ensureAuraVisual(effect);
+    if (this.auraSprite) {
+      this.auraSprite.setPosition(this.player.x, this.player.y);
+      const diameter = effect.radius * 2;
+      this.auraSprite.setDisplaySize(diameter, diameter);
+    }
+
+    const now = this.time.now;
+    if (!this.auraNextTickAt || now >= this.auraNextTickAt) {
+      this.applyAuraDamage(effect);
+      this.auraNextTickAt = now + effect.intervalMs;
+    }
+  }
+
+  ensureAuraVisual(effect) {
+    if (this.auraSprite) return;
+    if (!this.player || !this.add) return;
+    const textureKey = effect.textureKey ?? "item_effect_sunfire";
+    const sprite = this.add.image(this.player.x, this.player.y, textureKey);
+    sprite.setDepth(this.player.depth ? this.player.depth - 1 : 3);
+    sprite.setOrigin(0.5, 0.5);
+    sprite.setAlpha(0);
+    sprite.setBlendMode(Phaser.BlendModes.ADD);
+    const diameter = effect.radius * 2;
+    if (diameter > 0) sprite.setDisplaySize(diameter, diameter);
+    this.auraSprite = sprite;
+    if (this.auraTween) {
+      if (typeof this.auraTween.stop === "function") this.auraTween.stop();
+      if (typeof this.auraTween.remove === "function") this.auraTween.remove();
+      this.auraTween = null;
+    }
+    this.auraTween = this.tweens.add({
+      targets: sprite,
+      alpha: { from: 0, to: 1 },
+      duration: 280,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    });
+  }
+
+  stopAuraVisual() {
+    if (this.auraTween) {
+      if (typeof this.auraTween.stop === "function") this.auraTween.stop();
+      if (typeof this.auraTween.remove === "function") this.auraTween.remove();
+      this.auraTween = null;
+    }
+    if (this.auraSprite) {
+      this.auraSprite.destroy();
+      this.auraSprite = null;
+    }
+  }
+
+  applyAuraDamage(effect) {
+    const radius = effect.radius;
+    if (radius <= 0) return;
+    const maxHpStat = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
+    const baseDamage = Math.max(
+      0,
+      Math.round((effect.damageFlat ?? 0) + (effect.damageRatio ?? 0) * maxHpStat),
+    );
+    if (baseDamage <= 0) return;
+    const enemies = (this.enemies && typeof this.enemies.getChildren === "function")
+      ? this.enemies.getChildren()
+      : [];
+    if (!enemies.length) return;
+    const radiusSq = radius * radius;
+    for (let i = 0; i < enemies.length; i += 1) {
+      const enemy = enemies[i];
+      if (!enemy || !enemy.active) continue;
+      const distSq = Phaser.Math.Distance.Squared(this.player.x, this.player.y, enemy.x, enemy.y);
+      if (distSq > radiusSq) continue;
+      // Infinity Orb applies to magic damage
+      let raw = baseDamage;
+      let typeToShow = "magic";
+      if (this.hasItemEquipped(INFINITY_ORB_ID)) {
+        const effInf = EQUIPMENT_DATA[INFINITY_ORB_ID]?.effects || {};
+        const threshold = Number.isFinite(effInf.executeHpPct) ? effInf.executeHpPct : 0.5;
+        const mult = Number.isFinite(effInf.magicCritMultiplier) ? effInf.magicCritMultiplier : 1.5;
+        if ((enemy.hp / (enemy.maxHp || 1)) <= threshold) {
+          raw = Math.round(raw * mult);
+          typeToShow = "spellcrit";
+        }
+      }
+      const dealt = this.applyMitigationToTarget(raw, enemy, this.playerStats, "magic", 1);
+      if (dealt <= 0) continue;
+      enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
+      this.showDamageNumber(enemy.x, enemy.y, dealt, typeToShow);
+      if (enemy.isBoss && typeof enemy.setData === "function") {
+        enemy.setData("hp", enemy.hp);
+        this.updateBossUI(enemy);
+      }
+      if (enemy.hp <= 0) this.killEnemy(enemy);
+      // Omnivamp heal
+      const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
+      if (omni > 0) {
+        const heal = Math.max(0, Math.round(dealt * omni));
+        if (heal > 0) { this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp); this.showHealNumber(this.player.x, this.player.y - 18, heal); this.updateResourceBars(); }
+      }
+    }
+  }
+
   updateRoundTimer(delta) {
-    if (this.roundComplete || this.debugBossMode || this.isShopOpen()) return;
+    if (this.roundComplete || this.debugBossMode || this.isBossStage || this.isShopOpen()) return;
     this.roundTimeLeft = Math.max(0, this.roundTimeLeft - delta);
     if (this.roundTimeLeft <= 0) this.handleRoundComplete();
   }
@@ -2542,20 +3925,75 @@ updateEnemies() {
     this.clearRoundOverlay();
     this.roundAwaitingDecision = false;
     if (shouldContinue) {
+      // 进度：提升rank并准备下一关
       this.rank = Number((this.rank + ROUND_CONTINUE_RANK_BONUS).toFixed(2));
       this.roundComplete = false;
       const now = this.time.now;
       this.lastDamageTimestamp = now;
       this.nextNoDamageRankCheck = now + NO_DAMAGE_RANK_INTERVAL;
       this.roundTimeLeft = ROUND_DURATION;
+
+      // 判断是否Boss关卡（每20关）：显示关卡=rank-9
+      const displayedLevel = Math.max(1, Math.round(this.rank - 9));
+      this.isBossStage = (displayedLevel % 20 === 0);
+
+      // 刷新地形（Boss关卡仅保留边框）
       this.generateRandomSegmentsMap();
+
+      // 重置玩家位置
       if (this.player) {
         this.player.setPosition(WORLD_SIZE/2, WORLD_SIZE/2);
         this.player.body.setVelocity(0, 0);
         this.playerFacing = "down";
         this.stopPlayerAnimation(this.playerFacing);
       }
-      this.scheduleSpawnTimer();
+
+      // 地点刷新：商店/宝箱（Boss关卡不生成）
+      if (!this.places) this.places = this.physics.add.staticGroup();
+      if (this.places) this.places.clear(true, true);
+      this.shopPlaces = [];
+      if (!this.isBossStage) {
+        this.spawnRandomShops(MAP_SHOP_COUNT);
+        this.spawnRandomChests(MAP_CHEST_COUNT);
+      }
+
+      // 普通关卡：恢复刷怪；Boss关卡：生成Boss且暂停刷怪
+      if (this.isBossStage) {
+        // 停止常规刷怪
+        if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
+        // 生成Boss Utsuho（默认场地中上方）
+        this.spawnBossById("Utsuho", { x: WORLD_SIZE/2, y: Math.floor(WORLD_SIZE * 0.25) });
+        // Boss血量按“每20关翻倍”进行倍率：20关×1，40关×2，60关×4...
+        const cycles = Math.max(1, Math.floor(displayedLevel / 20));
+        const hpFactor = Math.pow(2, Math.max(0, cycles - 1));
+        if (this.boss && this.boss.isBoss && this.boss.bossKind === "Utsuho") {
+          const baseMaxHp = BOSS_UTSUHO_CONFIG.maxHp || this.boss.maxHp || 5000;
+          this.boss.maxHp = Math.max(1, Math.round(baseMaxHp * hpFactor));
+          this.boss.hp = this.boss.maxHp;
+          if (typeof this.boss.setData === "function") {
+            this.boss.setData("maxHp", this.boss.maxHp);
+            this.boss.setData("hp", this.boss.hp);
+          }
+          this.updateBossUI(this.boss);
+        }
+        // 音乐：切到Boss曲
+        try {
+          if (this.battleBgm?.isPlaying) this.battleBgm.stop();
+        } catch (_) {}
+        if (!this.bossMusic) {
+          this.bossMusic = this.sound.add(BOSS_UTSUHO_CONFIG.musicKey, { loop: true, volume: 1.5 });
+        }
+        if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
+      } else {
+        // 非Boss关卡：常规刷怪与BGM
+        this.scheduleSpawnTimer();
+        // 停掉Boss曲，恢复战斗BGM
+        if (this.bossMusic) { this.bossMusic.stop(); this.bossMusic.destroy(); this.bossMusic = null; }
+        if (!this.battleBgm) {
+          this.battleBgm = this.sound.add("battle_bgm", { loop: true, volume: 0.4 });
+        }
+        if (this.battleBgm && !this.battleBgm.isPlaying) this.battleBgm.play();
+      }
     } else {
       this.roundComplete = true;
       this.endRunVictory();
@@ -2577,7 +4015,7 @@ updateEnemies() {
 
   updateHUD() {
       // Boss模式下不显示倒计时
-      if (this.debugBossMode) {
+      if (this.debugBossMode || this.isBossStage) {
           if (this.ui.timerValue) this.ui.timerValue.textContent = "--:--";
       } else {
           const timeLeft = Math.max(0, this.roundTimeLeft);
@@ -2588,29 +4026,72 @@ updateEnemies() {
       }
       
       if (this.ui.killValue) this.ui.killValue.textContent = `${this.killCount}`;
-      if (this.ui.rankValue) this.ui.rankValue.textContent = this.formatRankValue(this.rank);
+      if (this.ui.rankValue) this.ui.rankValue.textContent = this.formatRankValue(this.rank - 9);
       if (this.ui.pointValue) this.ui.pointValue.textContent = `${this.playerPoints}`;
+      this.updateSkillCooldownUI();
+      this.updateSpellbladeOverlays();
+
+  }
+
+  updateSkillCooldownUI() {
+    if (!this.ui || !this.ui.skillUi) return;
+    const now = this.time?.now ?? Date.now();
+    Object.entries(this.ui.skillUi).forEach(([key, entry]) => {
+      if (!entry) return;
+      const overlay = entry.overlay;
+      const icon = entry.icon;
+      const timer = entry.timer;
+      const readyAt = this.skillReadyAt?.[key] ?? 0;
+      const remaining = Math.max(0, readyAt - now);
+
+      if (remaining > 0) {
+        const durationRaw = this.skillCooldownDuration?.[key];
+        const duration = Math.max(Number.isFinite(durationRaw) ? durationRaw : remaining, 1);
+        const ratio = Math.min(1, Math.max(0, remaining / duration));
+        const iconOpacity = 1 - ratio;
+        if (icon) icon.style.opacity = iconOpacity.toFixed(2);
+        if (overlay) {
+          overlay.style.display = "flex";
+          overlay.style.opacity = (0.3 + 0.7 * ratio).toFixed(2);
+        }
+        if (timer) timer.textContent = `${Math.ceil(remaining / 1000)}`;
+      } else {
+        if (icon) icon.style.opacity = "1";
+        if (overlay) overlay.style.display = "none";
+        if (timer) timer.textContent = "";
+      }
+    });
   }
 
   formatRankValue(value) { return Number.isInteger(value) ? `${value}` : value.toFixed(2); }
-// Add these methods to the GameScene class:
+
 
 showDamageNumber(x, y, amount, type = "physical", options = {}) {
-  // options 可以是布尔（表示 incoming），也可以是 { incoming: true/false }
+  // options 可以是布尔（表示 incoming），也可以是 { incoming: true/false, isSpellblade: false }
   const incoming = (typeof options === "boolean") ? options : !!options.incoming;
+  const isSpellblade = options.isSpellblade || false;
 
   const colors = {
     physical: "#ffd966",
     magic: "#66aaff",
     crit: "#ff0000",   // 纯红色
+    spellcrit: "#cc66ff", // 紫色：法术暴击
     heal: "#66ff66"
   };
 
-  const displayValue = (typeof amount === "number") ? Math.round(amount) : amount;
+  let displayValue = (typeof amount === "number") ? Math.round(amount) : amount;
+  if (isSpellblade) {
+    displayValue = `S${displayValue}`; // 为耀光伤害添加"S"前缀
+  }
+  if (type === "crit") displayValue = `爆${displayValue}`
+  if (type === "spellcrit") displayValue = `爆${displayValue}`
+  // === 修改点：动态字号（暴击 > 耀光 > 普通）===
+  const baseSize = (type === "crit" || type === "spellcrit") ? 20 : 14;
+  const size = isSpellblade ? Math.max(baseSize, 25) : baseSize;
 
   const text = this.add.text(x, y, `${displayValue}`, {
     fontFamily: '"Zpix", monospace',
-    fontSize: (type === "crit") ? "20px" : "14px",
+    fontSize: `${size}px`,              // ← 使用上面的 size
     color: colors[type] ?? "#ffffff",
   }).setOrigin(0.5).setDepth(80);
 
@@ -2619,7 +4100,7 @@ showDamageNumber(x, y, amount, type = "physical", options = {}) {
   // - 自身受伤：红色描边
   // - 普通伤害（物理/法术，对敌人）：黑色描边
   // - 治疗：黑色细描边
-  if (type === "crit") {
+  if (type === "crit" || type === "spellcrit") {
     text.setStroke("#000000", 0); // 去掉描边
   } else if (incoming) {
     text.setStroke("#ff0000", 3); // 自身受伤：红描边
@@ -2690,19 +4171,45 @@ showHealNumber(x, y, amount) {
 
   // 新增：对自机施加法术伤害（Boss弹幕）
 applyMagicDamageToPlayer(amount, sourceStats = null) {
+  if (this.isPlayerInvulnerable()) return;
+
   const actual = this.applyMitigationToTarget(
     Math.round(amount),
     { armor: this.playerStats.armor ?? 0, def: this.playerStats.defense ?? 0 },
     sourceStats,
     "magic",
   );
-  this.showDamageNumber(this.player.x, this.player.y - 12, actual, "magic", true); // ← 这里传 true
+  this.showDamageNumber(this.player.x, this.player.y - 12, actual, "magic", true);
   this.currentHp = Math.max(this.currentHp - actual, 0);
   this.updateResourceBars();
   const now = this.time.now;
   this.lastDamageTimestamp = now;
   this.nextNoDamageRankCheck = now + NO_DAMAGE_RANK_INTERVAL;
+
+  // 反甲："受到攻击时"也对施法者反伤（魔法伤害）
+  if (sourceStats && typeof sourceStats === "object" && sourceStats.active) {
+    const thBase = Math.max(0, this.playerEquipmentStats?.thornsBase || 0);
+    const thRatio = Math.max(0, this.playerEquipmentStats?.thornsArmorRatio || 0);
+    if (thBase > 0 || thRatio > 0) {
+      const armor = Math.max(0, this.playerStats?.armor || 0);
+      const raw = Math.round(thBase + armor * thRatio);
+      if (raw > 0) {
+        const dealt = this.applyMitigationToTarget(raw, sourceStats, this.playerStats, "magic", 1);
+        if (dealt > 0) {
+          sourceStats.hp = Math.max(0, (sourceStats.hp || 0) - dealt);
+          this.showDamageNumber(sourceStats.x, sourceStats.y, dealt, "magic");
+          if (sourceStats.isBoss && typeof sourceStats.setData === "function") {
+            sourceStats.setData("hp", sourceStats.hp);
+            this.updateBossUI(sourceStats);
+          }
+          if (sourceStats.hp <= 0) this.killEnemy(sourceStats);
+        }
+      }
+    }
+  }
+
   if (this.currentHp <= 0) this.gameOver();
+  else this.playSfx("player_gethit");
 }
 
 
@@ -2716,7 +4223,232 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
     });
   }
 
+castQ() {
+  if (!this.canCast("Q")) return;
+  // 蓝耗与CD
+  this.spendCostAndStartCd("Q");
+  // 技能音效：Q
+  this.playSfx("player_castQ");
+
+  const pointer = this.input?.activePointer ?? null;
+  const camera = this.cameras?.main ?? null;
+  const fallbackFacing = this.playerFacing || "down";
+  let dirRad = this.lastAimAngle ?? 0;
+  if (pointer && camera) {
+    const worldPoint = camera.getWorldPoint(pointer.x, pointer.y);
+    const dx = worldPoint.x - this.player.x;
+    const dy = worldPoint.y - this.player.y;
+    const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, worldPoint.x, worldPoint.y);
+    if ((Math.abs(dx) > 0.001 || Math.abs(dy) > 0.001) && Number.isFinite(angle)) dirRad = angle;
+  }
+  if (!Number.isFinite(dirRad)) {
+    dirRad = { down: Math.PI / 2, up: -Math.PI / 2, left: Math.PI, right: 0 }[fallbackFacing] ?? 0;
+  }
+  this.lastAimAngle = dirRad;
+
+  // —— 近战：改为贴图物理碰撞（4格大小）—— //
+  const ap = this.playerStats.abilityPower || 0;
+  const meleeDmgBase = Math.round(50 + ap); // 50 + 100%AP 法伤
+  const center = { x: this.player.x, y: this.player.y };
+  // 物理体：使用 Arcade Physics 重叠判定，避免手动扇形计算
+  const slash = this.physics.add.image(this.player.x, this.player.y, "skill_Qmelee").setDepth(12);
+  slash.body.setAllowGravity(false);
+  // 贴图显示大小：4格；判定：4格直径的圆（与贴图一致）
+  this.setDisplaySizeByTiles(slash, 4);
+  this.setSpriteCircleHit(slash, 4);
+  // 记录基础伤害与已命中目标，确保每个单位只结算一次
+  slash.meleeDamage = meleeDmgBase;
+  slash.hitTargets = new Set();
+
+  // 与敌人发生重叠即结算
+  this.physics.add.overlap(slash, this.enemies, this.handleQMeleeSlashOverlap, null, this);
+
+  // 近战特效动画保持：围绕前向小幅挥动
+  slash.setOrigin(0.5, 1);
+  const slashBaseRotation = dirRad + Math.PI / 2;
+  slash.setRotation(slashBaseRotation - Math.PI / 2);
+  slash.setAlpha(0.9);
+  this.tweens.add({
+    targets: slash,
+    rotation: slashBaseRotation + Math.PI / 2,
+    alpha: 0,
+    duration: 1000,
+    ease: "Sine.easeOut",
+    onComplete: ()=>slash.destroy(),
+  });
+
+  // —— 远程部分：正前30° 三枚穿透判定（改为物理伤害）—— //
+  const projDmg = Math.round((this.playerStats.attackDamage || 0) + 0.5 * ap);
+  const offsets = [-15, 0, 15];
+  offsets.forEach((deg)=>{
+    const angle = dirRad + Phaser.Math.DegToRad(deg);
+    this.spawnQTalismanProjectile(center.x, center.y, angle, projDmg);
+  });
+
+  // 远程视觉采样
+  const fx = this.add.image(this.player.x, this.player.y, "skill_Qspell").setDepth(11);
+  fx.setRotation(dirRad);
+  fx.setAlpha(0.8);
+  fx.setScale(0.92);
+  this.tweens.add({
+    targets: fx,
+    alpha: 0,
+    scale: 1.15,
+    duration: 200,
+    ease: "Sine.easeOut",
+    onComplete: ()=>fx.destroy(),
+  });
+
+  // 触发耀光效果
+  this.onSpellCastComplete();
+}
+
+spawnQTalismanProjectile(originX, originY, angle, damage) {
+  if (!this.qTalismans) return null;
+  const projectile = this.qTalismans.create(originX, originY, "skill_Qspell");
+  if (!projectile) return null;
+  projectile.setDepth(12);
+  projectile.setAlpha(0.95);
+  projectile.setScale(0.7);
+  // 改为物理伤害
+  projectile.physicalDamage = Number.isFinite(damage) ? Math.max(0, Math.round(damage)) : 0;
+  projectile.hitTargets = new Set();
+  projectile.fireAngle = angle;
+  projectile.spawnTime = this.time.now;
+  if (projectile.body) {
+    projectile.body.setAllowGravity(false);
+    this.physics.velocityFromRotation(angle, Q_TALISMAN_SPEED, projectile.body.velocity);
+  }
+  projectile.setRotation(angle + Math.PI / 2);
+  return projectile;
+}
+
+destroyQTalisman(projectile) {
+  if (!projectile || projectile.destroyed) return;
+  projectile.destroyed = true;
+  if (projectile.hitTargets?.clear) projectile.hitTargets.clear();
+  projectile.hitTargets = null;
+  if (projectile.body) projectile.body.setVelocity(0, 0);
+  if (this.qTalismans?.contains?.(projectile)) {
+    this.qTalismans.remove(projectile, true, true);
+  } else {
+    projectile.destroy();
+  }
+}
+castE() {
+  if (!this.canCast("E")) return;
+  this.spendCostAndStartCd("E");
+  // 技能音效：E（形态切换）
+  this.playSfx("player_castE");
+
+  this.playerCombatMode = (this.playerCombatMode === "ranged") ? "melee" : "ranged";
+
+  // 立即重建攻速计时器以生效20%攻速/近战停火
+  this.rebuildAttackTimer();
+  
+  // 触发耀光效果 
+  this.onSpellCastComplete();
+}
+castR() {
+  if (!this.canCast("R")) return;
+  this.spendCostAndStartCd("R");
+  // 技能音效：R
+  this.playSfx("player_castR");
+
+  const ap = this.playerStats.abilityPower || 0;
+  const heal = Math.max(0, Math.round(5*ap + 500)); // 解释：按文意“500%AP+500”
+  this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
+  this.showHealNumber(this.player.x, this.player.y - 24, heal);
+  this.updateResourceBars();
+
+  // 准备物理组
+  if (!this.mikoOrbsGroup) this.mikoOrbsGroup = this.physics.add.group();
+
+  // 从8选6不重复
+  const pool = ["R1","R2","R3","R4","R5","R6","R7","R8"];
+  Phaser.Utils.Array.Shuffle(pool);
+
+  // 触发耀光效果
+  this.onSpellCastComplete();
+  const picks = pool.slice(0,6);
+
+  this.mikoOrbs = picks.map((name, i)=>{
+    const spr = this.physics.add.image(this.player.x, this.player.y, `skill_${name}`).setDepth(11);
+    spr.body.setAllowGravity(false);
+    spr.setCircle(8, spr.width/2-8, spr.height/2-8);
+    spr._state = "orbit";                 // orbit -> seek -> done
+    spr._angle = (i / 6) * Math.PI*2;     // 均匀分布
+    spr._orbitTimeLeft = 2000;            // 2s
+    spr._seekTarget = null;
+    spr._ap = ap;
+    this.mikoOrbsGroup.add(spr);
+    return spr;
+  });
+
+  // 清弹：与 bossBullets 重叠即销毁
+  this.physics.add.overlap(this.mikoOrbsGroup, this.bossBullets, (_orb, bullet)=>{
+    this.destroyBossBullet(bullet);
+  });
+  // 追踪阶段命中敌人：接触&爆炸各100%AP
+  this.physics.add.overlap(this.mikoOrbsGroup, this.enemies, (orb, enemy)=>{
+    if (!enemy.active || orb._state !== "seek") return;
+    const spellFlat = Math.max(0, Math.round(this.playerEquipmentStats?.spellBonusMagicFlat || 0));
+    let raw1 = Math.round(orb._ap) + spellFlat;
+    let type1 = "magic";
+    if (this.hasItemEquipped(INFINITY_ORB_ID)) {
+      const eff = EQUIPMENT_DATA[INFINITY_ORB_ID]?.effects || {};
+      const threshold = Number.isFinite(eff.executeHpPct) ? eff.executeHpPct : 0.5;
+      const mult = Number.isFinite(eff.magicCritMultiplier) ? eff.magicCritMultiplier : 1.5;
+      if ((enemy.hp / (enemy.maxHp || 1)) <= threshold) { raw1 = Math.round(raw1 * mult); type1 = "spellcrit"; }
+    }
+    const dealt = this.applyMitigationToTarget(raw1, enemy, this.playerStats, "magic", 1);
+    enemy.hp = Math.max(0, enemy.hp - dealt);
+    this.showDamageNumber(enemy.x, enemy.y, dealt, type1);
+      if (enemy.hp<=0) this.killEnemy(enemy);
+      else this.maybeExecuteTheCollector(enemy);
+
+    // 爆炸再结算一次
+    let raw2 = Math.round(orb._ap) + spellFlat;
+    let type2 = "magic";
+    if (this.hasItemEquipped(INFINITY_ORB_ID)) {
+      const eff = EQUIPMENT_DATA[INFINITY_ORB_ID]?.effects || {};
+      const threshold = Number.isFinite(eff.executeHpPct) ? eff.executeHpPct : 0.5;
+      const mult = Number.isFinite(eff.magicCritMultiplier) ? eff.magicCritMultiplier : 1.5;
+      if ((enemy.hp / (enemy.maxHp || 1)) <= threshold) { raw2 = Math.round(raw2 * mult); type2 = "spellcrit"; }
+    }
+    const dealt2 = this.applyMitigationToTarget(raw2, enemy, this.playerStats, "magic", 1);
+    enemy.hp = Math.max(0, enemy.hp - dealt2);
+    this.showDamageNumber(enemy.x, enemy.y, dealt2, type2);
+    if (enemy.hp<=0) this.killEnemy(enemy);
+
+    // Omnivamp for both hits
+    const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
+    const sum = Math.max(0, (dealt||0) + (dealt2||0));
+    if (omni > 0 && sum > 0) {
+      const heal = Math.max(0, Math.round(sum * omni));
+      if (heal > 0) { this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp); this.showHealNumber(this.player.x, this.player.y - 18, heal); this.updateResourceBars(); }
+    }
+
+    // Liandry burn
+    this.applyLiandryBurn(enemy);
+
+    // 结束该珠
+    orb._state="done";
+    orb.destroy();
+  });
+}
+
+
+
+
+
   tryFireBullet() {
+    // 耀光检查
+    const canSpellblade = this.canTriggerSpellblade();
+
+    // 非远程模式不发射
+    if (this.playerCombatMode !== "ranged") return;
+
     const rangePixels = statUnitsToPixels(this.playerStats.range);
     const originX = this.weaponSprite ? this.weaponSprite.x : this.player.x;
     const originY = this.weaponSprite ? this.weaponSprite.y : this.player.y;
@@ -2731,6 +4463,8 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
     bullet.damage = this.playerStats.attackDamage;
     bullet.damageType = "physical";
     bullet.isCrit = false;
+    bullet.onHitScale = 1;
+    bullet.cleaveScale = 1;
 
     this.bullets.add(bullet);
     this.attachBulletTrailToBullet(bullet);
@@ -2739,6 +4473,60 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
     const angle = Phaser.Math.Angle.Between(bullet.x, bullet.y, target.x, target.y);
     this.physics.velocityFromRotation(angle, BULLET_SPEED, bullet.body.velocity);
     bullet.setRotation(angle + Math.PI / 2);
+    this.spawnRunaanBolts(originX, originY, target, rangePixels, angle);
+  }
+
+  spawnRunaanBolts(originX, originY, primaryTarget, rangePixels, initialAngle) {
+    if (!this.hasRunaan || !this.runaanConfig) return;
+    const { boltCount, damageMultiplier, boltsTriggerOnHit } = this.runaanConfig;
+    if (!boltCount || boltCount <= 0 || !damageMultiplier || damageMultiplier <= 0) return;
+    const enemies = (this.enemies && typeof this.enemies.getChildren === "function")
+      ? this.enemies.getChildren()
+      : [];
+    if (!enemies.length) return;
+
+    const rangeSq = rangePixels * rangePixels;
+    const candidates = [];
+    for (let i = 0; i < enemies.length; i += 1) {
+      const enemy = enemies[i];
+      if (!enemy || !enemy.active) continue;
+      if (enemy === primaryTarget) continue;
+      const distSq = Phaser.Math.Distance.Squared(originX, originY, enemy.x, enemy.y);
+      if (distSq > rangeSq) continue;
+      candidates.push({ enemy, distSq });
+    }
+    if (candidates.length === 0) return;
+    candidates.sort((a, b) => a.distSq - b.distSq);
+    const count = Math.min(boltCount, candidates.length);
+
+    for (let i = 0; i < count; i += 1) {
+      const target = candidates[i].enemy;
+      const bolt = this.physics.add.sprite(originX, originY, "item_effect_arrow");
+      bolt.setDepth(8);
+      bolt.setScale(0.85);
+      bolt.body.setAllowGravity(false);
+      bolt.body.setSize(8, 16);
+      bolt.body.setOffset(4, 0);
+      bolt.spawnTime = this.time.now;
+      bolt.damage = Math.max(1, Math.round(this.playerStats.attackDamage * damageMultiplier));
+      bolt.damageType = "physical";
+      bolt.isCrit = false;
+      bolt.onHitScale = boltsTriggerOnHit ? damageMultiplier : 0;
+      bolt.cleaveScale = damageMultiplier;
+      bolt.isRunaanBolt = true;
+
+      this.bullets.add(bolt);
+      this.attachBulletTrailToBullet(bolt);
+
+      const angle = Phaser.Math.Angle.Between(originX, originY, target.x, target.y);
+      this.physics.velocityFromRotation(angle, BULLET_SPEED, bolt.body.velocity);
+      bolt.setRotation(angle + Math.PI / 2);
+
+      // 若没有目标角度（极端情况），使用主射角保证贴图方向
+      if (!Number.isFinite(angle) && Number.isFinite(initialAngle)) {
+        bolt.setRotation(initialAngle + Math.PI / 2);
+      }
+    }
   }
 
   findNearestEnemy(x, y, range = Number.MAX_VALUE) {
@@ -2756,7 +4544,7 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
   }
 
   spawnEnemy() {
-    if (this.debugBossMode) return;
+    if (this.debugBossMode || this.isBossStage) return;
     if (this.roundComplete || this.roundAwaitingDecision) return;
     if (this.enemies.getChildren().length >= ENEMY_MAX_COUNT) return;
 
@@ -2775,8 +4563,10 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
     Object.entries(ENEMY_TYPE_CONFIG).forEach(([typeKey, typeConfig]) => {
       const tierEntries = [];
       Object.entries(typeConfig.tiers).forEach(([tierKey, tierConfig]) => {
-        const unlockRank = Number.isFinite(tierConfig.unlockRank) ? tierConfig.unlockRank : 0;
-        if (rankValue < unlockRank) return;
+        const minRank = Number.isFinite(tierConfig.unlockRank) ? tierConfig.unlockRank : 0;
+        const maxRank = Number.isFinite(tierConfig.maxRank) ? tierConfig.maxRank : Number.POSITIVE_INFINITY;
+        if (rankValue < minRank) return;
+        if (rankValue > maxRank) return;
         const weight = Number.isFinite(ENEMY_RARITY_WEIGHTS[tierKey]) ? ENEMY_RARITY_WEIGHTS[tierKey] : 0;
         if (weight < 0) return;
         tierEntries.push({ key: tierKey, config: tierConfig, weight });
@@ -2954,7 +4744,7 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
     enemy.enemyType = typeKey;
     enemy.enemyTier = tierKey;
     enemy.enemyKind = typeConfig?.kind ?? "charger";
-    enemy.dropRange = tierConfig.dropRange ?? { min: 10, max: 30 };
+    enemy.dropRange = tierConfig.dropRange ?? { min: 5, max: 15 };
     enemy.tierConfig = tierConfig;
     enemy.typeConfig = typeConfig;
     enemy.state = "idle";
@@ -3051,11 +4841,89 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
     enemy.nav.nudgeSpeed = 0;
   }
 
-handleBulletEnemyOverlap(bullet, enemy) {
-  if (!enemy.active) return;
+handleQTalismanEnemyOverlap(projectile, enemy) {
+  if (!projectile || !projectile.active || projectile.destroyed) return;
+  if (!enemy || !enemy.active) return;
+  if (!projectile.hitTargets) projectile.hitTargets = new Set();
+  if (projectile.hitTargets.has(enemy)) return;
+  projectile.hitTargets.add(enemy);
 
-  const now = this.time.now;
-  const preHp = enemy.hp;
+  // 物理伤害：不受法术加成与法术暴击影响
+  let rawDamage = Number.isFinite(projectile.physicalDamage) ? Math.max(0, Math.round(projectile.physicalDamage)) : 0;
+  if (rawDamage <= 0) return;
+
+  const dealt = this.applyMitigationToTarget(rawDamage, enemy, this.playerStats, "physical", 1);
+  enemy.hp = Math.max(0, enemy.hp - dealt);
+  this.showDamageNumber(enemy.x, enemy.y, dealt, "physical");
+  if (enemy.hp <= 0) this.killEnemy(enemy);
+  else this.maybeExecuteTheCollector(enemy);
+
+  // Omnivamp heal
+  const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
+  if (omni > 0 && dealt > 0) {
+    const heal = Math.max(0, Math.round(dealt * omni));
+    if (heal > 0) {
+      this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
+      this.showHealNumber(this.player.x, this.player.y - 18, heal);
+      this.updateResourceBars();
+    }
+  }
+
+  // Liandry burn on skill hit
+  this.applyLiandryBurn(enemy);
+}
+
+// Q近战贴图重叠结算：魔法伤害，按贴图碰撞判定
+handleQMeleeSlashOverlap(slash, enemy) {
+  if (!slash || slash.destroyed || !slash.active) return;
+  if (!enemy || !enemy.active) return;
+  if (!slash.hitTargets) slash.hitTargets = new Set();
+  if (slash.hitTargets.has(enemy)) return;
+  slash.hitTargets.add(enemy);
+
+  const base = Number.isFinite(slash.meleeDamage) ? Math.max(0, Math.round(slash.meleeDamage)) : 0;
+  if (base <= 0) return;
+
+  // 仍按法术处理：法术额外平A加成与低血法暴
+  const spellFlat = Math.max(0, Math.round(this.playerEquipmentStats?.spellBonusMagicFlat || 0));
+  let amount = base + spellFlat;
+  let showType = "magic";
+  if (this.hasItemEquipped(INFINITY_ORB_ID)) {
+    const eff = EQUIPMENT_DATA[INFINITY_ORB_ID]?.effects || {};
+    const threshold = Number.isFinite(eff.executeHpPct) ? eff.executeHpPct : 0.5;
+    const mult = Number.isFinite(eff.magicCritMultiplier) ? eff.magicCritMultiplier : 1.5;
+    if ((enemy.hp / (enemy.maxHp || 1)) <= threshold) {
+      amount = Math.max(0, Math.round(amount * mult));
+      showType = "spellcrit";
+    }
+  }
+
+  const dealt = this.applyMitigationToTarget(amount, enemy, this.playerStats, "magic", 1);
+  enemy.hp = Math.max(0, enemy.hp - dealt);
+  this.showDamageNumber(enemy.x, enemy.y, dealt, showType);
+  if (enemy.hp <= 0) this.killEnemy(enemy);
+  else this.maybeExecuteTheCollector(enemy);
+
+  // Omnivamp heal
+  const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
+  if (omni > 0 && dealt > 0) {
+    const heal = Math.max(0, Math.round(dealt * omni));
+    if (heal > 0) {
+      this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
+      this.showHealNumber(this.player.x, this.player.y - 18, heal);
+      this.updateResourceBars();
+    }
+  }
+
+  // Liandry burn
+  this.applyLiandryBurn(enemy);
+}
+
+  handleBulletEnemyOverlap(bullet, enemy) {
+    if (!enemy.active) return;  const now = this.time.now;
+    // 普攻命中音效（远程）
+    this.playSfx("enemyhit");
+    const preHp = enemy.hp;
 
   const entries = [];
 
@@ -3083,6 +4951,22 @@ handleBulletEnemyOverlap(bullet, enemy) {
     minDamage: minimumBaseDamage,
     isCrit,
   });
+
+// ——（替换原“处理耀光伤害”整段）——
+let spellbladeHit = null;
+if (this.nextAttackTriggersSpellblade) {
+  spellbladeHit = this.consumeSpellbladeIfReady(enemy); // { amount, type, isSpellblade:true } | null
+}
+
+  // === Generic on-hit flats from equipment (recurve bow, riftmaker, etc.) ===
+  const flatOnHitPhys = Math.max(0, Math.round(this.playerEquipmentStats?.onHitPhysicalFlat || 0));
+  if (flatOnHitPhys > 0) {
+    entries.push({ type: "physical", amount: flatOnHitPhys, source: "onhit_phys_flat", isOnHit: true });
+  }
+  const flatOnHitMagic = Math.max(0, Math.round(this.playerEquipmentStats?.onHitMagicFlat || 0));
+  if (flatOnHitMagic > 0) {
+    entries.push({ type: "magic", amount: flatOnHitMagic, source: "onhit_magic_flat", isOnHit: true });
+  }
 
   // === 装备：破败王者之刃（示例常量名保持与原代码一致） ===
   let tripleProc = false;
@@ -3149,6 +5033,30 @@ handleBulletEnemyOverlap(bullet, enemy) {
     this.rebuildAttackTimer();
   }
 
+  if (this.hasTitanicHydra && this.titanicCleaveBonus > 0) {
+    const maxHpStat = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
+    const bonusDamage = Math.round(maxHpStat * this.titanicCleaveBonus);
+    if (bonusDamage > 0) {
+      entries.push({
+        type: "physical",
+        amount: bonusDamage,
+        source: "titanic_primary",
+        isOnHit: true,
+      });
+    }
+  }
+
+  const onHitScale = Number.isFinite(bullet?.onHitScale) ? Math.max(0, bullet.onHitScale) : 1;
+  if (onHitScale !== 1) {
+    entries.forEach((entry) => {
+      if (!entry.isOnHit) return;
+      entry.amount = Math.max(0, Math.round(entry.amount * onHitScale));
+      if (entry.minDamage != null) {
+        entry.minDamage = Math.max(0, entry.minDamage * onHitScale);
+      }
+    });
+  }
+
   // === 伤害归并，仅区分 physical / magic 与 basic / onHit ===
   const damageGroups = {
     basic: { physical: 0, magic: 0 },
@@ -3183,6 +5091,25 @@ handleBulletEnemyOverlap(bullet, enemy) {
   // 判断本次是否发生了基础暴击（不依赖汇总结构）
   const basicWasCrit = entries.some(e => !e.isOnHit && e.source === "basic_crit");
 
+  // Infinity Orb: magic crit on low-HP targets
+  let magicBasicWasSpellCrit = false;
+  let magicOnHitWasSpellCrit = false;
+  if (this.hasItemEquipped(INFINITY_ORB_ID)) {
+    const eff = EQUIPMENT_DATA[INFINITY_ORB_ID]?.effects || {};
+    const threshold = Number.isFinite(eff.executeHpPct) ? eff.executeHpPct : 0.5;
+    const mult = Number.isFinite(eff.magicCritMultiplier) ? eff.magicCritMultiplier : 1.5;
+    if ((enemy.hp / (enemy.maxHp || 1)) <= threshold) {
+      if (damageGroups.basic.magic > 0) {
+        damageGroups.basic.magic = Math.max(0, Math.round(damageGroups.basic.magic * mult));
+        magicBasicWasSpellCrit = true;
+      }
+      if (damageGroups.onHit.magic > 0) {
+        damageGroups.onHit.magic = Math.max(0, Math.round(damageGroups.onHit.magic * mult));
+        magicOnHitWasSpellCrit = true;
+      }
+    }
+  }
+
   if (damageGroups.basic.physical > 0) {
     this.displayDamageWithSeparation(
       enemy.x,
@@ -3193,19 +5120,39 @@ handleBulletEnemyOverlap(bullet, enemy) {
     );
   }
   if (damageGroups.basic.magic > 0) {
-    this.displayDamageWithSeparation(enemy.x, enemy.y, damageGroups.basic.magic, "magic", displayOrder++);
+    this.displayDamageWithSeparation(
+      enemy.x, enemy.y,
+      damageGroups.basic.magic,
+      magicBasicWasSpellCrit ? "spellcrit" : "magic",
+      displayOrder++
+    );
   }
   if (damageGroups.onHit.physical > 0) {
     this.displayDamageWithSeparation(enemy.x, enemy.y, damageGroups.onHit.physical, "physical", displayOrder++);
   }
   if (damageGroups.onHit.magic > 0) {
-    this.displayDamageWithSeparation(enemy.x, enemy.y, damageGroups.onHit.magic, "magic", displayOrder++);
+    this.displayDamageWithSeparation(
+      enemy.x, enemy.y,
+      damageGroups.onHit.magic,
+      magicOnHitWasSpellCrit ? "spellcrit" : "magic",
+      displayOrder++
+    );
   }
+// —— 单独显示耀光（带“S”前缀，颜色按 type） ——
+// 注意：耀光不是 on-hit，不参与你的 basic/onHit 分组；独立显示并计入总伤害。
+let spellbladeDamage = 0;
+if (spellbladeHit && spellbladeHit.amount > 0) {
+  spellbladeDamage = spellbladeHit.amount;
+  // 使用独立接口直接显示（带 isSpellblade 标记）
+  const stype = (spellbladeHit.type === "magic" && spellbladeHit.isSpellCrit) ? "spellcrit" : spellbladeHit.type;
+  this.showDamageNumber(enemy.x, enemy.y, spellbladeDamage, stype, { isSpellblade: true });
+}
 
   // === 扣血与后续处理 ===
-  const totalDamage =
-    damageGroups.basic.physical + damageGroups.basic.magic +
-    damageGroups.onHit.physical + damageGroups.onHit.magic;
+const totalDamage =
+  damageGroups.basic.physical + damageGroups.basic.magic +
+  damageGroups.onHit.physical + damageGroups.onHit.magic +
+  spellbladeDamage;
 
   enemy.hp = Math.max(0, (enemy.hp ?? 0) - totalDamage);
   if (enemy.isBoss && typeof enemy.setData === "function") {
@@ -3213,9 +5160,20 @@ handleBulletEnemyOverlap(bullet, enemy) {
   }
   if (enemy.isBoss) this.updateBossUI(enemy);
 
+  const attackAngle = (typeof bullet?.rotation === "number")
+    ? bullet.rotation - Math.PI / 2
+    : Phaser.Math.Angle.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+  const cleaveScale = Number.isFinite(bullet?.cleaveScale) ? Math.max(0, bullet.cleaveScale) : 1;
+  this.triggerCleaveEffects(enemy, { angle: attackAngle, scale: cleaveScale });
+
   if (enemy.hp <= 0) {
     this.killEnemy(enemy);
+  } else {
+    // 收集者处决判定
+    this.maybeExecuteTheCollector(enemy);
   }
+  // 讯刃：普攻命中返还技能冷却
+  this.applyNavoriQuickbladesOnHitRefund();
 
   // === 物理吸血 ===
   const ls = this.playerEquipmentStats.physicalLifeSteal ?? 0;
@@ -3231,15 +5189,199 @@ handleBulletEnemyOverlap(bullet, enemy) {
     }
   }
 
+  // === Omnivamp (from any damage) ===
+  const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
+  if (omni > 0) {
+    const healAny = Math.max(0, Math.round(totalDamage * omni));
+    if (healAny > 0) {
+      this.currentHp = Math.min(this.currentHp + healAny, this.playerStats.maxHp);
+      this.showHealNumber(this.player.x, this.player.y - 18, healAny);
+      this.updateResourceBars();
+    }
+  }
+
   this.destroyBullet(bullet);
 }
 
+
+  triggerCleaveEffects(hitEnemy, options = {}) {
+    if ((!this.hasTiamat || this.tiamatCleaveRadius <= 0) &&
+        (!this.hasTitanicHydra || this.titanicCleaveRadius <= 0)) {
+      return;
+    }
+    if (!hitEnemy) return;
+    const angle = Number.isFinite(options.angle) ? options.angle : 0;
+    const scale = Number.isFinite(options.scale) ? Math.max(0, options.scale) : 1;
+
+    if (this.hasTiamat && this.tiamatCleaveRadius > 0) {
+      const baseAd = this.playerStats?.attackDamage ?? PLAYER_BASE_STATS.attackDamage;
+      const cleaveDamage = Math.max(0, Math.round(baseAd * scale));
+      if (cleaveDamage > 0) {
+        this.spawnCleaveVisual("item_effect_tiamat", hitEnemy.x, hitEnemy.y, angle, this.tiamatCleaveRadius);
+        this.applyCleaveDamage(hitEnemy, this.tiamatCleaveRadius, cleaveDamage, "physical");
+      }
+    }
+
+    if (this.hasTitanicHydra && this.titanicCleaveRadius > 0 && this.titanicCleaveBonus > 0) {
+      const maxHpStat = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
+      const bonusDamage = Math.max(0, Math.round(maxHpStat * this.titanicCleaveBonus * scale));
+      if (bonusDamage > 0) {
+        this.spawnCleaveVisual("item_effect_titanic", hitEnemy.x, hitEnemy.y, angle, this.titanicCleaveRadius);
+        this.applyCleaveDamage(hitEnemy, this.titanicCleaveRadius, bonusDamage, "physical");
+      }
+    }
+  }
+
+  spawnCleaveVisual(textureKey, x, y, angle, _radius) {
+    if (!this.textures || typeof this.textures.exists !== "function" || !this.textures.exists(textureKey)) return;
+    const sprite = this.add.image(x, y, textureKey).setDepth(7);
+    sprite.setOrigin(0.5, 0.5);
+    sprite.setRotation(angle + Math.PI / 2);
+    const effectSize = TILE_SIZE * 4;
+    sprite.setDisplaySize(effectSize, effectSize);
+    sprite.setAlpha(0.9);
+    this.tweens.add({
+      targets: sprite,
+      alpha: 0,
+      duration: 360,
+      ease: "Cubic.easeOut",
+      onComplete: () => sprite.destroy(),
+    });
+  }
+
+  applyCleaveDamage(primaryEnemy, radius, damage, damageType) {
+    if (radius <= 0 || damage <= 0) return;
+    const enemies = (this.enemies && typeof this.enemies.getChildren === "function")
+      ? this.enemies.getChildren()
+      : [];
+    const radiusSq = radius * radius;
+    for (let i = 0; i < enemies.length; i += 1) {
+      const enemy = enemies[i];
+      if (!enemy || !enemy.active) continue;
+      if (enemy === primaryEnemy) continue;
+      const distSq = Phaser.Math.Distance.Squared(primaryEnemy.x, primaryEnemy.y, enemy.x, enemy.y);
+      if (distSq > radiusSq) continue;
+      const dealt = this.applyMitigationToTarget(damage, enemy, this.playerStats, damageType, 1);
+      if (dealt <= 0) continue;
+      enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
+      this.showDamageNumber(enemy.x, enemy.y, dealt, damageType);
+      if (enemy.isBoss && typeof enemy.setData === "function") {
+        enemy.setData("hp", enemy.hp);
+        this.updateBossUI(enemy);
+      }
+      if (enemy.hp <= 0) this.killEnemy(enemy);
+      else this.maybeExecuteTheCollector(enemy);
+    }
+  }
 
   hasItemEquipped(itemId) {
     return this.playerEquipmentSlots.some((id) => id === itemId);
   }
 
   handleBrokenKingsBladeOnHit(_context) { return null; }
+
+  // Apply/refresh Liandry's burn (DoT every 0.25s, total matches description)
+  applyLiandryBurn(enemy) {
+    if (!enemy || !enemy.active) return;
+    if (!this.hasItemEquipped(LIANDRYS_ANGUISH_ID)) return;
+    const eff = EQUIPMENT_DATA[LIANDRYS_ANGUISH_ID]?.effects || {};
+    const durationMs = Number.isFinite(eff.burnDurationMs) ? eff.burnDurationMs : 3000;
+    const basePctPS = Number.isFinite(eff.burnPercentBasePerSecond) ? eff.burnPercentBasePerSecond : 0.01; // of target max HP
+    const apRatioPctPS = Number.isFinite(eff.burnPercentApRatio) ? eff.burnPercentApRatio : 0.0001;         // per AP (percentage per second)
+
+    // Cancel prior timer and refresh
+    if (enemy.liandryTimer) { enemy.liandryTimer.remove(false); enemy.liandryTimer = null; }
+    enemy.liandryBurnAcc = 0; // fractional accumulator
+
+    const ap = this.playerStats?.abilityPower || 0;
+    const perSecondRaw = (enemy.maxHp || 0) * (basePctPS + ap * apRatioPctPS);
+    const tickMs = 250;
+    const ticks = Math.max(1, Math.round(durationMs / tickMs));
+    const perTickRaw = perSecondRaw * (tickMs / 1000);
+
+    const doTick = () => {
+      if (!enemy || !enemy.active) return;
+      // Accumulate raw and round down only the integer portion
+      enemy.liandryBurnAcc = (enemy.liandryBurnAcc || 0) + perTickRaw;
+      let rawDamage = Math.floor(enemy.liandryBurnAcc);
+      enemy.liandryBurnAcc -= rawDamage;
+      if (rawDamage <= 0) return;
+
+      // Infinity Orb multiplier on low-HP targets affects display/damage type
+      let typeToShow = "magic";
+      if (this.hasItemEquipped(INFINITY_ORB_ID)) {
+        const inf = EQUIPMENT_DATA[INFINITY_ORB_ID]?.effects || {};
+        const threshold = Number.isFinite(inf.executeHpPct) ? inf.executeHpPct : 0.5;
+        const mult = Number.isFinite(inf.magicCritMultiplier) ? inf.magicCritMultiplier : 1.5;
+        if ((enemy.hp / (enemy.maxHp || 1)) <= threshold) {
+          rawDamage = Math.round(rawDamage * mult);
+          typeToShow = "spellcrit";
+        }
+      }
+
+      const dealt = this.applyMitigationToTarget(rawDamage, enemy, this.playerStats, "magic", 1);
+      if (dealt <= 0) return;
+      enemy.hp = Math.max(0, (enemy.hp || 0) - dealt);
+      this.showDamageNumber(enemy.x, enemy.y, dealt, typeToShow);
+      if (enemy.isBoss && typeof enemy.setData === "function") {
+        enemy.setData("hp", enemy.hp);
+        this.updateBossUI(enemy);
+      }
+      if (enemy.hp <= 0) { this.killEnemy(enemy); return; }
+
+      // Omnivamp heal from DoT
+      const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
+      if (omni > 0) {
+        const heal = Math.max(0, Math.round(dealt * omni));
+        if (heal > 0) {
+          this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
+          this.showHealNumber(this.player.x, this.player.y - 18, heal);
+          this.updateResourceBars();
+        }
+      }
+    };
+
+    enemy.liandryTimer = this.time.addEvent({ delay: 250, repeat: ticks - 1, callback: doTick });
+  }
+
+  // 收集者：若目标未死且血量低于处决阈值，则强制击杀并掉落额外金币。
+  maybeExecuteTheCollector(enemy) {
+    if (!enemy || !enemy.active) return false;
+    if (!this.hasItemEquipped(THE_COLLECTOR_ID)) return false;
+    const eff = EQUIPMENT_DATA[THE_COLLECTOR_ID]?.effects || {};
+    const threshold = Number.isFinite(eff.executeThresholdPct) ? eff.executeThresholdPct : 0.05;
+    const hpPct = (enemy.maxHp || 1) > 0 ? (enemy.hp / (enemy.maxHp || 1)) : 0;
+    if (enemy.hp > 0 && hpPct <= threshold) {
+      // 白色“真伤9999”显示
+      this.showDamageNumber(enemy.x, enemy.y, "真伤9999", "true");
+      // 标记以避免在 killEnemy 再次显示
+      enemy._collectorExecuteDisplayed = true;
+      // 掉落额外金币
+      const bonus = Number.isFinite(eff.executeBonusGold) ? Math.max(0, eff.executeBonusGold) : 0;
+      if (bonus > 0) this.dropFixedPoints(enemy.x, enemy.y, bonus);
+      this.killEnemy(enemy);
+      return true;
+    }
+    return false;
+  }
+
+  // 讯刃：普攻命中时，减少当前技能剩余冷却
+  applyNavoriQuickbladesOnHitRefund() {
+    if (!this.hasItemEquipped(NAVORI_QUICKBLADES_ID)) return;
+    const eff = EQUIPMENT_DATA[NAVORI_QUICKBLADES_ID]?.effects || {};
+    const refundPct = Number.isFinite(eff.cooldownRefundOnHitPct) ? eff.cooldownRefundOnHitPct : 0.15;
+    if (refundPct <= 0) return;
+    const now = this.time.now;
+    Object.keys(this.skillReadyAt || {}).forEach((key) => {
+      const readyAt = this.skillReadyAt[key] || 0;
+      if (readyAt > now) {
+        const remaining = readyAt - now;
+        const reduce = Math.round(remaining * refundPct);
+        this.skillReadyAt[key] = Math.max(now, readyAt - reduce);
+      }
+    });
+    this.updateSkillCooldownUI?.();
+  }
 
   handlePlayerEnemyContact(_player, enemy) {
     const now = this.time.now;
@@ -3251,16 +5393,231 @@ handleBulletEnemyOverlap(bullet, enemy) {
     }
   }
 
-applyDamageToPlayer(amount, sourceStats = null) {
-  const actual = this.applyMitigationToTarget(Math.round(amount), this.playerStats, sourceStats, "physical");
-  this.showDamageNumber(this.player.x, this.player.y - 12, actual, "physical", true); // ← 这里传 true
-  this.currentHp = Math.max(this.currentHp - actual, 0);
-  this.updateResourceBars();
-  const now = this.time.now;
-  this.lastDamageTimestamp = now;
-  this.nextNoDamageRankCheck = now + NO_DAMAGE_RANK_INTERVAL;
-  if (this.currentHp <= 0) this.gameOver();
+  canTriggerSpellblade(now = this.time.now) {
+    const SPELLBLADE_COOLDOWN = 1500; // 1.5秒冷却时间
+    return now - this.lastSpellbladeUsedAt >= SPELLBLADE_COOLDOWN;
+  }
+
+  // 处理耀光装备的伤害
+// ===【替换】原 dealSpellbladeDamage，并新增 consumeSpellbladeIfReady ===
+
+// 计算耀光伤害（按装备effects通用字段组合）
+computeSpellbladeDamageFor(item, enemy) {
+  if (!item?.effects || !enemy) return null;
+  const eff = item.effects;
+  const baseAD = PLAYER_BASE_STATS.attackDamage;            // 基础AD（base AD）
+  const ad     = this.playerStats?.attackDamage || 0;       // 面板AD
+  const ap     = this.playerStats?.abilityPower || 0;       // 面板AP
+  const tMaxHp = enemy.maxHp || enemy.maxHealth || 0;
+
+  let raw = 0;
+  // 通用支持：基础AD/面板AD/AP/最大生命/平直伤害（哪个有就加哪个）
+  if (Number.isFinite(eff.spellbladeBaseAdPct)) raw += baseAD * eff.spellbladeBaseAdPct;
+  if (Number.isFinite(eff.spellbladeAdRatio))   raw += ad     * eff.spellbladeAdRatio;
+  if (Number.isFinite(eff.spellbladeApRatio))   raw += ap     * eff.spellbladeApRatio;
+  if (Number.isFinite(eff.spellbladeMaxHpPct))  raw += tMaxHp * eff.spellbladeMaxHpPct;
+  if (Number.isFinite(eff.spellbladeFlat))      raw += eff.spellbladeFlat;
+
+  // 上限（区分boss/非boss）
+  const cap = enemy.isBoss
+    ? eff.spellbladeMaxDamageBoss
+    : eff.spellbladeMaxDamageNonBoss;
+  if (Number.isFinite(cap)) raw = Math.min(raw, cap);
+
+  // 伤害类型（默认物理；个别如巫妖之祸为法术）
+  const dmgType = eff.spellbladeDamageType === "magic" ? "magic" : "physical";
+
+  // 是否可暴击（例如吸蓝刀）
+  let isCrit = false;
+  if (eff.spellbladeCanCrit) {
+    const critChance01 = (this.playerStats?.critChance || 0) > 1
+      ? (this.playerStats.critChance / 100)
+      : (this.playerStats?.critChance || 0);
+    if (Math.random() < Math.min(1, Math.max(0, critChance01))) {
+      const critPct = this.playerStats?.critDamage || 150; // 150% = 1.5倍
+      raw = Math.round(raw * (critPct / 100));
+      isCrit = true; // 仅用于内部标记；显示仍用 S前缀而不是暴击红字
+    }
+  }
+
+  // Spell flat bonus applies to magic-type spellblade (e.g., Alternator, Riftmaker)
+  let isSpellCrit = false;
+  if (dmgType === "magic") {
+    const spellFlat = Math.max(0, Math.round(this.playerEquipmentStats?.spellBonusMagicFlat || 0));
+    raw += spellFlat;
+    // Infinity Orb multiplier
+    if (this.hasItemEquipped(INFINITY_ORB_ID)) {
+      const effInf = EQUIPMENT_DATA[INFINITY_ORB_ID]?.effects || {};
+      const threshold = Number.isFinite(effInf.executeHpPct) ? effInf.executeHpPct : 0.5;
+      const mult = Number.isFinite(effInf.magicCritMultiplier) ? effInf.magicCritMultiplier : 1.5;
+      if ((enemy.hp / (enemy.maxHp || 1)) <= threshold) {
+        raw = Math.round(raw * mult);
+        isSpellCrit = true;
+      }
+    }
+  }
+
+  // 结算减伤，得出实际伤害
+  const dealt = this.applyMitigationToTarget(Math.round(raw), enemy, this.playerStats, dmgType, 1);
+
+  return { amount: dealt, type: dmgType, isCrit, isSpellCrit };
 }
+
+// 消耗“下一击触发耀光”标记并返回结算条目（供命中流程合并）
+consumeSpellbladeIfReady(enemy) {
+  if (!this.nextAttackTriggersSpellblade) return null;
+
+  const itemId = this.playerEquipmentSlots.find(id => this.isSpellbladeItem(id));
+  if (!itemId) return null;
+
+  const item = this.getEquipmentDefinition(itemId);
+  if (!item) return null;
+
+  // 生成伤害
+  const result = this.computeSpellbladeDamageFor(item, enemy);
+  if (!result || result.amount <= 0) {
+    // 即便没有伤害，也要消耗标记并进入CD
+    this.nextAttackTriggersSpellblade = false;
+    this.lastSpellbladeUsedAt = this.time.now;
+    return null;
+  }
+
+  // 特效：按不同耀光装备执行额外效果（速度、减速圈等）
+  const eff = item.effects || {};
+  // 三相：移速
+  if (eff.spellbladeMoveSpeed && eff.spellbladeMoveSpeedDurationMs) {
+    this.addPlayerSpeedBuff(eff.spellbladeMoveSpeed, eff.spellbladeMoveSpeedDurationMs);
+  }
+  // 冰拳：减速圈
+  if (item.id === "frostfireGauntlet" || eff.frostSlowRadiusBase != null || eff.frostSlowRadiusArmorRatio != null) {
+    const adDamage = (this.playerStats?.attackDamage || 0) * (eff.spellbladeAdRatio || 0);
+    const armorDamage = (this.playerStats?.armor || 0) * (eff.spellbladeArmorRatio || 0);
+    // 旧数据兼容：如果上面已经在 compute 阶段算过，就不重复加；这里只处理范围减速与视觉
+    const slowR = (eff.frostSlowRadiusBase || 0) + (this.playerStats?.armor || 0) * (eff.frostSlowRadiusArmorRatio || 0);
+    if (slowR > 0) {
+      this.createIceEffect(enemy.x, enemy.y, slowR);
+      if (eff.frostSlowPct != null) this.applySlowInArea(enemy.x, enemy.y, slowR, eff.frostSlowPct);
+    }
+  }
+
+  // 消耗与进入CD
+  this.nextAttackTriggersSpellblade = false;
+  this.lastSpellbladeUsedAt = this.time.now;
+
+  // 返回一个供命中流程合并与独立显示的“耀光”条目
+  return { amount: result.amount, type: result.type, isSpellblade: true };
+}
+
+  // 创建冰冻效果的视觉表现
+  createIceEffect(x, y, radius) {
+    const iceEffect = this.add.sprite(x, y, 'ice_effect');
+    iceEffect.setScale(radius / 50); // 根据范围调整大小
+    iceEffect.setAlpha(0.5);
+    iceEffect.setDepth(7);
+    
+    // 添加淡出动画
+    this.tweens.add({
+      targets: iceEffect,
+      alpha: 0,
+      duration: 1000,
+      ease: 'Power2',
+      onComplete: () => {
+        iceEffect.destroy();
+      }
+    });
+  }
+
+  // 对范围内的敌人应用减速效果
+  applySlowInArea(centerX, centerY, radius, slowAmount) {
+    const enemies = this.enemies.getChildren();
+    const radiusSq = radius * radius;
+    
+    enemies.forEach(enemy => {
+      if (!enemy.active) return;
+      
+      const distSq = Phaser.Math.Distance.Squared(centerX, centerY, enemy.x, enemy.y);
+      if (distSq <= radiusSq) {
+        this.applySlowEffect(enemy, slowAmount);
+      }
+    });
+  }
+
+  // 对单个敌人应用减速效果
+  applySlowEffect(enemy, slowAmount) {
+    // 保存原始速度
+    if (!enemy.originalSpeed) {
+      enemy.originalSpeed = enemy.body.velocity.length();
+    }
+    
+    // 应用减速
+    const newSpeed = enemy.originalSpeed * (1 - slowAmount);
+    const currentVelocity = enemy.body.velocity;
+    const angle = Math.atan2(currentVelocity.y, currentVelocity.x);
+    
+    enemy.body.setVelocity(
+      Math.cos(angle) * newSpeed,
+      Math.sin(angle) * newSpeed
+    );
+    
+    // 2秒后恢复速度
+    this.time.delayedCall(2000, () => {
+      if (!enemy.active) return;
+      
+      const currentAngle = Math.atan2(enemy.body.velocity.y, enemy.body.velocity.x);
+      enemy.body.setVelocity(
+        Math.cos(currentAngle) * enemy.originalSpeed,
+        Math.sin(currentAngle) * enemy.originalSpeed
+      );
+      enemy.originalSpeed = null;
+    });
+  }
+
+  // 添加玩家速度加成
+  addPlayerSpeedBuff(amount, duration) {
+    const currentSpeed = this.playerStats.moveSpeed;
+    this.playerStats.moveSpeed += amount;
+    
+    // duration毫秒后恢复速度
+    this.time.delayedCall(duration, () => {
+      this.playerStats.moveSpeed = currentSpeed;
+    });
+  }
+
+  applyDamageToPlayer(amount, sourceStats = null) {
+    if (this.isPlayerInvulnerable()) return;
+    const actual = this.applyMitigationToTarget(Math.round(amount), this.playerStats, sourceStats, "physical");
+    this.showDamageNumber(this.player.x, this.player.y - 12, actual, "physical", true);
+    this.currentHp = Math.max(this.currentHp - actual, 0);
+    this.updateResourceBars();
+    const now = this.time.now;
+    this.lastDamageTimestamp = now;
+    this.nextNoDamageRankCheck = now + NO_DAMAGE_RANK_INTERVAL;
+
+    // 反甲：反伤给攻击者（魔法伤害）
+    if (sourceStats && typeof sourceStats === "object" && sourceStats.active) {
+      const thBase = Math.max(0, this.playerEquipmentStats?.thornsBase || 0);
+      const thRatio = Math.max(0, this.playerEquipmentStats?.thornsArmorRatio || 0);
+      if (thBase > 0 || thRatio > 0) {
+        const armor = Math.max(0, this.playerStats?.armor || 0);
+        const raw = Math.round(thBase + armor * thRatio);
+        if (raw > 0) {
+          const dealt = this.applyMitigationToTarget(raw, sourceStats, this.playerStats, "magic", 1);
+          if (dealt > 0) {
+            sourceStats.hp = Math.max(0, (sourceStats.hp || 0) - dealt);
+            this.showDamageNumber(sourceStats.x, sourceStats.y, dealt, "magic");
+            if (sourceStats.isBoss && typeof sourceStats.setData === "function") {
+              sourceStats.setData("hp", sourceStats.hp);
+              this.updateBossUI(sourceStats);
+            }
+            if (sourceStats.hp <= 0) this.killEnemy(sourceStats);
+          }
+        }
+      }
+    }
+
+    if (this.currentHp <= 0) this.gameOver();
+    else this.playSfx("player_gethit");
+  }
 
 
   killEnemy(enemy) {
@@ -3276,6 +5633,30 @@ applyDamageToPlayer(amount, sourceStats = null) {
     enemy.body.enable = false;
     this.killCount += 1;
     this.updateHUD();
+    this.applyHeartsteelKillStack();
+    this.applyDarkSealKillProgress(enemy);
+    this.applyBailouMomentumOnKill();
+
+    // 收集者：只要装备者击杀，显示白色“真伤9999”
+    if (this.hasItemEquipped(THE_COLLECTOR_ID) && !enemy._collectorExecuteDisplayed) {
+      this.showDamageNumber(enemy.x, enemy.y, "真伤9999", "true");
+    }
+
+    // Soulstealer Codex: refund 25% of current remaining cooldowns
+    if (this.hasItemEquipped(SOULSTEALER_CODEX_ID)) {
+      const eff = EQUIPMENT_DATA[SOULSTEALER_CODEX_ID]?.effects || {};
+      const refundPct = Number.isFinite(eff.killCooldownRefundPct) ? eff.killCooldownRefundPct : 0.25;
+      const now = this.time.now;
+      Object.keys(this.skillReadyAt || {}).forEach((key) => {
+        const readyAt = this.skillReadyAt[key] || 0;
+        if (readyAt > now) {
+          const remaining = readyAt - now;
+          const reduce = Math.round(remaining * refundPct);
+          this.skillReadyAt[key] = Math.max(now, readyAt - reduce);
+        }
+      });
+      this.updateSkillCooldownUI?.();
+    }
 
     // Boss死亡收尾
     if (enemy.isBoss) {
@@ -3285,10 +5666,28 @@ applyDamageToPlayer(amount, sourceStats = null) {
       this.bossKind = null;
       // 清空所有Boss弹幕
       this.clearBossBullets();
+      // Boss关卡：击杀Boss视为关卡完成 -> 打开商店（替代倒计时条件）
+      if (this.isBossStage) {
+        this.isBossStage = false;
+        this.handleRoundComplete();
+      }
+    }
+
+    // 清理该敌人已发出的弹幕（防止敌人死亡后子弹残留）
+    if (this.bossBullets) {
+      const bs = this.bossBullets.getChildren();
+      for (let i = bs.length - 1; i >= 0; i -= 1) {
+        const b = bs[i];
+        if (b && b.owner === enemy) this.destroyBossBullet(b);
+      }
     }
 
     this.time.delayedCall(260, () => enemy.destroy());
-    this.maybeDropPoint(enemy.x, enemy.y);
+    if (enemy.isChest) {
+      this.handleChestDeathRewards(enemy);
+    } else {
+      this.maybeDropPoint(enemy.x, enemy.y);
+    }
   if (enemy.ringSprite) {
   enemy.ringSprite.destroy();
   enemy.ringSprite = null;
@@ -3297,25 +5696,25 @@ this.time.delayedCall(260, () => enemy.destroy());
 
   }
 
-/* 按敌人 tier 的 dropRange（min/max）生成总点数，并拆成若干拾取物 */
+/* 按敌人 tier 的 dropRange（min/max）生成总点数，并拆成较多的拾取物（更分散的显示） */
 maybeDropPoint(enemyOrX, maybeY) {
   let x, y, range;
   if (typeof enemyOrX === "object") {
     const e = enemyOrX;
     x = e.x; y = e.y;
-    const r = e.dropRange ?? { min: 10, max: 30 };
+    const r = e.dropRange ?? { min: 5, max: 15 };
     range = { min: Math.max(0, r.min|0), max: Math.max(0, r.max|0) };
   } else {
     x = enemyOrX; y = maybeY;
-    range = { min: 10, max: 30 }; 
+    range = { min: 5, max: 15 }; 
   }
 
   // 总点数
   const total = Phaser.Math.Between(range.min, range.max);
   if (total <= 0) return;
 
-  // 拆分成 2~4 份
-  const pieces = Phaser.Math.Clamp(Math.ceil(total / 15), 2, 4);
+  // 显示更多的掉落点：按总额自适应拆分，最高不超过 total
+  const pieces = Phaser.Math.Clamp(Math.ceil(total / 5), 3, Math.min(12, total));
   // 保证每份至少有1点
   const base = Math.max(1, Math.floor(total / pieces));
   // 剩余点数
@@ -3323,7 +5722,7 @@ maybeDropPoint(enemyOrX, maybeY) {
 
   for (let i = 0; i < pieces; i += 1) {
     // 最后一份拿走所有剩余点数
-    const amount = (i === pieces - 1) ? remaining : base;
+    const amount = (i === pieces - 1) ? remaining : Math.max(1, Math.min(base, remaining - (pieces - 1 - i))); // 避免最后为负
     remaining -= amount;
 
     const ang = Phaser.Math.FloatBetween(0, Math.PI * 2);
@@ -3337,17 +5736,121 @@ maybeDropPoint(enemyOrX, maybeY) {
     point.body.setDrag(600, 600);
     point.magnetActive = false;
     point.amount = amount;
+    // 击杀回蓝：总计 1 点法力值，按碎片等额分配
+    point.manaGain = 1 / pieces;
   }
 }
+  // 宝箱：击杀后奖励（移除“清除所有敌人 10%”）
+  // 1) 掉落200点（掉落物）40%
+  // 2) 生成20个basic毛玉 10%
+  // 3) 随机一个basic装备（栏满不发）20%
+  // 4) 刷新1个随机legendary敌人 15%
+  // 5) 刷新一个Boss Utsuho 0.5%
+  handleChestDeathRewards(enemy) {
+    // 使用浮点概率，使 Utsuho 概率精确为 0.5%
+    // 其他概率：40% / 10% / 20% / 15%，其余不触发额外奖励
+    const r = Math.random();
+    let outcome = 0;
+    if (r < 0.40) outcome = 1;              // 40%
+    else if (r < 0.50) outcome = 2;         // +10 = 50%
+    else if (r < 0.70) outcome = 4;         // +20 = 70%
+    else if (r < 0.85) outcome = 5;         // +15 = 85%
+    else if (r < 0.855) outcome = 6;        // +0.5 = 85.5%
+
+    switch (outcome) {
+      case 1: { // 掉落200点（掉落物）
+        this.dropFixedPoints(enemy.x, enemy.y, 200);
+        break;
+      }
+      case 2: { // 生成20个basic毛玉
+        const def = {
+          typeKey: 'kedama',
+          typeConfig: ENEMY_TYPE_CONFIG.kedama,
+          tierKey: ENEMY_RARITIES.BASIC,
+          tierConfig: ENEMY_TYPE_CONFIG.kedama.tiers[ENEMY_RARITIES.BASIC],
+        };
+        for (let i = 0; i < 20; i += 1) {
+          const pos = this.findEnemySpawnPosition(def) || { x: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE), y: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE) };
+          this.spawnEnemyWithEffect(def, pos);
+        }
+        break;
+      }
+      case 4: { // 随机一个basic装备（满了就不给）
+        const empty = this.playerEquipmentSlots.findIndex((id) => id == null);
+        if (empty >= 0) {
+          const pool = ITEMS_BY_TIER[ITEM_TIERS.BASIC] || [];
+          const pick = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+          const itemId = pick?.id;
+          if (itemId) this.equipItem(empty, itemId);
+        }
+        break;
+      }
+      case 5: { // 刷新1个随机legendary敌人
+        const typeKeys = Object.keys(ENEMY_TYPE_CONFIG);
+        const typeKey = typeKeys[Phaser.Math.Between(0, typeKeys.length - 1)];
+        const typeConfig = ENEMY_TYPE_CONFIG[typeKey];
+        const tierConfig = typeConfig.tiers?.[ENEMY_RARITIES.LEGENDARY];
+        if (tierConfig) {
+          const def = { typeKey, typeConfig, tierKey: ENEMY_RARITIES.LEGENDARY, tierConfig };
+          const pos = this.findEnemySpawnPosition(def) || { x: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE), y: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE) };
+          this.spawnEnemyWithEffect(def, pos);
+        }
+        break;
+      }
+      case 6: { // 刷新一个boss Utsuho
+        const pos = { x: Phaser.Math.Clamp(enemy.x, TILE_SIZE * 2, WORLD_SIZE - TILE_SIZE * 2), y: Phaser.Math.Clamp(enemy.y - 80, TILE_SIZE * 2, WORLD_SIZE - TILE_SIZE * 2) };
+        this.spawnBossById("Utsuho", pos);
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  // 按固定总金额掉落拾取物（用于收集者额外金币/宝箱）
+  dropFixedPoints(x, y, total) {
+    const amountTotal = Math.max(0, Math.floor(total));
+    if (amountTotal <= 0) return;
+
+    // 显示更多：更细的拆分，但不超过 total 数量
+    const pieces = Phaser.Math.Clamp(Math.ceil(amountTotal / 10), 2, Math.min(20, amountTotal));
+    let remaining = amountTotal;
+    for (let i = 0; i < pieces; i += 1) {
+      const minLeft = (pieces - 1 - i); // 确保后面至少各1
+      const avg = Math.floor(remaining / (pieces - i));
+      const base = Math.max(1, avg);
+      const amount = (i === pieces - 1) ? remaining : Math.max(1, Math.min(base, remaining - minLeft));
+      remaining -= amount;
+      const ang = Phaser.Math.FloatBetween(0, Math.PI * 2);
+      const dist = Phaser.Math.FloatBetween(6, 22);
+      const dropX = x + Math.cos(ang) * dist;
+      const dropY = y + Math.sin(ang) * dist;
+
+      const point = this.loot.create(dropX, dropY, "point");
+      point.setDepth(5);
+      point.body.setAllowGravity(false);
+      point.body.setDrag(600, 600);
+      point.magnetActive = false;
+      point.amount = amount;
+      // 固定掉落（如宝箱/收集者）不提供回蓝
+      point.manaGain = 0;
+    }
+  }
 
   collectPoint(_player, point) {
     if (!point.active) return;
     this.playSfx("itempick");
     this.loot.remove(point, true, true);
     this.playerPoints += point.amount;
-    const manaGain = point.amount * 10;
+    const fallback = point.amount * 10; // 兼容旧逻辑
+    const gainRaw = Number.isFinite(point.manaGain) ? point.manaGain : fallback;
     const maxMana = this.playerStats?.maxMana ?? PLAYER_BASE_STATS.maxMana ?? PLAYER_MANA_MAX;
-    this.currentMana = Math.min((this.currentMana ?? 0) + manaGain, maxMana);
+    let carry = this._manaRegenCarry || 0;
+    const total = gainRaw + carry;
+    const gainInt = Math.floor(total);
+    this._manaRegenCarry = total - gainInt;
+    if (gainInt > 0) {
+      this.currentMana = Math.min((this.currentMana ?? 0) + gainInt, maxMana);
+    }
     this.updateResourceBars();
     this.updateHUD();
   }
@@ -3448,16 +5951,147 @@ maybeDropPoint(enemyOrX, maybeY) {
       }
   }
 
+updateMikoOrbs(delta) {
+  if (!this.mikoOrbs || this.mikoOrbs.length===0) return;
+  const dt = delta;
+  const speedOrbit = 6.5;             // 环绕角速度
+  const radius = 48;                   // 环绕半径
+  const seekSpeed = 220;               // 追踪速度
+
+  for (let i=this.mikoOrbs.length-1;i>=0;i--){
+    const orb = this.mikoOrbs[i];
+    if (!orb || !orb.active) { this.mikoOrbs.splice(i,1); continue; }
+
+    if (orb._state === "orbit") {
+      orb._orbitTimeLeft -= dt;
+      orb._angle += speedOrbit * dt/1000;
+      orb.x = this.player.x + Math.cos(orb._angle) * radius;
+      orb.y = this.player.y + Math.sin(orb._angle) * radius;
+      if (orb._orbitTimeLeft <= 0) {
+        // 切换到追踪
+        const t = this.findNearestEnemy(this.player.x, this.player.y, Number.MAX_VALUE);
+        orb._seekTarget = t || null;
+        orb._state = "seek";
+      }
+    } else if (orb._state === "seek") {
+      const t = orb._seekTarget && orb._seekTarget.active ? orb._seekTarget 
+               : this.findNearestEnemy(orb.x, orb.y, Number.MAX_VALUE);
+      if (!t) {
+        // 没目标则渐隐消失
+        orb._state="done";
+        this.tweens.add({targets:orb, alpha:0, duration:300, onComplete:()=>orb.destroy()});
+        continue;
+      }
+      const ang = Math.atan2(t.y - orb.y, t.x - orb.x);
+      this.physics.velocityFromRotation(ang, seekSpeed, orb.body.velocity);
+      // 朝向
+      orb.setRotation(ang + Math.PI/2);
+    }
+  }
+}
+castDash() {
+  if (!this.canCast("DASH")) return;
+  this.spendCostAndStartCd("DASH");
+  // 技能音效：SPACE 闪避
+  this.playSfx("player_dash");
+
+  // 无敌
+  const dur = this.skillConfig.DASH.durationMs;
+  this.playerInvulnerableUntil = this.time.now + dur;
+
+  // 临时忽略墙碰撞（边界仍生效：setCollideWorldBounds(true) 已存在）
+  if (this.playerWallCollider) this.playerWallCollider.active = false;
+
+  // 位移方向：玩家朝向
+  const facing = this.playerFacing || "down";
+  const dirRad = {down:Math.PI/2, up:-Math.PI/2, left:Math.PI, right:0}[facing] ?? 0;
+  const dx = Math.cos(dirRad) * this.skillConfig.DASH.distance;
+  const dy = Math.sin(dirRad) * this.skillConfig.DASH.distance;
+
+  // Tween 位移
+  const tx = Phaser.Math.Clamp(this.player.x + dx, TILE_SIZE, WORLD_SIZE - TILE_SIZE);
+  const ty = Phaser.Math.Clamp(this.player.y + dy, TILE_SIZE, WORLD_SIZE - TILE_SIZE);
+  const p = this.add.image(this.player.x, this.player.y, "dash_particle").setDepth(10).setAlpha(0.9);
+  this.tweens.add({ targets:p, alpha:0, duration:260, onComplete:()=>p.destroy() });
+
+  this.tweens.add({
+    targets: this.player,
+    x: tx, y: ty,
+    duration: dur, ease: "Cubic.Out",
+    onComplete: ()=>{
+      // 结束：恢复墙碰撞
+      if (this.playerWallCollider) this.playerWallCollider.active = true;
+      
+      // 触发耀光效果
+      this.onSpellCastComplete();
+    }
+  });
+}
+
+
   gameOver() {
+    if (this.isGameOver) return;
+    this.isGameOver = true;
     this.playSfx("pldead");
+    // 暂停一切物理与计时
     this.physics.pause();
-    this.time.removeAllEvents();
-    const text = this.add.text(this.player.x, this.player.y - 12, "GAME OVER", {
-      fontFamily: '"Zpix", monospace', fontSize: "18px", color: "#ff3344",
-      backgroundColor: "#000000aa", padding: { x: 6, y: 4 },
-    }).setOrigin(0.5).setScrollFactor(0);
-    ensureBaseFontSize(text);
-    setFontSizeByScale(text, CAMERA_ZOOM / this.currentZoom);
+    if (this.attackTimer) { this.attackTimer.remove(); this.attackTimer = null; }
+    if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
+    // 音乐静音
+    if (this.battleBgm?.isPlaying) this.battleBgm.pause();
+    // 显示失败覆盖层
+    this.showGameOverOverlay();
+  }
+
+  showGameOverOverlay() {
+    this.clearGameOverOverlay();
+    const bg = this.add.rectangle(GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.65)
+      .setScrollFactor(0).setDepth(50);
+    const title = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 28, "战斗失败", {
+      fontFamily: '"Zpix", monospace', fontSize: "20px", color: "#ff3344",
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
+    ensureBaseFontSize(title);
+    const prompt = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 + 10, "按 Enter 或 R 重开，按 N 返回标题", {
+      fontFamily: '"Zpix", monospace', fontSize: "14px", color: "#ffd0d0",
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
+    ensureBaseFontSize(prompt);
+
+    this.gameOverOverlayBackground = bg;
+    this.gameOverOverlayElements = [title, prompt];
+    this.updateOverlayScale();
+
+    this.gameOverDecisionHandler = (e) => {
+      if (!e) return;
+      if (e.code === "Enter" || e.code === "KeyR") this.restartFromGameOver();
+      else if (e.code === "KeyN" || e.code === "Escape") this.exitToStartFromGameOver();
+    };
+    this.input.keyboard.on("keydown", this.gameOverDecisionHandler, this);
+  }
+  clearGameOverOverlay() {
+    if (this.gameOverOverlayElements?.length) this.gameOverOverlayElements.forEach((el)=> el.destroy());
+    this.gameOverOverlayElements = [];
+    if (this.gameOverOverlayBackground) { this.gameOverOverlayBackground.destroy(); this.gameOverOverlayBackground = null; }
+    if (this.gameOverDecisionHandler) { this.input.keyboard.off("keydown", this.gameOverDecisionHandler, this); this.gameOverDecisionHandler = null; }
+  }
+  restartFromGameOver() {
+    this.clearGameOverOverlay();
+    this.isGameOver = false;
+    // 恢复音乐（新场景会自行创建/播放）
+    if (this.battleBgm?.isPaused) this.battleBgm.stop?.();
+    // 需求：死亡后的重开应完全重新加载界面
+    // 使用浏览器刷新来确保所有状态（包括全局/静态单例）被重置
+    if (typeof window !== "undefined" && window.location) {
+      window.location.reload();
+    } else {
+      // 兜底：若无法访问 window，则退回到场景重启
+      this.scene.restart();
+    }
+  }
+  exitToStartFromGameOver() {
+    this.clearGameOverOverlay();
+    this.isGameOver = false;
+    if (this.battleBgm?.isPaused) this.battleBgm.stop?.();
+    this.scene.start("StartScene");
   }
 
   updateStatPanel() {
@@ -3826,19 +6460,64 @@ maybeDropPoint(enemyOrX, maybeY) {
     });
 
     const maxAttempts = 100;
+    const preferredPicks = {
+      [ITEM_TIERS.MID]: 0,
+      [ITEM_TIERS.LEGENDARY]: 0,
+    };
     let attempts = 0;
     while (offers.length < SHOP_ITEM_COUNT && attempts < maxAttempts) {
       attempts += 1;
-      const tier = this.rollShopTier(ownedBasics, ownedMid);
-      const weightedCandidates = this.getWeightedCandidatesForTier(
-        tier,
-        ownedBasics,
-        ownedMid,
-        ownedCounts,
-        usedIds,
-      );
+      const initialTier = this.rollShopTier(ownedBasics, ownedMid);
+      const tierPriority = initialTier === ITEM_TIERS.LEGENDARY
+        ? [ITEM_TIERS.LEGENDARY, ITEM_TIERS.MID, ITEM_TIERS.BASIC]
+        : initialTier === ITEM_TIERS.MID
+          ? [ITEM_TIERS.MID, ITEM_TIERS.BASIC]
+          : [ITEM_TIERS.BASIC];
 
-      let chosenId = this.pickWeightedCandidate(weightedCandidates);
+      let tier = initialTier;
+      let weightedCandidates = [];
+      for (const candidateTier of tierPriority) {
+        const candidates = this.getWeightedCandidatesForTier(
+          candidateTier,
+          ownedBasics,
+          ownedMid,
+          ownedCounts,
+          usedIds,
+        );
+        if (candidates.length > 0) {
+          weightedCandidates = candidates;
+          tier = candidateTier;
+          break;
+        }
+      }
+
+      if (weightedCandidates.length === 0) {
+        const fallbackBasics = ITEMS_BY_TIER[ITEM_TIERS.BASIC]
+          .map((item) => item.id)
+          .filter((id) => !usedIds.has(id));
+        if (fallbackBasics.length === 0) break;
+        weightedCandidates = fallbackBasics.map((id) => ({
+          id,
+          weight: 1,
+          preferred: false,
+        }));
+        tier = ITEM_TIERS.BASIC;
+      }
+
+      let candidatePool = weightedCandidates;
+      if (tier === ITEM_TIERS.MID || tier === ITEM_TIERS.LEGENDARY) {
+        const limit = tier === ITEM_TIERS.MID ? 1 : 1;
+        if ((preferredPicks[tier] ?? 0) >= limit) {
+          const nonPreferred = weightedCandidates.filter((entry) => !entry.preferred);
+          if (nonPreferred.length > 0) candidatePool = nonPreferred;
+        } else if (shopRandom() < 0.4) {
+          const nonPreferred = weightedCandidates.filter((entry) => !entry.preferred);
+          if (nonPreferred.length > 0) candidatePool = nonPreferred;
+        }
+      }
+
+      let chosenId = this.pickWeightedCandidate(candidatePool);
+      if (!chosenId) chosenId = this.pickWeightedCandidate(weightedCandidates);
       if (!chosenId && tier === ITEM_TIERS.BASIC) {
         const fallback = ITEMS_BY_TIER[tier]
           .map((item) => item.id)
@@ -3849,6 +6528,10 @@ maybeDropPoint(enemyOrX, maybeY) {
       usedIds.add(chosenId);
       const item = this.getEquipmentDefinition(chosenId);
       const tierForOffer = item?.tier ?? tier;
+      if (item && (tier === ITEM_TIERS.MID || tier === ITEM_TIERS.LEGENDARY)) {
+        const entry = weightedCandidates.find((candidate) => candidate.id === chosenId);
+        if (entry?.preferred) preferredPicks[tier] = (preferredPicks[tier] ?? 0) + 1;
+      }
       offers.push({ id: chosenId, tier: tierForOffer });
     }
 
@@ -3858,17 +6541,20 @@ maybeDropPoint(enemyOrX, maybeY) {
   }
 
   rollShopTier(ownedBasics, ownedMid) {
-    if (ownedMid.length > 0 && Math.random() < 0.5) return ITEM_TIERS.LEGENDARY;
-    if (ownedBasics.length > 0 && Math.random() < 0.5) return ITEM_TIERS.MID;
+    if (ownedMid.length > 0 && shopRandom() < 0.5) return ITEM_TIERS.LEGENDARY;
+    if (ownedBasics.length > 0 && shopRandom() < 0.5) return ITEM_TIERS.MID;
     return ITEM_TIERS.BASIC;
   }
-
   getCandidatesForTier(tier, ownedBasics, ownedMid) {
     if (tier === ITEM_TIERS.MID) {
       return this.collectUpgradeCandidates(ownedBasics, ITEM_TIERS.MID);
     }
     if (tier === ITEM_TIERS.LEGENDARY) {
-      return this.collectUpgradeCandidates(ownedMid, ITEM_TIERS.LEGENDARY);
+      const candidates = new Set([
+        ...this.collectUpgradeCandidates(ownedMid, ITEM_TIERS.LEGENDARY),
+        ...this.collectUpgradeCandidates(ownedBasics, ITEM_TIERS.LEGENDARY),
+      ]);
+      return Array.from(candidates);
     }
     return ITEMS_BY_TIER[ITEM_TIERS.BASIC].map((item) => item.id);
   }
@@ -3909,21 +6595,37 @@ maybeDropPoint(enemyOrX, maybeY) {
   }
 
   collectGuaranteedItems(ownedCounts) {
-    const tierPriority = {
-      [ITEM_TIERS.LEGENDARY]: 3,
-      [ITEM_TIERS.MID]: 2,
-      [ITEM_TIERS.BASIC]: 1,
+    const tierOrder = [ITEM_TIERS.LEGENDARY, ITEM_TIERS.MID, ITEM_TIERS.BASIC];
+    const maxPerTier = {
+      [ITEM_TIERS.LEGENDARY]: Math.min(2, SHOP_ITEM_COUNT),
+      [ITEM_TIERS.MID]: Math.min(1, SHOP_ITEM_COUNT),
+      [ITEM_TIERS.BASIC]: 0,
     };
-    return Object.values(EQUIPMENT_DATA)
-      .filter((item) => this.hasAllComponentsForItem(item, ownedCounts))
-      .sort((a, b) => {
-        const tierDiff = (tierPriority[b.tier] ?? 0) - (tierPriority[a.tier] ?? 0);
-        if (tierDiff !== 0) return tierDiff;
-        const costDiff = (a.cost ?? 0) - (b.cost ?? 0);
-        if (costDiff !== 0) return costDiff;
-        return a.id.localeCompare(b.id);
-      })
-      .map((item) => item.id);
+    const craftableByTier = new Map();
+
+    Object.values(EQUIPMENT_DATA).forEach((item) => {
+      if (!this.hasAllComponentsForItem(item, ownedCounts)) return;
+      const tierBucket = craftableByTier.get(item.tier) ?? [];
+      tierBucket.push(item);
+      craftableByTier.set(item.tier, tierBucket);
+    });
+
+    const guaranteed = [];
+    tierOrder.forEach((tier) => {
+      if (guaranteed.length >= SHOP_ITEM_COUNT) return;
+      const bucket = craftableByTier.get(tier);
+      if (!bucket?.length) return;
+      const allowance = Math.min(
+        maxPerTier[tier] ?? 0,
+        SHOP_ITEM_COUNT - guaranteed.length,
+        bucket.length,
+      );
+      if (allowance <= 0) return;
+      const picks = randomSample(bucket, allowance, shopRandom);
+      picks.forEach((item) => guaranteed.push(item.id));
+    });
+
+    return guaranteed;
   }
 
   getComponentMatchInfo(item, ownedCounts) {
@@ -3951,9 +6653,22 @@ maybeDropPoint(enemyOrX, maybeY) {
       const item = this.getEquipmentDefinition(id);
       if (!item) return;
       const info = this.getComponentMatchInfo(item, ownedCounts);
-      if (info.complete) return;
-      const weight = item.buildsFrom?.length ? 1 + info.matched * 0.1 : 1;
-      candidates.push({ id, weight: Math.max(0, weight) });
+      if (info.total > 0 && info.complete) return;
+
+      let baseWeight = 1;
+      if (tier === ITEM_TIERS.MID) {
+        if (info.matched > 0) baseWeight += info.matched * 0.25;
+      } else if (tier === ITEM_TIERS.LEGENDARY) {
+        if (info.matched > 0) baseWeight += info.matched * 0.4;
+      }
+
+      const randomBonus = shopRandom() * (tier === ITEM_TIERS.BASIC ? 0.5 : 0.9);
+      const finalWeight = Math.max(0.1, baseWeight + randomBonus);
+      candidates.push({
+        id,
+        weight: finalWeight,
+        preferred: info.matched > 0,
+      });
     });
     return candidates;
   }
@@ -3962,7 +6677,7 @@ maybeDropPoint(enemyOrX, maybeY) {
     if (!Array.isArray(candidates) || candidates.length === 0) return null;
     const totalWeight = candidates.reduce((sum, entry) => sum + entry.weight, 0);
     if (totalWeight <= 0) return null;
-    let roll = Math.random() * totalWeight;
+    let roll = shopRandom() * totalWeight;
     for (const entry of candidates) {
       roll -= entry.weight;
       if (roll <= 0) return entry.id;
@@ -4226,11 +6941,12 @@ maybeDropPoint(enemyOrX, maybeY) {
     return this.getOwnedItemIds().filter((id) => this.getEquipmentDefinition(id)?.tier === tier);
   }
 
-  positionPreviewUnderSlot1() {
+  positionPreviewUnderSlot(slotIndex) {
     const ui = this.equipmentUi;
-    if (!ui || !ui.previewElement || !ui.previewImage || !ui.slots?.[0]) return;
+    if (!ui || !ui.previewElement || !ui.previewImage) return;
+    if (!Number.isInteger(slotIndex) || slotIndex < 0 || !ui.slots?.[slotIndex]) return;
 
-    const slotEl = ui.slots[0].element;
+    const slotEl = ui.slots[slotIndex].element;
     const rect = slotEl.getBoundingClientRect();
     const previewEl = ui.previewElement;
 
@@ -4250,7 +6966,11 @@ maybeDropPoint(enemyOrX, maybeY) {
   }
 
   bindPreviewRepositionEvents() {
-    this.previewRepositionHandler = () => this.positionPreviewUnderSlot1();
+    this.previewRepositionHandler = () => {
+      if (Number.isInteger(this.previewSlotIndex)) {
+        this.positionPreviewUnderSlot(this.previewSlotIndex);
+      }
+    };
     window.addEventListener("resize", this.previewRepositionHandler);
     window.addEventListener("scroll", this.previewRepositionHandler, true);
   }
@@ -4353,7 +7073,7 @@ createBossUI(name, title) {
   // 用 Graphics 而不是 Rectangle/Container
   const gfx = this.add.graphics().setDepth(depth);
 
-  // 名字文本（放在血条上方）
+  // 名字文本（放在血条上方）"
   const nameText = this.add.text(0, 0, name || "", {
     fontFamily: '"Zpix", monospace',
     fontSize: "10px",
@@ -4389,7 +7109,7 @@ createBossUI(name, title) {
     const innerH = barH - 2;
 
     gfx.fillStyle(0xff3333, 1);
-    gfx.fillRect(innerX, innerY, innerW, innerH);
+    gfx.fillRect(innerX, innerY, innerW, barH - 2);
   }
 
 updateBossUI(target) {
@@ -4439,17 +7159,35 @@ updateBossUI(target) {
 
   /* ==== Utsuho 专属：工具函数 ==== */
   tilesToPx(tiles) { return tiles * TILE_SIZE; }
-  setSpriteCircleHit(b, judgeTiles) {
-    const r = Math.max(0, (judgeTiles || 0) * TILE_SIZE / 2);
-    b.hitRadius = r;
-    const fw = b.width || TILE_SIZE, fh = b.height || TILE_SIZE;
-    const offX = fw/2 - r, offY = fh/2 - r;
-    if (r > 0) b.body.setCircle(r, offX, offY);
-    else b.body.setSize(fw, fh);
+  setSpriteCircleHit(sprite, judgeTiles) {
+    if (!sprite || !sprite.body) return;
+    const diameterTiles = Number.isFinite(judgeTiles) ? judgeTiles : 0;
+    const radiusPx = Math.max(0, (diameterTiles * TILE_SIZE) / 2);
+    sprite.hitRadius = radiusPx;
+    const frameW = sprite.displayWidth || sprite.width || TILE_SIZE;
+    const frameH = sprite.displayHeight || sprite.height || TILE_SIZE;
+    const offsetX = frameW / 2 - radiusPx;
+    const offsetY = frameH / 2 - radiusPx;
+    if (radiusPx > 0 && typeof sprite.body.setCircle === "function") {
+      sprite.body.setCircle(radiusPx, offsetX, offsetY);
+    } else if (sprite.body.setSize) {
+      sprite.body.setSize(frameW, frameH);
+      if (sprite.body.setOffset) sprite.body.setOffset(0, 0);
+    }
   }
   setDisplaySizeByTiles(sprite, sizeTiles) {
     const px = this.tilesToPx(sizeTiles || 1);
     sprite.setDisplaySize(px, px);
+  }
+
+  // 等比例缩放：以宽度（tilesWide）为基准，不压缩纵横比
+  setDisplayWidthByTilesKeepAspect(sprite, tilesWide) {
+    if (!sprite) return;
+    const targetW = this.tilesToPx(tilesWide || 1);
+    const frameW = sprite.width || sprite.displayWidth || TILE_SIZE;
+    if (frameW <= 0) { sprite.setDisplaySize(targetW, targetW); return; }
+    const scale = targetW / frameW;
+    sprite.setScale(scale);
   }
   aimUnit(fromX, fromY, toX, toY) {
     const dx = toX - fromX, dy = toY - fromY;
@@ -4585,7 +7323,6 @@ updateBossUI(target) {
     const now = this.getBossElapsed();
     ai.stateChargeUntil = now + ms;
     ai.state = ai.mode === 2 ? "m2_charge" : "m3_charge";
-    this.playSfx("enemycharge");
     // 提示框（在Boss下方，不遮挡Boss）
     if (boss.warningSprite) { boss.warningSprite.destroy(); boss.warningSprite = null; }
     const warn = this.add.image(boss.x, boss.y, "utsuho_warning").setDepth(boss.depth - 1);
@@ -4598,7 +7335,6 @@ updateBossUI(target) {
     const ai = boss.ai;
     const now = this.getBossElapsed();
     ai.stateChargeUntil = now + ms;
-    this.playSfx("enemycharge");
   }
 
   /* ==== Utsuho：Mode1（40秒）==== */
@@ -4622,8 +7358,6 @@ updateBossUI(target) {
       ai.chargeEndsAt = now + 1000;
       ai.dashTarget = { x: this.player.x, y: this.player.y }; // 记录当前自机坐标
       ai.state = "charge";
-
-      this.playSfx("enemycharge");
       return;
     }
 
@@ -4990,7 +7724,7 @@ updateBossUI(target) {
   }
   // 在指定坐标发环；sideSpeed 可为常数或函数(angleDeg)->值
   fireRingAt(cx, cy, params, magicDamage) {
-    const { key, sizeTiles, judgeTiles, count, phaseDeg, forwardSpeed, accel, sideSpeed } = params;
+    const { key, sizeTiles, judgeTiles, count, phaseDeg, forwardSpeed, accel, sideSpeed, owner } = params;
     for (let i = 0; i < count; i += 1) {
       const angDeg = (phaseDeg + i * (360 / count)) % 360;
       const side = (typeof sideSpeed === "function") ? sideSpeed(angDeg) : (sideSpeed || 0);
@@ -5003,11 +7737,12 @@ updateBossUI(target) {
         forwardSpeed,
         accel,
         sideSpeed: side,
+        owner,
       }, magicDamage, true);
     }
   }
   spawnBossBullet(opts, magicDamage, withTrail = false) {
-    const { key, sizeTiles, judgeTiles, from, dirAngleDeg, forwardSpeed, accel, sideSpeed } = opts;
+    const { key, sizeTiles, judgeTiles, from, dirAngleDeg, forwardSpeed, accel, sideSpeed, owner } = opts;
     const b = this.physics.add.image(from.x, from.y, key).setDepth(8);
     b.setActive(true).setVisible(true);
     b.body.setAllowGravity(false);
@@ -5020,6 +7755,7 @@ updateBossUI(target) {
     b.accel = accel || 0;
     b.sideSpeed = sideSpeed || 0;
     b.magicDamage = magicDamage || 0;
+    if (owner) b.owner = owner;
     this.bossBullets.add(b);
     if (withTrail) {
       // 复用玩家子弹轨迹作为特效
