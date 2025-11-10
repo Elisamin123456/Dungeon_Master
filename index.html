@@ -683,8 +683,8 @@
     .stats-title.pause { color: #ffeb3b; }
 
     .stats-bars {
-      /* Increased side padding */
-      padding: 12px 28px 16px 28px;
+      /* Increased side padding per spec: 6px 20px 10px 20px */
+      padding: 6px 20px 10px 20px;
       box-sizing: border-box;
       position: relative;
       flex: 1 1 auto;
@@ -708,7 +708,7 @@
       min-height: 28px;
     }
     .stats-label {
-      padding-left: 28px; /* align with ticks and inner paddings */
+      padding-left: 20px; /* align with ticks and inner paddings */
       color: #ffffff;
       font-family: "Zpix", monospace;
       font-size: 16px;
@@ -751,8 +751,8 @@
     /* Optional baseline ticks; left/right margins 20px inside .stats-bars */
     .stats-scale {
       position: absolute;
-      left: 28px;
-      right: 28px;
+      left: 20px;
+      right: 20px;
       top: 46px; /* roughly below the title; inside stats area */
       bottom: 60px; /* leave space for buttons */
       pointer-events: none;
