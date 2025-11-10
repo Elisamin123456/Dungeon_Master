@@ -950,6 +950,13 @@ class GameScene extends Phaser.Scene {
     this.gameOverOverlayElements = [];
     this.gameOverOverlayBackground = null;
     this.gameOverDecisionHandler = null;
+    // Run stats for HTML overlay
+    this.runStats = {
+      dealtPhysical: 0,
+      dealtMagic: 0,
+      taken: 0,
+      heal: 0,
+    };
     this.qTalismans = null;
     this.lastAimAngle = Math.PI / 2;
     this.playerFacing = "down";
@@ -3442,7 +3449,8 @@ updateSpellbladeOverlays() {
     if (this.battleBgm?.isPlaying) this.battleBgm.pause();
     if (this.attackTimer) this.attackTimer.paused = true;
     if (this.spawnTimer) this.spawnTimer.paused = true;
-    this.showPauseOverlay();
+    // Use unified HTML overlay for pause
+    this.showHtmlStatsOverlay("pause");
     this.playSfx("pause");
   }
   resumeGame() {
@@ -3457,10 +3465,12 @@ updateSpellbladeOverlays() {
     if (this.attackTimer) this.attackTimer.paused = false;
     if (this.spawnTimer) this.spawnTimer.paused = false;
     this.clearPauseOverlay();
+    if (typeof this.hideHtmlStatsOverlay === "function") this.hideHtmlStatsOverlay();
   }
   exitToStartFromPause() {
     if (!this.isPaused) return;
     this.clearPauseOverlay();
+    if (typeof this.hideHtmlStatsOverlay === "function") this.hideHtmlStatsOverlay();
     this.isPaused = false;
     this.time.timeScale = 1;
     this.physics.resume();
@@ -4529,14 +4539,8 @@ updateEnemies() {
   endRunVictory() {
     this.physics.pause();
     if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
-    if (this.attackTimer) { this.attackTimer.remove(); this.attackTimer = null; }
-    const text = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2, "Adventure Complete", {
-      fontFamily: '"Zpix", monospace', fontSize: "20px", color: "#66ff99",
-      backgroundColor: "#000000aa", padding: { x: 8, y: 6 },
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(50);
-    ensureBaseFontSize(text);
-    setFontSizeByScale(text, CAMERA_ZOOM / this.currentZoom);
-  }
+    this.time.timeScale = 0;
+    if (typeof this.showHtmlStatsOverlay === "function") this.showHtmlStatsOverlay("win");
 
   updateHUD() {
       // Boss模式下不显示倒计时
@@ -4625,6 +4629,19 @@ showDamageNumber(x, y, amount, type = "physical", options = {}) {
   else if (type === "true") size = baseTrue;
   else if (type === "crit" || type === "spellcrit") size = baseCrit;
 
+  // Accumulate run stats for overlay
+  if (typeof amount === "number" && Number.isFinite(amount) && amount > 0) {
+    if (type === "heal") {
+      // handled in showHealNumber
+    } else if (incoming) {
+      this.runStats.taken = Math.max(0, (this.runStats.taken || 0) + Math.round(amount));
+    } else {
+      const isMagicType = (type === "magic" || type === "spellcrit");
+      if (isMagicType) this.runStats.dealtMagic = Math.max(0, (this.runStats.dealtMagic || 0) + Math.round(amount));
+      else this.runStats.dealtPhysical = Math.max(0, (this.runStats.dealtPhysical || 0) + Math.round(amount));
+    }
+  }
+
   const text = this.add.text(x, y, `${displayValue}`, {
     fontFamily: '"Zpix", monospace',
     fontSize: `${size}px`,              // ← 使用上面的 size
@@ -4675,6 +4692,9 @@ showDamageNumber(x, y, amount, type = "physical", options = {}) {
 }
 
 showHealNumber(x, y, amount) {
+  if (typeof amount === "number" && Number.isFinite(amount) && amount > 0) {
+    this.runStats.heal = Math.max(0, (this.runStats.heal || 0) + Math.round(amount));
+  }
   this.showDamageNumber(x, y, amount, "heal", { incoming: false });
 }
 
@@ -6896,7 +6916,8 @@ castDash() {
     // 音乐静音
     if (this.battleBgm?.isPlaying) this.battleBgm.pause();
     // 显示失败覆盖层
-    this.showGameOverOverlay();
+    this.time.timeScale = 0;
+    if (typeof this.showHtmlStatsOverlay === "function") this.showHtmlStatsOverlay("fail");
   }
 
   showGameOverOverlay() {
@@ -8999,3 +9020,75 @@ const config = {
 window.addEventListener("load", () => {
   new Phaser.Game(config); // eslint-disable-line no-new
 });
+
+// ==== Attach HTML Stats Overlay helpers to GameScene prototype ====
+GameScene.prototype.showHtmlStatsOverlay = function(result = "fail") {
+  try {
+    const overlay = typeof document !== "undefined" ? document.getElementById("stats-overlay") : null;
+    if (!overlay) return;
+    const titleEl = overlay.querySelector("#stats-title");
+    const restartBtn = overlay.querySelector("#stats-restart");
+    const exitBtn = overlay.querySelector("#stats-exit");
+
+    if (titleEl) {
+      titleEl.classList.remove("win", "fail", "pause");
+      if (result === "pause") { titleEl.textContent = "游戏暂停"; titleEl.classList.add("pause"); }
+      else if (result === "win") { titleEl.textContent = "通关成功"; titleEl.classList.add("win"); }
+      else { titleEl.textContent = "通关失败"; titleEl.classList.add("fail"); }
+    }
+
+    const dealtPhys = Math.max(0, Math.round(this.runStats?.dealtPhysical || 0));
+    const dealtMagic = Math.max(0, Math.round(this.runStats?.dealtMagic || 0));
+    const dealtTotal = dealtPhys + dealtMagic;
+    const taken = Math.max(0, Math.round(this.runStats?.taken || 0));
+    const heal = Math.max(0, Math.round(this.runStats?.heal || 0));
+    const gold = Math.max(0, Math.round(this.playerPoints || 0));
+    const maxVal = Math.max(1, dealtTotal, taken, gold, heal);
+
+    const rows = overlay.querySelectorAll(".stats-row");
+    rows.forEach((row) => {
+      const key = row.getAttribute("data-key");
+      const outer = row.querySelector(".stats-bar-outer");
+      const valueEl = row.querySelector('[data-value]');
+      if (!outer || !valueEl) return;
+      let val = 0;
+      if (key === "dealt") val = dealtTotal; else if (key === "taken") val = taken; else if (key === "gold") val = gold; else if (key === "heal") val = heal;
+      const p = Math.max(0, Math.min(1, maxVal > 0 ? (val / maxVal) : 0));
+      const lp = p * 100;
+      outer.style.width = `${lp.toFixed(2)}%`;
+      outer.style.borderWidth = (lp <= 0.01) ? "0" : "2px";
+
+      if (key === "dealt") {
+        const segPhys = row.querySelector('[data-seg="phys"]');
+        const segMagic = row.querySelector('[data-seg="magic"]');
+        const total = Math.max(1, dealtTotal);
+        const partPhys = Math.max(0, Math.min(1, dealtPhys / total));
+        const partMagic = Math.max(0, Math.min(1, dealtMagic / total));
+        if (segPhys) { segPhys.style.left = `0%`; segPhys.style.width = `${(partPhys * 100).toFixed(2)}%`; }
+        if (segMagic) { segMagic.style.left = `${(partPhys * 100).toFixed(2)}%`; segMagic.style.width = `${(partMagic * 100).toFixed(2)}%`; }
+      } else {
+        const single = row.querySelector('[data-fill]');
+        if (single) { single.style.left = `0%`; single.style.width = `100%`; }
+      }
+
+      valueEl.textContent = `${val}`;
+      valueEl.style.left = `100%`;
+      valueEl.style.transform = "translate(6px, -50%)";
+      valueEl.style.textAlign = "left";
+    });
+
+    const restart = () => { overlay.style.display = "none"; this.isGameOver = false; this.time.timeScale = 1; if (typeof window !== "undefined" && window.location) window.location.reload(); else this.scene.restart(); };
+    const exit = () => { overlay.style.display = "none"; this.isGameOver = false; this.time.timeScale = 1; this.scene.start("StartScene"); };
+    if (restartBtn) restartBtn.onclick = restart;
+    if (exitBtn) exitBtn.onclick = exit;
+
+    overlay.style.display = "block";
+  } catch (_) {}
+};
+
+GameScene.prototype.hideHtmlStatsOverlay = function() {
+  try {
+    const overlay = typeof document !== "undefined" ? document.getElementById("stats-overlay") : null;
+    if (overlay) overlay.style.display = "none";
+  } catch (_) {}
+};
