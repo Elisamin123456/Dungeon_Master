@@ -5444,12 +5444,16 @@ castR() {
     const enemies = (this.enemies && typeof this.enemies.getChildren === "function")
       ? this.enemies.getChildren()
       : [];
-    if (!enemies.length) return;
+    const corpses = (this.rinCorpses && typeof this.rinCorpses.getChildren === "function")
+      ? this.rinCorpses.getChildren()
+      : [];
+    const all = enemies.concat(corpses);
+    if (!all.length) return;
 
     const rangeSq = rangePixels * rangePixels;
     const candidates = [];
-    for (let i = 0; i < enemies.length; i += 1) {
-      const enemy = enemies[i];
+    for (let i = 0; i < all.length; i += 1) {
+      const enemy = all[i];
       if (!enemy || !enemy.active) continue;
       if (enemy === primaryTarget) continue;
       const distSq = Phaser.Math.Distance.Squared(originX, originY, enemy.x, enemy.y);
@@ -5491,15 +5495,21 @@ castR() {
   }
 
   findNearestEnemy(x, y, range = Number.MAX_VALUE) {
-    const enemies = this.enemies.getChildren();
+    const enemies = (this.enemies && typeof this.enemies.getChildren === "function")
+      ? this.enemies.getChildren()
+      : [];
+    const corpses = (this.rinCorpses && typeof this.rinCorpses.getChildren === "function")
+      ? this.rinCorpses.getChildren()
+      : [];
     let nearest = null;
     const maxRangeSq = (range === Number.MAX_VALUE) ? Number.MAX_VALUE : range * range;
     let nearestDist = maxRangeSq;
-    for (let i=0;i<enemies.length;i+=1) {
-      const enemy = enemies[i];
-      if (!enemy.active) continue;
-      const distanceSq = Phaser.Math.Distance.Squared(x, y, enemy.x, enemy.y);
-      if (distanceSq <= nearestDist) { nearest = enemy; nearestDist = distanceSq; }
+    const candidates = enemies.concat(corpses);
+    for (let i=0;i<candidates.length;i+=1) {
+      const obj = candidates[i];
+      if (!obj || !obj.active) continue;
+      const distanceSq = Phaser.Math.Distance.Squared(x, y, obj.x, obj.y);
+      if (distanceSq <= nearestDist) { nearest = obj; nearestDist = distanceSq; }
     }
     return nearest;
   }
@@ -7056,6 +7066,11 @@ maybeDropPoint(enemyOrX, maybeY) {
           const vx = ux * fs + (-uy) * side;
           const vy = uy * fs + (ux) * side;
           b.body.setVelocity(vx, vy);
+
+          // 让 Rin 的 needle 子弹贴图方向与运动方向一致（贴图正方向为正上）
+          if (b.texture && b.texture.key === "r_bullet_needle") {
+            b.setRotation(Math.atan2(vy, vx) + Math.PI / 2);
+          }
 
           // 新增：核弹轨迹生成
           if (b.texture.key === "u_bullet_nuclearbomb") {
