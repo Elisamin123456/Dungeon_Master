@@ -1234,7 +1234,7 @@ this.playerWallCollider = null; // 保存玩家-墙体碰撞体
 this.weaponHitbox = this.physics.add.image(this.player.x, this.player.y, "weapon").setVisible(false).setDepth(8);
 this.weaponHitbox.body.setAllowGravity(false);
 this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.height/2-8);
-this.physics.add.overlap(this.weaponHitbox, this.enemies, (hitbox, enemy)=>{
+ this.physics.add.overlap(this.weaponHitbox, this.enemies, (hitbox, enemy)=>{
   if (!enemy.active || this.playerCombatMode!=="melee") return;
   const now = this.time.now;
   if (!enemy.lastOrbHitAt || now - enemy.lastOrbHitAt >= 300) {
@@ -1433,6 +1433,10 @@ this.physics.add.overlap(this.weaponHitbox, this.enemies, (hitbox, enemy)=>{
       }
     }
   }
+});
+// 近战命中也可以清理 Rin 尸体（不生成 round 子弹）
+this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
+  if (corpse && corpse.active) this.killRinCorpse(corpse, false);
 });
 
     if (this.debugShopMode) {
@@ -3441,6 +3445,8 @@ updateSpellbladeOverlays() {
     this.qTalismans = this.physics.add.group();
     this.loot = this.physics.add.group();
     this.places = this.physics.add.staticGroup();
+    // Rin 尸体（可被击杀的子弹）专用组
+    this.rinCorpses = this.physics.add.group();
 
     this.physics.add.collider(this.enemies, this.wallGroup);
     this.physics.add.collider(this.enemies, this.enemies);
@@ -3454,6 +3460,20 @@ updateSpellbladeOverlays() {
         if (bullet && bullet.active) this.spawnWallHitExplosion(bullet.x, bullet.y);
         this.destroyBullet(bullet);
       });
+    }
+    // 玩家子弹可击杀尸体（不生成 round 子弹）
+    this.physics.add.overlap(this.bullets, this.rinCorpses, (_bullet, corpse) => {
+      if (corpse && corpse.active) this.killRinCorpse(corpse, false);
+    }, null, this);
+    // 符札也可清理尸体
+    this.physics.add.overlap(this.qTalismans, this.rinCorpses, (_tal, corpse) => {
+      if (corpse && corpse.active) this.killRinCorpse(corpse, false);
+    }, null, this);
+    // 尸体撞墙 -> 自爆并生成 round 子弹
+    if (this.wallGroup) {
+      this.physics.add.collider(this.rinCorpses, this.wallGroup, (corpse, _wall) => {
+        if (corpse && corpse.active) this.killRinCorpse(corpse, true);
+      }, null, this);
     }
     this.physics.add.overlap(this.player, this.enemies, this.handlePlayerEnemyContact, null, this);
 
@@ -5244,6 +5264,10 @@ castR() {
 
   // 准备物理组
   if (!this.mikoOrbsGroup) this.mikoOrbsGroup = this.physics.add.group();
+  // 御币生成后，确保也能清理 Rin 尸体
+  this.physics.add.overlap(this.mikoOrbsGroup, this.rinCorpses, (_orb, corpse) => {
+    if (corpse && corpse.active) this.killRinCorpse(corpse, false);
+  }, null, this);
 
   // 每颗梦想妙珠的基础伤害加成
   const orbBaseFlat = 200;
@@ -9444,17 +9468,14 @@ updateBossUI(target) {
   }
 
   spawnRinCorpse(x, y) {
-    const s = this.enemies.create(x, y, "r_yousei_corpse");
+    const s = this.physics.add.image(x, y, "r_yousei_corpse");
     if (!s) return null;
     s.setDepth(6);
     s.body.setAllowGravity(false);
-    // 设定为小型召唤单位，HP=1
+    this.rinCorpses.add(s);
+    // 标记：可被击杀子弹（不是怪）
     s.isRinCorpse = true;
-    s.enemyType = "rin_corpse";
-    s.enemyKind = "summon";
     s.maxHp = 1; s.hp = 1;
-    s.armor = 0; s.def = 0;
-    s.attackDamage = 1; s.contactDamage = 1; s.abilityPower = 0;
     // 命中判定：约 1 tile
     const radius = TILE_SIZE / 2;
     if (s.body?.setCircle) {
@@ -9467,22 +9488,25 @@ updateBossUI(target) {
     return s;
   }
 
-  explodeRinCorpse(corpse) {
+  killRinCorpse(corpse, spawnRoundBullet) {
     if (!corpse || !corpse.active) return;
-    // 自爆 -> 生成一个朝向自机的 round 子弹
-    const ang = Phaser.Math.Angle.Between(corpse.x, corpse.y, this.player.x, this.player.y);
-    const angDeg = Phaser.Math.RadToDeg(ang);
-    this.spawnBossBullet({
-      key: "r_bullet_round",
-      sizeTiles: BOSS_RIN_CONFIG.hitboxes.bullets.round.size,
-      judgeTiles: BOSS_RIN_CONFIG.hitboxes.bullets.round.judge,
-      from: { x: corpse.x, y: corpse.y },
-      dirAngleDeg: angDeg,
-      forwardSpeed: 150,
-      owner: this.boss,
-    }, BOSS_RIN_CONFIG.bulletMagicDamage);
-    // 销毁尸体
-    corpse.active = false; corpse.body.enable = false; corpse.destroy();
+    if (spawnRoundBullet) {
+      const ang = Phaser.Math.Angle.Between(corpse.x, corpse.y, this.player.x, this.player.y);
+      const angDeg = Phaser.Math.RadToDeg(ang);
+      this.spawnBossBullet({
+        key: "r_bullet_round",
+        sizeTiles: BOSS_RIN_CONFIG.hitboxes.bullets.round.size,
+        judgeTiles: BOSS_RIN_CONFIG.hitboxes.bullets.round.judge,
+        from: { x: corpse.x, y: corpse.y },
+        dirAngleDeg: angDeg,
+        forwardSpeed: 150,
+        owner: this.boss,
+      }, BOSS_RIN_CONFIG.bulletMagicDamage);
+    }
+    corpse.active = false;
+    if (corpse.body) corpse.body.enable = false;
+    try { if (corpse.trailTimer) corpse.trailTimer.remove(false); } catch (_) {}
+    corpse.destroy();
   }
 
 }
