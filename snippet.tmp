@@ -1,0 +1,22 @@
+﻿        <div class="stats-card" style="width:600px;max-width:95%;height:calc(480px - 24px);background:linear-gradient(180deg,#1a1423,#0f0b16);border:2px solid #fff;box-shadow:0 16px 40px rgba(0,0,0,0.45);padding:18px 24px;color:#fff;font-family:'Zpix',monospace;display:flex;flex-direction:column;gap:18px;">
+          <div id="stats-title" class="stats-title" style="font-size:26px;text-align:center;letter-spacing:2px;text-shadow:2px 2px 0 rgba(0,0,0,0.6);">统计</div>
+          <div class="stats-bars" style="display:flex;flex-direction:column;gap:10px;padding:4px 0 8px 0;">
+            ${[
+              { key:'dealt', label:'造成伤害', cls:'damage' },
+              { key:'taken', label:'受到伤害', cls:'taken' },
+              { key:'gold',  label:'总经济',   cls:'gold'  },
+              { key:'heal',  label:'总治疗量', cls:'heal'  },
+            ].map(({key,label,cls}) => `
+            <div class="stats-row" style="display:grid;grid-template-columns:100px 1fr 90px;align-items:center;gap:10px;">
+              <div class="stats-label">${label}</div>
+              <div class="stats-bar" style="position:relative;height:18px;border:2px solid #fff;background:rgba(255,255,255,0.08);">
+                <div id="stats-bar-${key}" class="stats-bar-fill ${cls}" style="position:absolute;left:0;top:0;height:100%;width:0%;background:rgba(255,255,255,0.45);"></div>
+              </div>
+              <div id="stats-val-${key}" class="stats-value" style="text-align:right;">0</div>
+            </div>`).join('')}
+          </div>
+          <div class="stats-actions" style="display:flex;justify-content:center;gap:12px;padding-top:6px;">
+            <button id="stats-restart" class="stats-button" style="padding:8px 14px;font-family:'Zpix',monospace;font-size:14px;color:#000;background:#ffd966;border:2px solid #fff;cursor:pointer;user-select:none;">重开</button>
+            <button id="stats-exit" class="stats-button secondary" style="padding:8px 14px;font-family:'Zpix',monospace;font-size:14px;color:#000;background:#d0d0ff;border:2px solid #fff;cursor:pointer;user-select:none;">返回标题</button>
+          </div>
+        </div>`;

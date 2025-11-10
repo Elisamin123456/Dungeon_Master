@@ -1,0 +1,983 @@
+﻿            <div class="stats-row">
+          <div class="stats-bars">
+          <div id="stats-title" class="stats-title">通关</div>
+        <div class="stats-card">
+      <div id="stats-overlay" class="stats-overlay">
+      <!-- 统计覆盖层（仅覆盖 640x480 主游戏区域） -->
+      </div>
+        <div id="spellcard-name" class="spellcard-name"></div>
+        <img id="spellcard-illustration" class="spellcard-illustration" alt="boss-illustration" />
+      <div id="spellcard-overlay" class="spellcard-overlay">
+      <!-- 符卡动画层（覆盖游戏主界面640x480） -->
+      </div>
+        </div>
+          <div class="shop-items" id="shop-items"></div>
+          <div class="shop-message" id="shop-message"></div>
+          </div>
+            </div>
+              <button class="shop-button" id="shop-close-btn">Continue</button>
+              <button class="shop-button" id="shop-exit-run-btn" style="display:none;">Retire</button>
+              <button class="shop-button" id="shop-refresh-btn">Refresh (-10)</button>
+              <span class="shop-gold">Gold: <span id="shop-gold">0</span></span>
+            <div class="shop-controls">
+            <div class="shop-title">Equipment Shop</div>
+          <div class="shop-header">
+        <div class="shop-panel">
+      <div class="shop-overlay" id="shop-overlay">
+      </div>
+        <div class="bottom-stats-side" id="stat-lines"></div>
+        <div class="bottom-divider"></div>
+        </div>
+          </div>
+            </div>
+              <img id="equipment-slot-1-preview-img" alt="预览" />
+            <div class="equipment-preview-slot" id="equipment-slot-1-preview">
+            </div>
+              <img class="equipment-icon" alt="" />
+              <span class="equipment-stack-badge"></span>
+              <span class="slot-id">6</span>
+            <div class="equipment-slot" data-slot-index="5">
+            </div>
+              <img class="equipment-icon" alt="" />
+              <span class="equipment-stack-badge"></span>
+              <span class="slot-id">5</span>
+            <div class="equipment-slot" data-slot-index="4">
+            </div>
+              <img class="equipment-icon" alt="" />
+              <span class="equipment-stack-badge"></span>
+              <span class="slot-id">4</span>
+            <div class="equipment-slot" data-slot-index="3">
+            </div>
+              <img class="equipment-icon" alt="" />
+              <span class="equipment-stack-badge"></span>
+              <span class="slot-id">3</span>
+            <div class="equipment-slot" data-slot-index="2">
+            </div>
+              <img class="equipment-icon" alt="" />
+              <span class="equipment-stack-badge"></span>
+              <span class="slot-id">2</span>
+            <div class="equipment-slot" data-slot-index="1">
+            </div>
+              <img class="equipment-icon" alt="" />
+              <span class="equipment-stack-badge"></span>
+              <span class="slot-id">1</span>
+            <div class="equipment-slot" data-slot-index="0">
+          <div class="equipment-grid">
+          </div>
+            </div>
+              </div>
+                <span id="mp-bar-label" class="bar-label">MN</span>
+                <div id="mp-bar" class="bar-fill mana"></div>
+              <div class="bar-wrapper">
+              </div>
+                <span id="hp-bar-label" class="bar-label">HP</span>
+                <div id="hp-bar" class="bar-fill"></div>
+              <div class="bar-wrapper">
+            <div class="resource-column">
+            </div>
+              </div>
+                </div>
+                  <span class="cooldown-timer">0</span>
+                <div class="cooldown-overlay">
+                <img class="skill-icon" data-skill="SPACE" src="assets/player/reimu/skill/space.png" alt="Space" />
+                <span class="skill-name">闪避</span>
+                <span class="skill-label">Space</span>
+              <div class="skill-slot space" data-skill="SPACE">
+              </div>
+                </div>
+                  <span class="cooldown-timer">0</span>
+                <div class="cooldown-overlay">
+                <img class="skill-icon" data-skill="R" src="assets/player/reimu/skill/R.png" alt="R" />
+                <span class="skill-label">R</span>
+              <div class="skill-slot" data-skill="R">
+              </div>
+                </div>
+                  <span class="cooldown-timer">0</span>
+                <div class="cooldown-overlay">
+                <img class="skill-icon" data-skill="E" src="assets/player/reimu/skill/E.png" alt="E" />
+                <span class="skill-label">E</span>
+              <div class="skill-slot" data-skill="E">
+              </div>
+                </div>
+                  <span class="cooldown-timer">0</span>
+                <div class="cooldown-overlay">
+                <img class="skill-icon" data-skill="Q" src="assets/player/reimu/skill/Q.png" alt="Q" />
+                <span class="skill-label">Q</span>
+              <div class="skill-slot" data-skill="Q">
+            <div class="skill-row">
+          <div class="skill-resource">
+        <div class="bottom-stats-center">
+      <div class="panel bottom-bar">
+      </div>
+        </div>
+          </div>
+            </div>
+              <span class="sidebar-equipment-hint">查看鼠标移动到的位置</span>
+            <div class="sidebar-equipment-details" id="sidebar-equipment-details">
+            <span class="sidebar-stat-label">预览</span>
+          <div class="sidebar-section">
+          </div>
+            </div>
+              <span class="sidebar-stat-value" id="sidebar-point-value">0</span>
+              <span class="sidebar-stat-label">点数</span>
+            <div class="sidebar-stat-row">
+            </div>
+              <span class="sidebar-stat-value" id="sidebar-rank-value">1</span>
+              <span class="sidebar-stat-label">关卡</span>
+            <div class="sidebar-stat-row">
+            </div>
+              <span class="sidebar-stat-value" id="sidebar-kill-value">0</span>
+              <span class="sidebar-stat-label">击杀</span>
+            <div class="sidebar-stat-row">
+            </div>
+              <span class="sidebar-stat-value" id="sidebar-timer-value">01:00</span>
+              <span class="sidebar-stat-label">倒计时</span>
+            <div class="sidebar-stat-row">
+          <div class="sidebar-section">
+        <div class="sidebar-content">
+      <div class="panel sidebar">
+      <div id="game"></div>
+      <div class="game-border"></div>
+    <div class="root">
+  <div class="frame">
+<body>
+</head>
+  </style>
+    }
+      color: #ff8080;
+      font-size: 12px;
+      min-height: 18px;
+    .shop-message {
+
+    }
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 12px;
+    .shop-item-upgrades {
+
+    }
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+    .shop-item-recipe {
+
+    }
+      gap: 2px;
+      flex-direction: column;
+      display: flex;
+      color: rgba(255, 255, 255, 0.85);
+      line-height: 1.4;
+      font-size: 12px;
+    .shop-item-description {
+
+    }
+      color: #9ed36a;
+      font-size: 14px;
+    .shop-item-cost {
+
+    }
+      color: #ffd966;
+      letter-spacing: 1px;
+      font-size: 16px;
+    .shop-item-name {
+
+    }
+      align-items: center;
+      gap: 10px;
+      display: flex;
+    .shop-item-header {
+
+    }
+      background: rgba(0, 0, 0, 0.2);
+      image-rendering: pixelated;
+      border: 1px solid #ffffff88;
+      height: 64px;
+      width: 64px;
+    .shop-item-icon {
+
+    }
+      opacity: 0.45;
+    .shop-item.unavailable {
+
+    }
+      min-height: 220px;
+      gap: 8px;
+      flex-direction: column;
+      display: flex;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+    .shop-item {
+
+    }
+      gap: 14px;
+      grid-template-columns: repeat(3, 1fr);
+      display: grid;
+    .shop-items {
+
+    }
+      color: #ff9696;
+    .shop-item-status {
+
+    }
+      justify-content: flex-end;
+      display: flex;
+    .shop-item-actions {
+
+    }
+      line-height: 1.4;
+      font-size: 13px;
+    .shop-item-status {
+    .shop-item-missing,
+    .shop-item-consume,
+    .shop-item-recipe,
+    .shop-item-cost,
+
+    }
+      letter-spacing: 1px;
+      font-size: 16px;
+    .shop-item-name {
+
+    }
+      object-fit: contain;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      height: 48px;
+      width: 48px;
+    .shop-item-icon {
+
+    }
+      gap: 12px;
+      align-items: center;
+      display: flex;
+    .shop-item-header {
+
+    }
+      gap: 8px;
+      flex-direction: column;
+      display: flex;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.05);
+    .shop-item-card {
+
+    }
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      display: grid;
+    .shop-items {
+
+    }
+      letter-spacing: 1px;
+      font-size: 16px;
+    .shop-gold {
+
+    }
+      background: #46356d;
+    .shop-button:not(:disabled):hover {
+
+    }
+      cursor: not-allowed;
+      opacity: 0.4;
+    .shop-button:disabled {
+
+    }
+      transition: background 0.2s ease;
+      cursor: pointer;
+      padding: 6px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #fff;
+      border: 1px solid #ffffffaa;
+      background: #32274a;
+    .shop-button {
+
+    }
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      display: flex;
+    .shop-controls {
+
+    }
+      letter-spacing: 2px;
+      font-size: 20px;
+    .shop-title {
+
+    }
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      display: flex;
+    .shop-header {
+
+
+}
+  overflow: auto; /* 内容超出时在主界面区域内滚动，不压到侧栏/下栏 */
+  gap: 16px;
+  flex-direction: column;
+  display: flex;
+  font-family: "Zpix", monospace;
+  color: #fff;
+  padding: 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  border: 2px solid #fff;
+  background: linear-gradient(180deg, #1a1423, #0f0b16);
+  max-height: calc(480px - 40px);
+  max-width: 90%;
+  width: 560px;
+.shop-panel {
+/* 维持面板尺寸，确保在 640×480 内合适居中 */
+
+}
+  opacity: 1;
+  visibility: visible;
+.shop-overlay.visible {
+
+}
+  transition: opacity 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 1;           /* 仅盖住 #game 即可 */
+  /* 不再使用极高的 z-index，避免“悬浮在所有界面之上” */
+  background: rgba(8, 6, 12, 0.85);
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  height: 480px;        /* 主界面高 */
+  width: 640px;         /* 主界面宽 */
+  top: 0;
+  left: 0;              /* 锁定到主界面左上角 */
+  position: absolute;
+.shop-overlay {
+/* 仅覆盖 shop-overlay 的样式，其余保持不变 */
+    .stats-progress-label { position: absolute; top: 14px; transform: translateX(-50%); font-size: 12px; color: #ffd966; }
+    .stats-progress-arrow { position: absolute; top: 0; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 12px solid #ffd966; transform: translateX(-50%); }
+    .stats-progress-track { position: absolute; left: 12px; right: 12px; top: 0; height: 28px; }
+    .stats-progress-tick { width: 2px; height: 10px; background: #ffffff; opacity: 0.9; }
+    .stats-progress-ticks { position: absolute; left: 12px; right: 12px; top: 4px; height: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .stats-progress-line { position: absolute; left: 12px; right: 12px; top: 14px; height: 2px; background: rgba(255,255,255,0.6); }
+    .stats-progress-bar { position: relative; height: 28px; }
+    .stats-progress { width: 100%; padding: 0 8px; }
+    /* 进度条（20齿） */
+
+    .stats-button:active { transform: translateY(1px); }
+    .stats-button.secondary { background: #d0d0ff; }
+    }
+      user-select: none;
+      cursor: pointer;
+      border: 2px solid #fff;
+      background: #ffd966;
+      color: #000;
+      font-size: 14px;
+      font-family: "Zpix", monospace;
+      padding: 10px 18px;
+    .stats-button {
+    }
+      padding-top: 6px;
+      gap: 14px;
+      justify-content: center;
+      display: flex;
+    .stats-actions {
+
+    .stats-bar-fill.heal { background: linear-gradient(90deg, #a5d6a7, #66bb6a); }
+    .stats-bar-fill.gold { background: linear-gradient(90deg, #ffd54f, #ffb300); }
+    .stats-bar-fill.taken { background: linear-gradient(90deg, #80d8ff, #40c4ff); }
+    .stats-bar-fill.damage { background: linear-gradient(90deg, #ff8a80, #ff5252); }
+    }
+      background: linear-gradient(90deg, rgba(255,255,255,0.25), rgba(255,255,255,0.55));
+      transition: width 300ms ease;
+      width: 0%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      position: absolute;
+    .stats-bar-fill {
+    .stats-bar-value { position: absolute; top: 50%; transform: translate(6px, -50%); font-size: 14px; color: #ffffff; white-space: nowrap; pointer-events: none; }
+    .stats-seg-single.heal  { background: linear-gradient(90deg, #a5d6a7, #66bb6a); }
+    .stats-seg-single.gold  { background: linear-gradient(90deg, #ffd54f, #ffb300); }
+    .stats-seg-single.taken { background: linear-gradient(90deg, #80d8ff, #40c4ff); }
+    .stats-seg-single { left: 0; background: linear-gradient(90deg, rgba(255,255,255,0.25), rgba(255,255,255,0.55)); }
+    .stats-seg-magic { background: linear-gradient(90deg, #80d8ff, #40c4ff); }
+    .stats-seg-phys  { left: 0; background: linear-gradient(90deg, #ffd54f, #ffb300); }
+    .stats-seg-phys, .stats-seg-magic, .stats-seg-single { position: absolute; top: 2px; height: calc(100% - 4px); }
+    .stats-bar-box { position: absolute; top: 50%; left: 0; transform: translateY(-50%); height: 18px; border: 2px solid #fff; background: rgba(255,255,255,0.08); width: 0%; box-sizing: border-box; }
+    .stats-bar-area { position: relative; height: 22px; }
+    .stats-label { font-size: 14px; color: #d0d0ff; padding-left: 12px; }
+    }
+      gap: 12px;
+      align-items: center;
+      grid-template-columns: 112px 1fr;
+      display: grid;
+    .stats-row {
+    }
+      justify-content: center;
+      flex: 1;
+      padding: 6px 0 10px 0;
+      gap: 14px;
+      flex-direction: column;
+      display: flex;
+    .stats-bars {
+
+    .stats-title.pause { color: #d0d0ff; }
+    .stats-title.success { color: #ffd966; }
+    .stats-title.fail { color: #ff3344; }
+    }
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.6);
+      letter-spacing: 2px;
+      font-size: 26px;
+      text-align: center;
+      width: 100%;
+    .stats-title {
+
+    }
+      gap: 18px;
+      flex-direction: column;
+      display: flex;
+      font-family: "Zpix", monospace;
+      color: #fff;
+      box-sizing: border-box;
+      padding: 18px 24px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+      border: 2px solid #fff;
+      background: linear-gradient(180deg, #1a1423, #0f0b16);
+      height: calc(480px - 24px);
+      max-width: 95%;
+      width: 600px;
+    .stats-card {
+
+    .stats-overlay.visible { visibility: visible; opacity: 1; }
+    }
+      transition: opacity 0.2s ease;
+      opacity: 0;
+      visibility: hidden;
+      z-index: 2000; /* 顶层：覆盖游戏区内所有元素 */
+      background: rgba(8, 6, 12, 0.85);
+      justify-content: center;
+      align-items: center;
+      display: flex;
+      height: 480px;
+      width: 640px;
+      top: 0;
+      left: 0;
+      position: absolute;
+    .stats-overlay {
+    /* ==== 通关/死亡 统计覆盖层（HTML）==== */
+
+    }
+      display: inline-block;
+      text-align: left;
+      font-size: 12px;
+      font-family: "Zpix", monospace;
+      color: #fff;
+    .stat-line {
+
+    }
+      color: #d0d0ff;
+      font-size: 18px;
+      transform: translate(0, 0) scale(0.85);
+      top: 10px;
+      right: 10px;
+      left: auto;
+    .spellcard-name.to-corner {
+    /* 缩小并移至右上角（和Boss名区域对齐：主界面内右上） */
+    }
+      white-space: nowrap;
+      transition: left 0.5s ease, top 0.5s ease, transform 0.5s ease, font-size 0.5s ease, color 0.5s ease;
+      letter-spacing: 2px;
+      font-size: 24px;
+      font-family: "Zpix", monospace;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.6);
+      color: #ffd966;
+      transform: translate(-50%, -50%);
+      top: 50%;
+      left: 50%;
+      position: absolute;
+    .spellcard-name {
+
+    }
+      animation: sc-exit 1200ms cubic-bezier(0.4, 0, 0.8, 1) forwards;
+    .spellcard-illustration.exiting {
+    }
+      100% { transform: translate(120%, 120%); opacity: 0; }
+      0%   { transform: translate(-48%, -48%); opacity: 1; }
+    @keyframes sc-exit {
+    /* 从中间到右下角飞出并淡出（慢->快） */
+    }
+      animation: sc-drift 3000ms linear infinite alternate;
+    .spellcard-illustration.drifting {
+    }
+      100% { transform: translate(-48%, -48%); }
+      0%   { transform: translate(-52%, -52%); }
+    @keyframes sc-drift {
+    /* 慢速小幅漂移（保持移动，不完全静止） */
+    }
+      animation: sc-enter 900ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    .spellcard-illustration.entering {
+    }
+      100% { transform: translate(-52%,  -52%);  opacity: 1; }
+      0%   { transform: translate(-150%, -150%); opacity: 0; }
+    @keyframes sc-enter {
+    /* 从左上角飞入（快速->慢速），透明度 0% 到 100% */
+    }
+      transition: none; /* 动画改为 keyframes 控制 */
+      filter: drop-shadow(0 8px 24px rgba(0,0,0,0.6));
+      image-rendering: pixelated;
+      max-height: 95%;
+      max-width: 95%;
+      transform: translate(-50%, -50%);
+      top: 50%;
+      left: 50%;
+      position: absolute;
+    .spellcard-illustration {
+
+    .spellcard-overlay.visible { visibility: visible; opacity: 1; }
+    }
+      overflow: hidden;
+      transition: opacity 0.25s ease;
+      opacity: 0;
+      visibility: hidden;
+      z-index: 2; /* 盖住 #game 但低于全局弹窗 */
+      pointer-events: none;
+      height: 480px;
+      width: 640px;
+      top: 0;
+      left: 0;
+      position: absolute;
+    .spellcard-overlay {
+    /* ==== 符卡动画（HTML层）==== */
+
+    }
+      font-size: 12px;
+      font-family: "Zpix", monospace;
+      color: #fff;
+      transform: translate(-50%, -50%);
+      left: 50%;
+      top: 50%;
+      position: absolute;
+    .bar-label {
+
+    }
+      background: #1666ff;
+    .bar-fill.mana {
+
+    }
+      background: red;
+      height: 100%;
+    .bar-fill {
+
+    }
+      align-content: center;
+      gap: 8px 16px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      display: grid;
+      flex: 1;
+    .bottom-stats-side {
+
+    }
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.6);
+    .sidebar-equipment-hint {
+
+    }
+      color: #ffd966;
+      font-size: 14px;
+    .sidebar-equipment-title {
+
+    }
+      line-height: 1.4;
+      font-size: 12px;
+      font-family: "Zpix", monospace;
+      color: #fff;
+      gap: 6px;
+      flex-direction: column;
+      display: flex;
+    .sidebar-equipment-details {
+
+    }
+      pointer-events: none;
+      object-fit: contain;
+      height: 100%;
+      width: 100%;
+    .equipment-preview-slot img {
+
+    }
+      display: flex;
+    .equipment-preview-slot.active {
+
+    }
+      justify-content: center;
+      align-items: center;
+      display: none;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid #fff;
+      height: 54px;
+      width: 54px;
+    .equipment-preview-slot {
+
+    }
+      display: block;
+    .equipment-slot.has-item .equipment-icon {
+
+    }
+      transition: opacity 0.2s linear;
+      display: block;
+      pointer-events: none;
+      object-fit: contain;
+      height: 100%;
+      width: 100%;
+    .skill-icon {
+    /* 技能图标 */
+
+    }
+      pointer-events: none;
+      display: none;
+      object-fit: contain;
+      height: 100%;
+      width: 100%;
+    .equipment-icon {
+
+    }
+      outline-offset: -2px;
+      outline: 2px dashed rgba(255, 255, 255, 0.6);
+    .equipment-slot.drag-over {
+
+    }
+      opacity: 0.5;
+    .equipment-slot.dragging {
+
+    }
+      cursor: grab;
+    .equipment-slot.has-item {
+
+    }
+      display: inline-block;
+    .equipment-stack-badge.active {
+
+    }
+        0 1px 0 #000;
+        0 -1px 0 #000,
+        1px 0 0 #000,
+        -1px 0 0 #000,
+      text-shadow:
+      pointer-events: none;
+      display: none;
+      text-align: center;
+      line-height: 1.2;
+      font-size: 10px;
+      font-family: "Zpix", monospace;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.9);
+      border-radius: 3px;
+      border: 1px solid rgba(0, 0, 0, 0.85);
+      padding: 1px 3px;
+      min-width: 16px;
+      right: 4px;
+      top: 4px;
+      position: absolute;
+    .equipment-stack-badge {
+
+    }
+      font-family: "Zpix", monospace;
+      color: #fff;
+      font-size: 10px;
+      left: 6px;
+      top: 4px;
+      position: absolute;
+    .equipment-slot .slot-id {
+
+    }
+      user-select: none;
+      cursor: default;
+      justify-content: center;
+      align-items: center;
+      display: flex;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid #fff;
+      height: 54px;
+      width: 54px;
+      position: relative;
+    .equipment-slot {
+
+    }
+      transform: translateY(-50%);
+      top: 50%;
+      left: 360px;
+      position: absolute;
+      gap: 12px;
+      grid-auto-rows: 54px;
+      grid-template-columns: repeat(3, 54px);
+      display: grid;
+    .equipment-grid {
+
+    }
+      font-weight: bold;
+      font-size: 14px;
+      color: #fff;
+    .cooldown-timer {
+
+    }
+      pointer-events: none;
+      opacity: 1;
+      justify-content: center;
+      align-items: center;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      inset: 0;
+      position: absolute;
+    .cooldown-overlay {
+
+    }
+      pointer-events: none;
+      font-size: 12px;
+      left: 6px;
+      bottom: 4px;
+      position: absolute;
+    .skill-slot.space .skill-name {
+
+    }
+      font-size: 11px;
+    .skill-name {
+
+    }
+      font-size: 11px;
+      left: 6px;
+      top: 4px;
+      position: absolute;
+    .skill-label {
+
+    }
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 14px;
+      font-family: "Zpix", monospace;
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      display: flex;
+      position: relative;
+      border: 2px solid #fff;
+      height: 56px;
+      width: 56px;
+    .skill-slot {
+
+    }
+      width: calc(56px * 4 + 12px * 3);
+      gap: 12px;
+      display: flex;
+    .skill-row {
+
+    }
+      width: calc(56px * 4 + 12px * 3);
+      box-sizing: border-box;
+      gap: 6px;
+      align-items: flex-start;
+      flex-direction: column;
+      display: flex;
+    .resource-column {
+
+    }
+      margin-left: 8px;
+      gap: 8px;
+      align-items: flex-start;
+      flex-direction: column;
+      display: flex;
+    .skill-resource {
+
+    }
+      background: rgba(255, 255, 255, 0.05);
+      position: relative;
+      box-sizing: border-box;
+      border: 2px solid #fff;
+      height: 16px;
+      width: 100%;
+    .bar-wrapper {
+
+    }
+      box-sizing: border-box;
+      padding: 0 12px;
+      height: 100%;
+      gap: 12px;
+      justify-content: flex-start;
+      align-items: flex-end;
+      display: flex;
+      flex: 0 0 640px;
+      position: relative;
+    .bottom-stats-center {
+
+    }
+      pointer-events: none;
+      opacity: 0.6;
+      border-left: 2px solid #fff;
+      left: 640px;
+      bottom: 12px;
+      top: 12px;
+      position: absolute;
+    .bottom-divider {
+
+    }
+      position: relative;
+      gap: 12px;
+      padding: 12px;
+      align-items: flex-start;
+      flex-direction: row;
+      display: flex;
+      height: 160px;
+      width: 853px;
+      top: 480px;
+      left: 0;
+    .bottom-bar {
+
+    }
+      font-size: 16px;
+    .sidebar-stat-value {
+
+    }
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    .sidebar-stat-label {
+
+    }
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      align-items: center;
+      justify-content: space-between;
+      display: flex;
+    .sidebar-stat-row {
+
+    }
+      gap: 8px;
+      flex-direction: column;
+      display: flex;
+    .sidebar-section {
+
+    }
+      font-size: 12px;
+      font-family: "Zpix", monospace;
+      color: #fff;
+      gap: 18px;
+      flex-direction: column;
+      display: flex;
+      box-sizing: border-box;
+      padding: 16px;
+      height: 100%;
+      width: 100%;
+    .sidebar-content {
+
+    }
+      height: 480px;
+      width: 213px;
+      top: 0;
+      left: 640px;
+    .sidebar {
+
+    }
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+      border: none;
+      image-rendering: pixelated;
+      height: 480px;
+      width: 640px;
+      top: 0;
+      left: 0;
+      position: absolute;
+    #game {
+
+    }
+      pointer-events: none;
+      box-sizing: border-box;
+      border: 2px solid #fff;
+      height: 480px;
+      width: 640px;
+      top: 0;
+      left: 0;
+      position: absolute;
+    .game-border {
+
+    }
+      box-sizing: border-box;
+      border: 2px solid #fff;
+      background: #000;
+      position: absolute;
+    .panel {
+
+    }
+      position: relative;
+      height: 640px;
+      width: 853px;
+    .root {
+
+    }
+      transform-origin: center center;
+      display: inline-block;
+      box-sizing: content-box;
+      padding: 12px;
+      border: 2px solid #fff;
+    .frame {
+
+    }
+      font-family: "Zpix", sans-serif;
+      font-family: sans-serif;
+      justify-content: center;
+      align-items: center;
+      display: flex;
+      background: #0c0912;
+      min-height: 100vh;
+      margin: 0;
+    body {
+    html,
+
+    }
+      font-style: normal;
+      font-weight: normal;
+      src: url("font/zpix.ttf") format("truetype");
+      font-family: "Zpix";
+    @font-face {
+    }
+      animation: spellblade-flash 0.2s ease-out;
+    .spellblade-trigger {
+    
+    }
+      100% { filter: brightness(1); }
+      50% { filter: brightness(1.5); }
+      0% { filter: brightness(1); }
+    @keyframes spellblade-flash {
+    
+    }
+      opacity: 1;
+    .spellblade-ready.active {
+    
+    }
+      pointer-events: none;
+      transition: opacity 0.2s;
+      opacity: 0;
+      background-color: #4CAF50;
+      border-radius: 50%;
+      height: 6px;
+      width: 6px;
+      right: 3px;
+      top: 3px;
+      position: absolute;
+    .spellblade-ready {
+    
+    }
+      pointer-events: none;
+      transition: height 0.1s linear;
+      background-color: rgba(0, 0, 0, 0.6);
+      width: 100%;
+      left: 0;
+      bottom: 0;
+      position: absolute;
+    .spellblade-cd {
+    
+    }
+      position: relative;
+    .equipment-slot {
+    /* 耀光装备CD和指示器 */
+  <style>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  
+  <title>Dungeon Master</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" />
+<head>
+<html lang="zh-CN">
+<!DOCTYPE html>

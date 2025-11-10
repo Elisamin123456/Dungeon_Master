@@ -1,0 +1,51 @@
+      down: Phaser.Input.Keyboard.KeyCodes.S,
+      left: Phaser.Input.Keyboard.KeyCodes.A,
+      right: Phaser.Input.Keyboard.KeyCodes.D,
+      focus: Phaser.Input.Keyboard.KeyCodes.SHIFT,
+    });
+// 技能键
+this.input.keyboard.on("keydown-Q", ()=> this.castQ());
+this.input.keyboard.on("keydown-E", ()=> this.castE());
+this.input.keyboard.on("keydown-R", ()=> this.castR());
+this.input.keyboard.on("keydown-SPACE", ()=> this.castDash());
+
+// 退出时清理
+const offSkills = ()=> {
+  this.input.keyboard.off("keydown-Q", undefined, this);
+  this.input.keyboard.off("keydown-E", undefined, this);
+  this.input.keyboard.off("keydown-R", undefined, this);
+  this.input.keyboard.off("keydown-SPACE", undefined, this);
+};
+this.events.once("shutdown", offSkills);
+this.events.once("destroy", offSkills);
+
+    this.movementDirectionOrder = this.movementDirectionOrder ?? [];
+    this.movementKeyHandlers = [];
+    MOVEMENT_KEY_BINDINGS.forEach(({ code, direction }) => {
+      const downEvent = `keydown-${code}`;
+      const upEvent = `keyup-${code}`;
+      const downHandler = (event) => { if (event?.repeat) return; this.registerMovementDirection(direction); };
+      const upHandler = () => { this.unregisterMovementDirection(direction); };
+      this.input.keyboard.on(downEvent, downHandler, this);
+      this.input.keyboard.on(upEvent, upHandler, this);
+      this.movementKeyHandlers.push({ event: downEvent, handler: downHandler }, { event: upEvent, handler: upHandler });
+    });
+
+    this.input.on("wheel", this.handleMouseWheel, this);
+    this.input.keyboard.on("keydown", this.handlePauseKey, this);
+
+    const offAll = () => {
+      this.input.off("wheel", this.handleMouseWheel, this);
+      this.input.keyboard.off("keydown", this.handlePauseKey, this);
+      if (this.movementKeyHandlers) {
+        this.movementKeyHandlers.forEach(({ event, handler }) => this.input.keyboard.off(event, handler, this));
+        this.movementKeyHandlers = [];
+      }
+      this.movementDirectionOrder = [];
+      this.stopAuraVisual();
+      this.clearPauseOverlay();
+    };
+    this.events.once("shutdown", offAll);
+    this.events.once("destroy", offAll);
+  }
+
