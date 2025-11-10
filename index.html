@@ -686,8 +686,8 @@
     .stats-title.pause { color: #ffeb3b; }
 
     .stats-bars {
-      /* Increased side padding per spec: 6px 20px 10px 20px */
-      padding: 6px 20px 10px 20px;
+      /* Increased side padding to 200px on left/right */
+      padding: 6px 200px 10px 200px;
       box-sizing: border-box;
       position: relative;
       flex: 0 0 auto;
@@ -723,7 +723,7 @@
       border: 2px solid #ffffff;
       background: rgba(255,255,255,0.06);
       box-sizing: border-box;
-      overflow: hidden;
+      overflow: visible; /* allow value text to render outside on the right */
       width: 100%; /* full width; fill indicates proportion */
     }
     .stats-bar-fill {
@@ -754,8 +754,8 @@
     /* Optional baseline ticks; left/right margins 20px inside .stats-bars */
     .stats-scale {
       position: absolute;
-      left: 20px;
-      right: 20px;
+      left: 200px;
+      right: 200px;
       top: 46px; /* roughly below the title; inside stats area */
       bottom: 60px; /* leave space for buttons */
       pointer-events: none;
@@ -794,16 +794,16 @@
     }
     .level-progress .baseline {
       position: absolute;
-      left: 20px;
-      right: 20px;
+      left: 200px;
+      right: 200px;
       bottom: 12px;
       height: 2px;
       background: rgba(255,255,255,0.7);
     }
     .level-progress .ticks {
       position: absolute;
-      left: 20px;
-      right: 20px;
+      left: 200px;
+      right: 200px;
       bottom: 12px;
       height: 10px;
       pointer-events: none;

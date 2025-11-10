@@ -4619,6 +4619,7 @@ updateEnemies() {
       if (valueEl) {
         valueEl.textContent = `${totalValue}`;
         valueEl.style.left = `${totalPct}%`; // anchor to bar end
+        // keep it outside on the right via CSS transform translate(6px, -50%)
       }
       const singleFill = rowEl.querySelector('.stats-bar-fill[data-fill]');
       if (singleFill) singleFill.style.width = `${totalPct}%`;
