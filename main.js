@@ -81,6 +81,9 @@ const DEBUG_BOSS = (() => {
     return (params.get("debug") === "boss")
       || params.has("boss")
       || params.has("bossDebug")
+      || (params.get("boss") === "Rin")
+      || params.has("rin")
+      || hash.includes("rin")
       || hash.includes("debug-boss")
       || hash.includes("bossdebug");
   } catch (error) {
@@ -1464,6 +1467,8 @@ this.physics.add.overlap(this.weaponHitbox, this.enemies, (hitbox, enemy)=>{
       } catch (_) {}
       if (__dbgWant === "Rin") {
         this.spawnBoss(BOSS_RIN_CONFIG);
+        this.createBossUI(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
+        this.showBossHeader(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
       } else {
         this.spawnBossById("Utsuho", { x: WORLD_SIZE/2, y: Math.floor(WORLD_SIZE * 0.25) });
       }
