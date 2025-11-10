@@ -337,10 +337,46 @@ const BOSS_UTSUHO_CONFIG = {
   }
 };
 
+/* ==== 火焔猫 燐 Boss 配置 ==== */
+const BOSS_RIN_CONFIG = {
+  id: "Rin",
+  textureKey: "rin_texture",
+  name: "火焔猫　燐",
+  title: "背信棄義的死猫",
+  tiles: 6,
+  maxHp: 10000,
+  armor: 0,
+  contactDamage: 50,
+  bulletMagicDamage: 50,
+  moveSpeed: 60,
+  def: 50,
+  assets: {
+    basePath: "assets/boss/Rin/",
+    bullets: {
+      needle: "assets/boss/Rin/bullet/needle.png",
+      round: "assets/boss/Rin/bullet/round.png",
+    },
+    spawn: {
+      corpse: "assets/boss/Rin/spawn/yousei_corpse.png",
+    },
+  },
+  musicKey: "rin_bgm",
+  musicPath: "music/boss_rin.mp3",
+  // 模式时长：m1=28.8s, m2=19.2s，m3为击杀小怪后结束（不设固定时长）
+  modeDurations: { m1: 28800, m2: 19200 },
+  hitboxes: {
+    bullets: {
+      needle: { size: 1.5, judge: 0.8 },
+      round: { size: 1.5, judge: 1.0 },
+    },
+  },
+};
+
 /* ==== Boss 注册表：便于其他关卡调用 ==== */
 const BOSS_REGISTRY = {
   [BOSS_TEST_CONFIG.id]: BOSS_TEST_CONFIG,
   [BOSS_UTSUHO_CONFIG.id]: BOSS_UTSUHO_CONFIG,
+  [BOSS_RIN_CONFIG.id]: BOSS_RIN_CONFIG,
 };
 
 /* ==== 装备数据 ==== */
@@ -857,6 +893,13 @@ class PreloadScene extends Phaser.Scene {
     this.load.image("u_bullet_yellow", BOSS_UTSUHO_CONFIG.assets.bullets.yellow);
     // BGM（生成后播放）
     this.load.audio(BOSS_UTSUHO_CONFIG.musicKey, BOSS_UTSUHO_CONFIG.musicPath);
+
+    // Preload Rin boss assets
+    this.load.image(BOSS_RIN_CONFIG.textureKey, `${BOSS_RIN_CONFIG.assets.basePath}Rin.png`);
+    this.load.image("r_bullet_needle", BOSS_RIN_CONFIG.assets.bullets.needle);
+    this.load.image("r_bullet_round", BOSS_RIN_CONFIG.assets.bullets.round);
+    this.load.image("r_yousei_corpse", BOSS_RIN_CONFIG.assets.spawn.corpse);
+    this.load.audio(BOSS_RIN_CONFIG.musicKey, BOSS_RIN_CONFIG.musicPath);
   }
   create() { this.scene.start("StartScene"); }
 }
@@ -1411,11 +1454,28 @@ this.physics.add.overlap(this.weaponHitbox, this.enemies, (hitbox, enemy)=>{
       if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
 
       // 生成于场地中上方
-      this.spawnBossById("Utsuho", { x: WORLD_SIZE/2, y: Math.floor(WORLD_SIZE * 0.25) });
+      let __dbgWant = "Utsuho";
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const hash = (window.location.hash || "").toLowerCase();
+        const bossParam = params.get("boss") || params.get("Boss") || params.get("BOSS");
+        if (bossParam) __dbgWant = bossParam;
+        if (params.has("rin") || hash.includes("rin")) __dbgWant = "Rin";
+      } catch (_) {}
+      if (__dbgWant === "Rin") {
+        this.spawnBoss(BOSS_RIN_CONFIG);
+      } else {
+        this.spawnBossById("Utsuho", { x: WORLD_SIZE/2, y: Math.floor(WORLD_SIZE * 0.25) });
+      }
 
       // 生成后才播放 Boss 音乐
       this.bossMusic = this.sound.add(BOSS_UTSUHO_CONFIG.musicKey, { loop: true, volume: 1.5 });
       this.bossMusic.play();
+      if (__dbgWant === "Rin") {
+        try { this.bossMusic.stop(); this.bossMusic.destroy(); } catch (_) {}
+        this.bossMusic = this.sound.add(BOSS_RIN_CONFIG.musicKey, { loop: true, volume: 1.5 });
+        this.bossMusic.play();
+      }
 
       // 退出或销毁场景时清理
       this.events.once("shutdown", () => {
@@ -3391,6 +3451,13 @@ updateSpellbladeOverlays() {
       });
     }
     this.physics.add.overlap(this.player, this.enemies, this.handlePlayerEnemyContact, null, this);
+
+    // 让特定召唤物（Rin 的妖精尸体）撞墙自爆
+    if (this.wallGroup) {
+      this.physics.add.collider(this.enemies, this.wallGroup, (enemy, _wall) => {
+        if (enemy && enemy.active && enemy.isRinCorpse) this.explodeRinCorpse(enemy);
+      }, null, this);
+    }
     this.physics.add.overlap(this.player, this.loot, this.collectPoint, null, this);
     this.physics.add.overlap(this.player, this.places, this.handlePlaceOverlap, null, this);
   }
@@ -3771,6 +3838,9 @@ this.events.once("destroy", offSkills);
     this.updateBossBullets(delta);
     if (this.boss && this.boss.isBoss && this.boss.bossKind === "Utsuho") {
       this.updateUtsuhoAI(delta);
+    }
+    if (this.boss && this.boss.isBoss && this.boss.bossKind === "Rin") {
+      this.updateRinAI(delta);
     }
 this.updateMikoOrbs(delta);
 
@@ -4843,6 +4913,14 @@ showHealNumber(x, y, amount) {
   applyMitigationToTarget(amount, targetStatsOrObj, sourceStatsOrObj, damageType = "physical", minimumOutput = 0) {
     const baseDamage = Number.isFinite(amount) ? amount : 0;
     if (baseDamage <= 0) return 0;
+
+    // Rin 第三阶段无敌：对其伤害为0
+    try {
+      if (targetStatsOrObj?.isBoss && targetStatsOrObj?.bossKind === "Rin") {
+        const ai = targetStatsOrObj?.ai;
+        if (ai && ai.mode === 3) return 0;
+      }
+    } catch (_) {}
 
     const minOutput = Number.isFinite(minimumOutput) ? Math.max(0, Math.ceil(minimumOutput)) : 0;
 
@@ -6587,6 +6665,42 @@ consumeSpellbladeIfReady(enemy) {
 
   killEnemy(enemy) {
     this.playSfx("enemyexploded");
+    // Rin 第三阶段：连锁召唤逻辑
+    if (this.boss && this.boss.isBoss && this.boss.bossKind === "Rin") {
+      const ai = this.boss.ai || {};
+      if (ai.mode === 3) {
+        try {
+          // 每杀死5个毛玉 -> 召唤1个 basic 妖精
+          if (enemy.enemyType === "kedama") {
+            ai.m3_counts = ai.m3_counts || { kedamaKills: 0 };
+            ai.m3_counts.kedamaKills += 1;
+            if (ai.m3_counts.kedamaKills % 5 === 0) {
+              const typeKey = "yousei"; const tierKey = ENEMY_RARITIES.BASIC; const typeConfig = ENEMY_TYPE_CONFIG[typeKey]; const tierConfig = typeConfig?.tiers?.[tierKey];
+              if (typeConfig && tierConfig) {
+                const pos = { x: enemy.x, y: enemy.y };
+                this.spawnEnemyWithEffect({ typeKey, tierKey, typeConfig, tierConfig }, pos);
+              }
+            }
+          }
+          // 每杀死一个 basic 妖精 -> 召唤一个 basic 阴阳玉
+          if (enemy.enemyType === "yousei" && enemy.enemyTier === ENEMY_RARITIES.BASIC) {
+            const typeKey = "orb"; const tierKey = ENEMY_RARITIES.BASIC; const typeConfig = ENEMY_TYPE_CONFIG[typeKey]; const tierConfig = typeConfig?.tiers?.[tierKey];
+            if (typeConfig && tierConfig) {
+              const pos = { x: enemy.x, y: enemy.y };
+              this.spawnEnemyWithEffect({ typeKey, tierKey, typeConfig, tierConfig }, pos);
+            }
+          }
+          // 每杀死一个任意单位 -> 额外召唤一个妖精尸体（不计入清屏）
+          if (!enemy.isRinCorpse) {
+            const c = this.spawnRinCorpse(enemy.x, enemy.y);
+            if (c && c.body) {
+              const ang = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+              this.physics.velocityFromRotation(ang, 150, c.body.velocity);
+            }
+          }
+        } catch (_) {}
+      }
+    }
     // 修改：Utsuho死亡贴图；小怪保持原贴图并做淡出效果
     if (enemy.isBoss && enemy.bossKind === "Utsuho") {
       enemy.setTexture(BOSS_UTSUHO_CONFIG.textureDeath);
@@ -8297,14 +8411,19 @@ castDash() {
     boss.body.setSize(Math.max(8, fw * scale * 0.9), Math.max(8, fh * scale * 0.9), true);
 
     boss.isBoss = true;
+    boss.bossKind = cfg.id || "Generic";
     boss.maxHp = cfg.maxHp;
     boss.hp = cfg.maxHp;
     boss.armor = cfg.armor;
-    boss.def = 0;
+    boss.def = cfg.def || 0;
+    boss.contactDamage = cfg.contactDamage || boss.contactDamage || 0;
     boss.state = "idle";
     boss.attackCooldownUntil = this.time.now + 1000;
 
     this.boss = boss;
+    // Initialize boss-specific AI if known
+    if (cfg.id === "Rin") this.initRinAI(boss);
+    if (cfg.id === "Utsuho") this.initUtsuhoAI?.(boss);
   }
 
   /* ==== 新增：通用 Boss 生成（通过ID） ==== */
@@ -9143,6 +9262,222 @@ updateBossUI(target) {
       }});
     }
     return b;
+  }
+
+  /* ==== Rin AI 实现 ==== */
+  initRinAI(boss) {
+    boss.ai = {
+      elapsed: 0,
+      mode: 1,
+      modeEndsAt: BOSS_RIN_CONFIG.modeDurations.m1,
+      // Mode1 dash
+      m1_nextDashAt: 0,
+      m1_dashEndAt: 0,
+      m1_dashIndex: 0,
+      m1_dashDurationMs: 600,
+      m1_cooldownMs: 600,
+      m1_dashSpeed: 1000,
+      // Mode2 ring corpses
+      m2_phaseDeg: Phaser.Math.Between(0, 359),
+      m2_nextEmitAt: 0,
+      m2_emitInterval: 300,
+      m2_corpseSpeed: 150,
+      // Mode3 survival
+      m3_initialized: false,
+      m3_counts: { kedamaKills: 0 },
+    };
+    boss.body.setVelocity(0, 0);
+  }
+
+  updateRinAI(delta) {
+    const boss = this.boss;
+    if (!boss || !boss.active) return;
+    const ai = boss.ai || {};
+    ai.elapsed = (ai.elapsed || 0) + delta;
+    const now = ai.elapsed;
+
+    // 模式切换：Mode1 -> Mode2 -> Mode3 -> Mode1
+    if ((ai.mode === 1 && now >= ai.modeEndsAt) || (ai.mode === 2 && now >= ai.modeEndsAt)) {
+      this.advanceRinMode();
+      return;
+    }
+
+    switch (ai.mode) {
+      case 1: this.updateRinMode1(delta); break;
+      case 2: this.updateRinMode2(delta); break;
+      case 3: this.updateRinMode3(delta); break;
+      default: this.updateRinMode1(delta); break;
+    }
+  }
+
+  advanceRinMode() {
+    const boss = this.boss;
+    if (!boss || !boss.active) return;
+    const ai = boss.ai;
+    const now = this.getBossElapsed?.() ?? ai.elapsed ?? 0;
+    this.clearBossBullets?.();
+    boss.body.setVelocity(0, 0);
+
+    if (ai.mode === 1) {
+      ai.mode = 2;
+      ai.modeEndsAt = now + BOSS_RIN_CONFIG.modeDurations.m2;
+      ai.m2_nextEmitAt = now; // 立刻开始发射一圈
+      return;
+    }
+    if (ai.mode === 2) {
+      ai.mode = 3;
+      // 第三阶段：直到场上小怪清空
+      ai.m3_initialized = false;
+      // 设置Boss无敌
+      boss.invulnerable = true;
+      return;
+    }
+    if (ai.mode === 3) {
+      // 返回第一阶段
+      ai.mode = 1;
+      ai.elapsed = 0;
+      ai.modeEndsAt = BOSS_RIN_CONFIG.modeDurations.m1;
+      ai.m1_nextDashAt = 0;
+      ai.m1_dashEndAt = 0;
+      ai.m1_dashIndex = 0;
+      boss.invulnerable = false;
+    }
+  }
+
+  updateRinMode1(delta) {
+    const boss = this.boss; const ai = boss.ai; const now = ai.elapsed;
+    // 冲刺进行中
+    if (now < ai.m1_dashEndAt) {
+      return; // 速度已在开始时设置
+    }
+    // 冷却中
+    if (now < ai.m1_nextDashAt) {
+      boss.body.setVelocity(0, 0);
+      return;
+    }
+    // 冲刺结束 -> 在终点释放一圈弹幕
+    if (ai.m1_dashEndAt > 0 && now >= ai.m1_dashEndAt) {
+      this.fireRing({
+        key: "r_bullet_needle",
+        sizeTiles: BOSS_RIN_CONFIG.hitboxes.bullets.needle.size,
+        judgeTiles: BOSS_RIN_CONFIG.hitboxes.bullets.needle.judge,
+        count: 15,
+        phaseDeg: Phaser.Math.Between(0, 359),
+        forwardSpeed: 150,
+        owner: boss,
+      }, BOSS_RIN_CONFIG.bulletMagicDamage);
+      ai.m1_nextDashAt = now + ai.m1_cooldownMs;
+      ai.m1_dashEndAt = 0; // 标记冲刺已结束
+      return;
+    }
+    // 开始一次新的冲刺：正前、右、左、后，基于当前朝向玩家
+    const baseAng = Phaser.Math.Angle.Between(boss.x, boss.y, this.player.x, this.player.y);
+    const deg = Phaser.Math.RadToDeg(baseAng);
+    let dashDeg = deg;
+    const idx = ai.m1_dashIndex % 4;
+    if (idx === 1) dashDeg = deg + 90;
+    if (idx === 2) dashDeg = deg - 90;
+    if (idx === 3) dashDeg = deg + 180;
+    ai.m1_dashIndex = (ai.m1_dashIndex + 1) % 4;
+    const rad = Phaser.Math.DegToRad(dashDeg);
+    const ux = Math.cos(rad), uy = Math.sin(rad);
+    this.physics.velocityFromRotation(rad, ai.m1_dashSpeed, boss.body.velocity);
+    ai.m1_dashEndAt = now + ai.m1_dashDurationMs;
+  }
+
+  updateRinMode2(_delta) {
+    const boss = this.boss; const ai = boss.ai; const now = ai.elapsed;
+    // 迅速移动到版中
+    const centerX = WORLD_SIZE / 2; const centerY = WORLD_SIZE / 2;
+    const dist = Phaser.Math.Distance.Between(boss.x, boss.y, centerX, centerY);
+    if (dist > 4) {
+      this.physics.moveTo(boss, centerX, centerY, Math.max(BOSS_RIN_CONFIG.moveSpeed * 4, 240));
+    } else {
+      boss.body.setVelocity(0, 0);
+    }
+    // 环状方式发射妖精尸体
+    if (now >= ai.m2_nextEmitAt) {
+      const count = 15; const phase = (ai.m2_phaseDeg || 0) % 360;
+      for (let i = 0; i < count; i += 1) {
+        const angDeg = (phase + i * (360 / count)) % 360;
+        const rad = Phaser.Math.DegToRad(angDeg);
+        const ux = Math.cos(rad), uy = Math.sin(rad);
+        const s = this.spawnRinCorpse(boss.x, boss.y);
+        if (s && s.body) s.body.setVelocity(ux * ai.m2_corpseSpeed, uy * ai.m2_corpseSpeed);
+      }
+      ai.m2_phaseDeg = (phase + 33) % 360;
+      ai.m2_nextEmitAt = now + ai.m2_emitInterval;
+    }
+  }
+
+  updateRinMode3(_delta) {
+    const boss = this.boss; const ai = boss.ai;
+    if (!ai.m3_initialized) {
+      ai.m3_initialized = true;
+      boss.invulnerable = true;
+      // 召唤 250 basic 毛玉
+      const typeKey = "kedama";
+      const tierKey = ENEMY_RARITIES.BASIC;
+      const typeConfig = ENEMY_TYPE_CONFIG[typeKey];
+      const tierConfig = typeConfig?.tiers?.[tierKey];
+      if (typeConfig && tierConfig) {
+        for (let i = 0; i < 250; i += 1) {
+          const pos = this.findEnemySpawnPosition({ typeKey, tierKey, typeConfig, tierConfig })
+                    || { x: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE), y: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE) };
+          this.spawnEnemyWithEffect({ typeKey, tierKey, typeConfig, tierConfig }, pos);
+        }
+      }
+      // 初始化计数
+      ai.m3_counts = { kedamaKills: 0 };
+    }
+    // 检查小怪是否全部击杀（不计入妖精尸体）
+    const enemies = (this.enemies?.getChildren?.() || []).filter(e => e && e.active && !e.isBoss && !e.isRinCorpse);
+    if (enemies.length === 0) {
+      // 结束第三阶段，回到第一阶段
+      this.advanceRinMode();
+    }
+  }
+
+  spawnRinCorpse(x, y) {
+    const s = this.enemies.create(x, y, "r_yousei_corpse");
+    if (!s) return null;
+    s.setDepth(6);
+    s.body.setAllowGravity(false);
+    // 设定为小型召唤单位，HP=1
+    s.isRinCorpse = true;
+    s.enemyType = "rin_corpse";
+    s.enemyKind = "summon";
+    s.maxHp = 1; s.hp = 1;
+    s.armor = 0; s.def = 0;
+    s.attackDamage = 1; s.contactDamage = 1; s.abilityPower = 0;
+    // 命中判定：约 1 tile
+    const radius = TILE_SIZE / 2;
+    if (s.body?.setCircle) {
+      const frameW = s.width || TILE_SIZE; const frameH = s.height || TILE_SIZE;
+      const offX = frameW / 2 - radius; const offY = frameH / 2 - radius;
+      s.body.setCircle(radius, offX, offY);
+    } else if (s.body?.setSize) {
+      s.body.setSize(radius * 2, radius * 2);
+    }
+    return s;
+  }
+
+  explodeRinCorpse(corpse) {
+    if (!corpse || !corpse.active) return;
+    // 自爆 -> 生成一个朝向自机的 round 子弹
+    const ang = Phaser.Math.Angle.Between(corpse.x, corpse.y, this.player.x, this.player.y);
+    const angDeg = Phaser.Math.RadToDeg(ang);
+    this.spawnBossBullet({
+      key: "r_bullet_round",
+      sizeTiles: BOSS_RIN_CONFIG.hitboxes.bullets.round.size,
+      judgeTiles: BOSS_RIN_CONFIG.hitboxes.bullets.round.judge,
+      from: { x: corpse.x, y: corpse.y },
+      dirAngleDeg: angDeg,
+      forwardSpeed: 150,
+      owner: this.boss,
+    }, BOSS_RIN_CONFIG.bulletMagicDamage);
+    // 销毁尸体
+    corpse.active = false; corpse.body.enable = false; corpse.destroy();
   }
 
 }
