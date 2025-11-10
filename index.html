@@ -667,15 +667,18 @@
       border: 2px solid #ffffff;
       display: flex;
       flex-direction: column;
+      justify-content: center; /* center all blocks vertically */
+      align-items: stretch;
       box-sizing: border-box;
-      padding-top: 50px; /* push title slightly down */
+      padding: 0; /* centered layout */
+      gap: 6px;
     }
     .stats-title {
       text-align: center;
       font-family: "Zpix", monospace;
       font-size: 30px;
       letter-spacing: 2px;
-      margin: 28px 0 12px 0; /* slightly lower from top */
+      margin: 8px 0 4px 0;
       text-shadow: 2px 2px 0 rgba(0,0,0,0.45);
     }
     .stats-title.win { color: #ffd700; }
@@ -687,13 +690,12 @@
       padding: 6px 20px 10px 20px;
       box-sizing: border-box;
       position: relative;
-      flex: 1 1 auto;
+      flex: 0 0 auto;
       display: flex;
       flex-direction: column;
       gap: 10px;
-      /* center vertically between title and actions */
-      margin-top: auto;
-      margin-bottom: auto;
+      /* center block within panel */
+      margin: 0 auto;
     }
     .stats-rows {
       display: flex;
@@ -722,6 +724,7 @@
       background: rgba(255,255,255,0.06);
       box-sizing: border-box;
       overflow: hidden;
+      width: 0%; /* dynamically set by JS to match value */
     }
     .stats-bar-fill {
       position: absolute;
@@ -781,6 +784,59 @@
       cursor: pointer;
     }
     .stats-button:hover { background: #46356d; }
+
+    /* ==== Level Progress (20 ticks + arrow) ==== */
+    .level-progress {
+      position: relative;
+      box-sizing: border-box;
+      padding: 0 20px 2px 20px; /* align with stats-bars */
+      height: 64px;
+    }
+    .level-progress .baseline {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 12px;
+      height: 2px;
+      background: rgba(255,255,255,0.7);
+    }
+    .level-progress .ticks {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 12px;
+      height: 10px;
+      pointer-events: none;
+    }
+    .level-progress .ticks .tick {
+      position: absolute;
+      bottom: -4px;
+      width: 1px;
+      height: 14px;
+      background: rgba(255,255,255,0.5);
+    }
+    .level-progress .arrow {
+      position: absolute;
+      bottom: 28px; /* above baseline */
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+    }
+    .level-progress .arrow .label {
+      font-family: "Zpix", monospace;
+      font-size: 14px;
+      color: #fff;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.6);
+      margin-bottom: 2px;
+      white-space: nowrap;
+    }
+    .level-progress .arrow .tip {
+      width: 0; height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 10px solid #ffeb3b; /* yellow arrow */
+      margin: 0 auto;
+    }
   </style>
 </head>
 <body>
@@ -958,6 +1014,36 @@
               <div class="tick" style="left: 50%"></div>
               <div class="tick" style="left: 75%"></div>
               <div class="tick" style="left: 100%"></div>
+            </div>
+          </div>
+          <!-- Level progress (20 ticks + arrow) -->
+          <div class="level-progress" id="level-progress">
+            <div class="baseline"></div>
+            <div class="ticks">
+              <div class="tick" style="left: 0%"></div>
+              <div class="tick" style="left: 5.263%"></div>
+              <div class="tick" style="left: 10.526%"></div>
+              <div class="tick" style="left: 15.789%"></div>
+              <div class="tick" style="left: 21.053%"></div>
+              <div class="tick" style="left: 26.316%"></div>
+              <div class="tick" style="left: 31.579%"></div>
+              <div class="tick" style="left: 36.842%"></div>
+              <div class="tick" style="left: 42.105%"></div>
+              <div class="tick" style="left: 47.368%"></div>
+              <div class="tick" style="left: 52.632%"></div>
+              <div class="tick" style="left: 57.895%"></div>
+              <div class="tick" style="left: 63.158%"></div>
+              <div class="tick" style="left: 68.421%"></div>
+              <div class="tick" style="left: 73.684%"></div>
+              <div class="tick" style="left: 78.947%"></div>
+              <div class="tick" style="left: 84.211%"></div>
+              <div class="tick" style="left: 89.474%"></div>
+              <div class="tick" style="left: 94.737%"></div>
+              <div class="tick" style="left: 100%"></div>
+            </div>
+            <div class="arrow" id="level-arrow">
+              <div class="label" id="level-label">1/20</div>
+              <div class="tip"></div>
             </div>
           </div>
           <div class="stats-actions">

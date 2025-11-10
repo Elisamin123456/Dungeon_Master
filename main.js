@@ -1459,6 +1459,9 @@ this.physics.add.overlap(this.weaponHitbox, this.enemies, (hitbox, enemy)=>{
       statsTitle: document.getElementById("stats-title"),
       statsRestartBtn: document.getElementById("stats-restart"),
       statsExitBtn: document.getElementById("stats-exit"),
+      levelProgress: document.getElementById("level-progress"),
+      levelArrow: document.getElementById("level-arrow"),
+      levelLabel: document.getElementById("level-label"),
     };
     const selectFirst = (selectors) => selectors.map((s) => document.querySelector(s)).find(Boolean);
     const skillSelectors = {
@@ -4611,20 +4614,22 @@ updateEnemies() {
       const rowEl = row(key);
       if (!rowEl) return;
       const valueEl = rowEl.querySelector('.stats-value[data-value]');
+      const outer = rowEl.querySelector('.stats-bar-outer');
       const p = Math.max(0, Math.min(1, (maxVal > 0 ? (totalValue / maxVal) : 0)));
       const totalPct = p * 100 * BAR_MAX;
+      if (outer) outer.style.width = `${totalPct}%`;
       if (valueEl) {
         valueEl.textContent = `${totalValue}`;
-        valueEl.style.left = `${totalPct}%`;
+        valueEl.style.left = `100%`; // always outside at the right end
       }
       const singleFill = rowEl.querySelector('.stats-bar-fill[data-fill]');
-      if (singleFill) singleFill.style.width = `${totalPct}%`;
+      if (singleFill) singleFill.style.width = `100%`;
       if (opts.split) {
         const a = Math.max(0, opts.segA || 0);
         const b = Math.max(0, opts.segB || 0);
         const t = Math.max(0.0001, a + b);
-        const aPct = totalPct * (a / t);
-        const bPct = totalPct - aPct;
+        const aPct = 100 * (a / t);
+        const bPct = 100 - aPct;
         const segA = rowEl.querySelector('.stats-bar-fill.yellow[data-seg="phys"]');
         const segB = rowEl.querySelector('.stats-bar-fill.blue[data-seg="magic"]');
         if (segA) { segA.style.left = '0%'; segA.style.width = `${aPct}%`; }
@@ -4638,6 +4643,22 @@ updateEnemies() {
     setRow('heal', heal);
 
     overlay.style.display = 'block';
+
+    // Update level progress arrow
+    const maxLevel = 20;
+    const curLevel = Math.max(1, Math.min(maxLevel, Math.floor(this.level || 1)));
+    const frac = (maxLevel > 1) ? (curLevel - 1) / (maxLevel - 1) : 0; // 0..1 aligned with 20 ticks
+    const arrow = this.ui?.levelArrow;
+    const label = this.ui?.levelLabel;
+    const progressEl = this.ui?.levelProgress;
+    const ticksHost = overlay.querySelector?.('.level-progress .ticks');
+    if (arrow && ticksHost && progressEl) {
+      const hostLeft = ticksHost.offsetLeft || 0;
+      const hostWidth = ticksHost.clientWidth || 0;
+      const px = hostLeft + hostWidth * frac;
+      arrow.style.left = `${px}px`;
+    }
+    if (label) label.textContent = `${curLevel}/${maxLevel}`;
 
     // Wire buttons (restart/exit)
     const restartBtn = this.ui?.statsRestartBtn;
