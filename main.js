@@ -347,12 +347,12 @@ const BOSS_RIN_CONFIG = {
   name: "火焔猫　燐",
   title: "背信棄義的死猫",
   tiles: 6,
-  maxHp: 10000,
+  maxHp: 100000,
   armor: 0,
-  contactDamage: 50,
-  bulletMagicDamage: 50,
+  contactDamage: 1,
+  bulletMagicDamage: 20,
   moveSpeed: 60,
-  def: 50,
+  def: 20,
   assets: {
     basePath: "assets/boss/Rin/",
     bullets: {
@@ -1473,6 +1473,14 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
         this.spawnBoss(BOSS_RIN_CONFIG);
         this.createBossUI(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
         this.showBossHeader(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
+        // 设置Rin调试初始装备：饮血剑 + 破败王者之刃
+        try {
+          this.playerEquipmentSlots = new Array(EQUIPMENT_SLOT_COUNT).fill(null);
+          this.refreshEquipmentUI();
+          this.recalculateEquipmentEffects();
+          this.equipItem(0, (EQUIPMENT_IDS?.legendary?.bloodthirster) || "bloodthirster");
+          this.equipItem(1, BROKEN_KINGS_BLADE_ID);
+        } catch (_) {}
       } else {
         this.spawnBossById("Utsuho", { x: WORLD_SIZE/2, y: Math.floor(WORLD_SIZE * 0.25) });
       }
@@ -1482,7 +1490,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       this.bossMusic.play();
       if (__dbgWant === "Rin") {
         try { this.bossMusic.stop(); this.bossMusic.destroy(); } catch (_) {}
-        this.bossMusic = this.sound.add(BOSS_RIN_CONFIG.musicKey, { loop: true, volume: 1.5 });
+        this.bossMusic = this.sound.add(BOSS_RIN_CONFIG.musicKey, { loop: true, volume: 1.0 });
         this.bossMusic.play();
       }
 
@@ -5651,7 +5659,8 @@ castR() {
       });
     }
     this.time.delayedCall(ENEMY_SPAWN_DELAY_MS, () => {
-      if (!this || this.debugBossMode || this.roundComplete || this.roundAwaitingDecision) {
+      const allowRinP3 = !!(this && this.boss && this.boss.isBoss && this.boss.bossKind === "Rin" && this.boss.ai && this.boss.ai.mode === 3);
+      if (!this || (this.debugBossMode && !allowRinP3) || this.roundComplete || this.roundAwaitingDecision) {
         if (effectSprite) effectSprite.destroy();
         return;
       }
@@ -9315,16 +9324,16 @@ updateBossUI(target) {
       mode: 1,
       modeEndsAt: BOSS_RIN_CONFIG.modeDurations.m1,
       // Mode1 dash
-      m1_nextDashAt: 0,
+      m1_nextDashAt: 600, // 首次冲刺前等待0.6s
       m1_dashEndAt: 0,
       m1_dashIndex: 0,
       m1_dashDurationMs: 600,
       m1_cooldownMs: 600,
-      m1_dashSpeed: 1000,
+      m1_dashSpeed: 300,
       // Mode2 ring corpses
       m2_phaseDeg: Phaser.Math.Between(0, 359),
       m2_nextEmitAt: 0,
-      m2_emitInterval: 300,
+      m2_emitInterval: 3000,
       m2_corpseSpeed: 150,
       // Mode3 survival
       m3_initialized: false,
@@ -9381,7 +9390,7 @@ updateBossUI(target) {
       ai.mode = 1;
       ai.elapsed = 0;
       ai.modeEndsAt = BOSS_RIN_CONFIG.modeDurations.m1;
-      ai.m1_nextDashAt = 0;
+      ai.m1_nextDashAt = 600; // 回到P1也先等待0.6s
       ai.m1_dashEndAt = 0;
       ai.m1_dashIndex = 0;
       boss.invulnerable = false;
@@ -9505,6 +9514,8 @@ updateBossUI(target) {
 
   killRinCorpse(corpse, spawnRoundBullet) {
     if (!corpse || !corpse.active) return;
+    // 播放击杀音效
+    this.playSfx?.("enemyexploded");
     if (spawnRoundBullet) {
       const ang = Phaser.Math.Angle.Between(corpse.x, corpse.y, this.player.x, this.player.y);
       const angDeg = Phaser.Math.RadToDeg(ang);
