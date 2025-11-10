@@ -686,15 +686,15 @@
     .stats-title.pause { color: #ffeb3b; }
 
     .stats-bars {
-      /* Center the chart visually with symmetric side padding */
-      padding: 6px 200px 10px 200px;
+      /* Left align with 75px side spacing */
+      padding: 6px 75px 10px 75px;
       box-sizing: border-box;
       position: relative;
       flex: 0 0 auto;
       display: flex;
       flex-direction: column;
       gap: 10px;
-      margin: 0 auto; /* center block */
+      margin: 0; /* left aligned */
     }
     .stats-rows {
       display: flex;
@@ -754,8 +754,8 @@
     /* Optional baseline ticks; left/right margins 20px inside .stats-bars */
     .stats-scale {
       position: absolute;
-      left: 200px;
-      right: 200px;
+      left: 75px;
+      right: 75px;
       top: 46px; /* roughly below the title; inside stats area */
       bottom: 60px; /* leave space for buttons */
       pointer-events: none;
@@ -794,16 +794,16 @@
     }
     .level-progress .baseline {
       position: absolute;
-      left: 200px;
-      right: 200px;
+      left: 75px;
+      right: 75px;
       bottom: 12px;
       height: 2px;
       background: rgba(255,255,255,0.7);
     }
     .level-progress .ticks {
       position: absolute;
-      left: 200px;
-      right: 200px;
+      left: 75px;
+      right: 75px;
       bottom: 12px;
       height: 10px;
       pointer-events: none;
@@ -1048,7 +1048,6 @@
           </div>
           <div class="stats-actions">
             <button id="stats-restart" class="stats-button">重开</button>
-            <button id="stats-exit" class="stats-button">返回标题</button>
           </div>
         </div>
       </div>
