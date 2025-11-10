@@ -3232,6 +3232,7 @@ updateSpellbladeOverlays() {
 
   registerMovementDirection(direction) {
     if (!direction) return;
+    if (this.isGameplaySuspended && this.isGameplaySuspended()) return;
     const order = this.movementDirectionOrder ?? [];
     const index = order.indexOf(direction);
     if (index !== -1) order.splice(index, 1);
@@ -3440,10 +3441,22 @@ updateSpellbladeOverlays() {
   handlePauseKey(event) {
     if (!event || event.code !== "Escape") return;
     if (event.repeat) { event.preventDefault(); return; }
-    if (this.isGameOver || this.roundAwaitingDecision || (this.roundComplete && !this.isPaused)) return;
+    // Do not toggle pause when any interactive overlay is active
+    if (this.isGameOver || this.isShopOpen?.() || this.roundAwaitingDecision || (this.roundComplete && !this.isPaused)) return;
     event.preventDefault();
     if (this.isPaused) this.resumeGame();
     else this.pauseGame();
+  }
+
+  // Centralized gameplay-suspension predicate: true when game should be fully paused
+  isGameplaySuspended() {
+    // Paused explicitly, or at end/win/fail overlays, or shop/decision UIs
+    if (this.isPaused) return true;
+    if (this.isGameOver) return true;
+    if (this.isShopOpen && this.isShopOpen()) return true;
+    if (this.roundAwaitingDecision) return true;
+    if (this.roundComplete) return true;
+    return false;
   }
   pauseGame() {
     if (this.isPaused || this.roundComplete || this.roundAwaitingDecision) return;
@@ -3734,8 +3747,7 @@ this.events.once("destroy", offSkills);
   }
   update(time, delta) {
     if (this.boss) this.updateBossUI(this.boss);
-    if (this.isPaused) return;
-    if (this.isShopOpen()) return;
+    if (this.isGameplaySuspended()) return;
     this.elapsed += delta;
 
     if (this.guinsooStacks > 0 && this.time.now >= (this.guinsooStacksExpireAt || 0)) {
@@ -3886,7 +3898,7 @@ this.updateMikoOrbs(delta);
   // —— Q施法范围：按下Q开始瞄准（显示扇形+近战圆），抬起Q后释放 —— //
   startQAiming() {
     if (this.qAiming) return;
-    if (this.isPaused || this.isShopOpen()) return;
+    if (this.isGameplaySuspended && this.isGameplaySuspended()) return;
     this.qAiming = true;
     // 初始化角度为当前鼠标方向
     const pointer = this.input?.activePointer ?? null;
@@ -3905,7 +3917,7 @@ this.updateMikoOrbs(delta);
 
   finishQAiming() {
     if (!this.qAiming) return;
-    if (this.isPaused || this.isShopOpen()) { this.qAiming = false; if (this.qAimGraphics) this.qAimGraphics.clear(); return; }
+    if (this.isGameplaySuspended && this.isGameplaySuspended()) { this.qAiming = false; if (this.qAimGraphics) this.qAimGraphics.clear(); return; }
     this.qAiming = false;
     if (this.qAimGraphics) this.qAimGraphics.clear();
     // 抬起后施法（可否施法由castQ内部canCast判定）
@@ -4113,6 +4125,8 @@ onSpellCastComplete() {
 }
 
 canCast(key) {
+  // Block all casting while gameplay is suspended (pause/shop/game over/round UI)
+  if (this.isGameplaySuspended && this.isGameplaySuspended()) return false;
   const now = this.time.now;
   const cfg = this.skillConfig[key];
   if (!cfg) return false;
@@ -6519,6 +6533,8 @@ consumeSpellbladeIfReady(enemy) {
   }
 
   applyDamageToPlayer(amount, sourceStats = null) {
+    // Ignore all damage processing while gameplay is suspended
+    if (this.isGameplaySuspended && this.isGameplaySuspended()) return;
     if (this.isPlayerInvulnerable()) return;
     const hpBefore = this.currentHp;
     const actual = this.applyMitigationToTarget(Math.round(amount), this.playerStats, sourceStats, "physical");
