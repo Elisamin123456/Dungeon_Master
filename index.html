@@ -648,6 +648,139 @@
       font-size: 12px;
       color: #ff8080;
     }
+    
+    /* ==== Stats Overlay (HTML) ==== */
+    .stats-overlay {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 640px;
+      height: 480px;
+      z-index: 10000;
+      display: none; /* toggled via JS */
+      pointer-events: auto;
+    }
+    .stats-panel {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.80);
+      border: 2px solid #ffffff;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      padding-top: 50px; /* push title slightly down */
+    }
+    .stats-title {
+      text-align: center;
+      font-family: "Zpix", monospace;
+      font-size: 30px;
+      letter-spacing: 2px;
+      margin: 28px 0 12px 0; /* slightly lower from top */
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.45);
+    }
+    .stats-title.win { color: #ffd700; }
+    .stats-title.fail { color: #ff4d4f; }
+    .stats-title.pause { color: #ffeb3b; }
+
+    .stats-bars {
+      /* Increased side padding */
+      padding: 12px 28px 16px 28px;
+      box-sizing: border-box;
+      position: relative;
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      /* center vertically between title and actions */
+      margin-top: auto;
+      margin-bottom: auto;
+    }
+    .stats-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: 120px 1fr; /* widened label column */
+      align-items: center;
+      gap: 8px;
+      min-height: 28px;
+    }
+    .stats-label {
+      padding-left: 28px; /* align with ticks and inner paddings */
+      color: #ffffff;
+      font-family: "Zpix", monospace;
+      font-size: 16px;
+      letter-spacing: 1px;
+      opacity: 0.95;
+    }
+    .stats-bar-outer {
+      position: relative;
+      height: 18px;
+      border: 2px solid #ffffff;
+      background: rgba(255,255,255,0.06);
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .stats-bar-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 0%;
+      background: #66aaff; /* default blue */
+    }
+    .stats-bar-fill.yellow { background: #ffd966; }
+    .stats-bar-fill.blue { background: #66aaff; }
+    .stats-bar-fill.red { background: #ff6666; }
+    .stats-bar-fill.green { background: #66ff66; }
+    .stats-bar-fill.gold { background: #ffd966; }
+
+    .stats-value {
+      position: absolute;
+      top: 50%;
+      transform: translate(6px, -50%); /* always outside to the right */
+      white-space: nowrap;
+      color: #ffffff;
+      font-family: "Zpix", monospace;
+      font-size: 14px;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.6);
+    }
+
+    /* Optional baseline ticks; left/right margins 20px inside .stats-bars */
+    .stats-scale {
+      position: absolute;
+      left: 28px;
+      right: 28px;
+      top: 46px; /* roughly below the title; inside stats area */
+      bottom: 60px; /* leave space for buttons */
+      pointer-events: none;
+    }
+    .stats-scale .tick {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(255,255,255,0.18);
+    }
+    .stats-actions {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 0 16px 0;
+    }
+    .stats-button {
+      background: #32274a;
+      border: 1px solid #ffffffaa;
+      color: #fff;
+      font-family: "Zpix", monospace;
+      font-size: 16px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+    .stats-button:hover { background: #46356d; }
   </style>
 </head>
 <body>
@@ -780,6 +913,57 @@
           </div>
           <div class="shop-message" id="shop-message"></div>
           <div class="shop-items" id="shop-items"></div>
+        </div>
+      </div>
+
+      <!-- Stats Overlay (HTML, not affected by camera zoom) -->
+      <div id="stats-overlay" class="stats-overlay">
+        <div class="stats-panel">
+          <div id="stats-title" class="stats-title">Stats</div>
+          <div class="stats-bars">
+            <div class="stats-rows">
+              <div class="stats-row" data-key="dealt">
+                <div class="stats-label">造成伤害</div>
+                <div class="stats-bar-outer">
+                  <div class="stats-bar-fill yellow" data-seg="phys"></div>
+                  <div class="stats-bar-fill blue" data-seg="magic"></div>
+                  <div class="stats-value" data-value></div>
+                </div>
+              </div>
+              <div class="stats-row" data-key="taken">
+                <div class="stats-label">受到伤害</div>
+                <div class="stats-bar-outer">
+                  <div class="stats-bar-fill red" data-fill></div>
+                  <div class="stats-value" data-value></div>
+                </div>
+              </div>
+              <div class="stats-row" data-key="gold">
+                <div class="stats-label">总经济</div>
+                <div class="stats-bar-outer">
+                  <div class="stats-bar-fill gold" data-fill></div>
+                  <div class="stats-value" data-value></div>
+                </div>
+              </div>
+              <div class="stats-row" data-key="heal">
+                <div class="stats-label">总治疗</div>
+                <div class="stats-bar-outer">
+                  <div class="stats-bar-fill green" data-fill></div>
+                  <div class="stats-value" data-value></div>
+                </div>
+              </div>
+            </div>
+            <div class="stats-scale">
+              <div class="tick" style="left: 0%"></div>
+              <div class="tick" style="left: 25%"></div>
+              <div class="tick" style="left: 50%"></div>
+              <div class="tick" style="left: 75%"></div>
+              <div class="tick" style="left: 100%"></div>
+            </div>
+          </div>
+          <div class="stats-actions">
+            <button id="stats-restart" class="stats-button">重开</button>
+            <button id="stats-exit" class="stats-button">返回标题</button>
+          </div>
         </div>
       </div>
       <div id="boss-header" style="
