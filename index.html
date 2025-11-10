@@ -694,8 +694,8 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      /* center block within panel */
-      margin: 0 auto;
+      /* left align within panel */
+      margin: 0;
     }
     .stats-rows {
       display: flex;
@@ -724,7 +724,7 @@
       background: rgba(255,255,255,0.06);
       box-sizing: border-box;
       overflow: hidden;
-      width: 0%; /* dynamically set by JS to match value */
+      width: 100%; /* full width; fill indicates proportion */
     }
     .stats-bar-fill {
       position: absolute;
