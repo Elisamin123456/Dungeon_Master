@@ -3450,7 +3450,8 @@ updateSpellbladeOverlays() {
     if (this.battleBgm?.isPlaying) this.battleBgm.pause();
     if (this.attackTimer) this.attackTimer.paused = true;
     if (this.spawnTimer) this.spawnTimer.paused = true;
-    this.showPauseOverlay();
+    // 改为使用 HTML 统计浮层：标题“游戏暂停”
+    this.showHtmlStatsOverlay("pause");
     this.playSfx("pause");
   }
   resumeGame() {
@@ -3464,6 +3465,9 @@ updateSpellbladeOverlays() {
     }
     if (this.attackTimer) this.attackTimer.paused = false;
     if (this.spawnTimer) this.spawnTimer.paused = false;
+    // 关闭 HTML 统计浮层
+    this.hideHtmlStatsOverlay();
+    // 清理旧的 Phaser 暂停覆盖层（兼容旧逻辑，避免残留）
     this.clearPauseOverlay();
   }
   exitToStartFromPause() {
@@ -4567,6 +4571,102 @@ updateEnemies() {
       this.updateSkillCooldownUI();
       this.updateSpellbladeOverlays();
 
+  }
+
+  // ==== HTML Stats Overlay (Pause/Fail/Win) ====
+  showHtmlStatsOverlay(outcome = "fail") {
+    const overlay = this.ui?.statsOverlay;
+    const titleEl = this.ui?.statsTitle;
+    if (!overlay || !titleEl) return;
+
+    // Hide shop DOM if visible
+    try { if (this.shopUi?.overlay) this.shopUi.overlay.classList.remove("visible"); } catch (_) {}
+
+    // Title and color
+    titleEl.classList.remove("win", "fail", "pause");
+    if (outcome === "win") {
+      titleEl.classList.add("win");
+      titleEl.textContent = "通关成功";
+    } else if (outcome === "pause") {
+      titleEl.classList.add("pause");
+      titleEl.textContent = "游戏暂停";
+    } else {
+      titleEl.classList.add("fail");
+      titleEl.textContent = "通关失败";
+    }
+
+    // Collect values
+    const dealtPhys = Math.max(0, Math.floor(this.runStats?.dealtPhys || 0));
+    const dealtMagic = Math.max(0, Math.floor(this.runStats?.dealtMagic || 0));
+    const dealtTotal = dealtPhys + dealtMagic;
+    const taken = Math.max(0, Math.floor(this.runStats?.taken || 0));
+    const heal = Math.max(0, Math.floor(this.runStats?.heal || 0));
+    const gold = Math.max(0, Math.floor(this.runStats?.gold || 0));
+    const maxVal = Math.max(1, dealtTotal, taken, gold, heal);
+    const BAR_MAX = 0.85; // cap bar length to 85%
+
+    const root = overlay;
+    const row = (key) => root.querySelector(`.stats-row[data-key="${key}"]`);
+    const setRow = (key, totalValue, opts = {}) => {
+      const rowEl = row(key);
+      if (!rowEl) return;
+      const valueEl = rowEl.querySelector('.stats-value[data-value]');
+      const p = Math.max(0, Math.min(1, (maxVal > 0 ? (totalValue / maxVal) : 0)));
+      const totalPct = p * 100 * BAR_MAX;
+      if (valueEl) {
+        valueEl.textContent = `${totalValue}`;
+        valueEl.style.left = `${totalPct}%`;
+      }
+      const singleFill = rowEl.querySelector('.stats-bar-fill[data-fill]');
+      if (singleFill) singleFill.style.width = `${totalPct}%`;
+      if (opts.split) {
+        const a = Math.max(0, opts.segA || 0);
+        const b = Math.max(0, opts.segB || 0);
+        const t = Math.max(0.0001, a + b);
+        const aPct = totalPct * (a / t);
+        const bPct = totalPct - aPct;
+        const segA = rowEl.querySelector('.stats-bar-fill.yellow[data-seg="phys"]');
+        const segB = rowEl.querySelector('.stats-bar-fill.blue[data-seg="magic"]');
+        if (segA) { segA.style.left = '0%'; segA.style.width = `${aPct}%`; }
+        if (segB) { segB.style.left = `${aPct}%`; segB.style.width = `${bPct}%`; }
+      }
+    };
+
+    setRow('dealt', dealtTotal, { split: true, segA: dealtPhys, segB: dealtMagic });
+    setRow('taken', taken);
+    setRow('gold', gold);
+    setRow('heal', heal);
+
+    overlay.style.display = 'block';
+
+    // Wire buttons (restart/exit)
+    const restartBtn = this.ui?.statsRestartBtn;
+    const exitBtn = this.ui?.statsExitBtn;
+    if (this._statsOverlayHandlers?.length) {
+      try { restartBtn?.removeEventListener('click', this._statsOverlayHandlers[0]); } catch (_) {}
+      try { exitBtn?.removeEventListener('click', this._statsOverlayHandlers[1]); } catch (_) {}
+    }
+    const onRestart = () => {
+      if (typeof window !== 'undefined' && window.location) window.location.reload();
+      else this.scene.restart();
+    };
+    const onExit = () => { this.scene.start('StartScene'); };
+    if (restartBtn) restartBtn.addEventListener('click', onRestart);
+    if (exitBtn) exitBtn.addEventListener('click', onExit);
+    this._statsOverlayHandlers = [onRestart, onExit];
+  }
+
+  hideHtmlStatsOverlay() {
+    const overlay = this.ui?.statsOverlay;
+    if (!overlay) return;
+    overlay.style.display = 'none';
+    const restartBtn = this.ui?.statsRestartBtn;
+    const exitBtn = this.ui?.statsExitBtn;
+    if (this._statsOverlayHandlers?.length) {
+      try { restartBtn?.removeEventListener('click', this._statsOverlayHandlers[0]); } catch (_) {}
+      try { exitBtn?.removeEventListener('click', this._statsOverlayHandlers[1]); } catch (_) {}
+    }
+    this._statsOverlayHandlers = null;
   }
   
   // (moved: showHtmlStatsOverlay/hideHtmlStatsOverlay declared at class scope)
