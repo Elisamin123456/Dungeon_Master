@@ -686,7 +686,7 @@
     .stats-title.pause { color: #ffeb3b; }
 
     .stats-bars {
-      /* Increased side padding to 200px on left/right */
+      /* Center the chart visually with symmetric side padding */
       padding: 6px 200px 10px 200px;
       box-sizing: border-box;
       position: relative;
@@ -694,8 +694,7 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      /* left align within panel */
-      margin: 0;
+      margin: 0 auto; /* center block */
     }
     .stats-rows {
       display: flex;
@@ -716,6 +715,7 @@
       font-size: 16px;
       letter-spacing: 1px;
       opacity: 0.95;
+      text-align: left; /* left-align labels */
     }
     .stats-bar-outer {
       position: relative;
