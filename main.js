@@ -57,7 +57,7 @@ const SOULSTEALER_CODEX_ID = "soulstealerCodex";
 const HEALTH_POTION_ID = "healthPotion";
 const REFILLABLE_POTION_ID = "refillablePotion";
 const EQUIPMENT_TOOLTIP_DEFAULT = "查看鼠标移动到的位置";
-const DEBUG_INITIAL_RANK = 11;
+const DEBUG_INITIAL_RANK = 10;
 const DEBUG_SCENARIO = (() => {
   if (typeof window === "undefined") {
     return false;
@@ -944,6 +944,7 @@ class GameScene extends Phaser.Scene {
     // 默认从第1关开始；当使用 ?debug 时，从第11关开始便于测试中后期
     this.level = (this.debugMode ? 11 : 1); // 关卡必须是整数
 
+    this.level = (this.debugMode ? 10 : 1);
     this.playerStats = { ...PLAYER_BASE_STATS };
     this.currentHp = this.playerStats.maxHp;
     this.currentMana = this.playerStats.maxMana;
@@ -1983,7 +1984,10 @@ updateTurretAI(enemy, now, _delta) {
     this.refreshEquipmentUI();
     this.refreshEquipmentTooltip(null);
 
-    if ((this.debugMode || this.debugBossMode) && !this.debugShopMode) {
+    if (this.debugMode && !this.debugShopMode) {
+      this.equipItem(0, HEARTSTEEL_ID);
+      this.equipItem(1, TITANIC_HYDRA_ID);
+    } else if (this.debugBossMode && !this.debugShopMode) {
       this.equipItem(0, BROKEN_KINGS_BLADE_ID);
       this.equipItem(1, WITS_END_ID);
       this.equipItem(2, NASHORS_TOOTH_ID);
