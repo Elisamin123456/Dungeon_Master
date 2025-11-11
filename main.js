@@ -347,7 +347,7 @@ const BOSS_RIN_CONFIG = {
   name: "火焔猫　燐",
   title: "背信棄義的死猫",
   tiles: 6,
-  maxHp: 100000,
+  maxHp: 60000,
   armor: 0,
   contactDamage: 1,
   bulletMagicDamage: 20,
