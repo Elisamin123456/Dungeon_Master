@@ -1483,7 +1483,13 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
           this.equipItem(1, BROKEN_KINGS_BLADE_ID);
         } catch (_) {}
       } else {
-        this.spawnBossById("Utsuho", { x: WORLD_SIZE/2, y: Math.floor(WORLD_SIZE * 0.25) });
+        if (this.level === 10) {
+          this.spawnBoss(BOSS_RIN_CONFIG);
+          this.createBossUI(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
+          this.showBossHeader(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
+        } else {
+          this.spawnBossById("Utsuho", { x: WORLD_SIZE/2, y: Math.floor(WORLD_SIZE * 0.25) });
+        }
       }
 
       // 生成后才播放 Boss 音乐
@@ -4591,7 +4597,7 @@ updateEnemies() {
       }
 
       // 判断是否Boss关卡（每20关）
-      this.isBossStage = (this.level % 20 === 0);
+      this.isBossStage = (this.level === 10) || (this.level % 20 === 0);
 
       // 刷新地形（Boss关卡仅保留边框）
       this.generateRandomSegmentsMap();
@@ -4615,6 +4621,17 @@ updateEnemies() {
 
       // 普通关卡：恢复刷怪；Boss关卡：生成Boss且暂停刷怪
       if (this.isBossStage) {
+        // 第10关：作为 Boss 关，生成 Rin 并直接进入Boss流程
+        if (this.level === 10) {
+          if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
+          this.spawnBoss(BOSS_RIN_CONFIG);
+          this.createBossUI(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
+          this.showBossHeader(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
+          try { if (this.battleBgm?.isPlaying) this.battleBgm.stop(); } catch (_) {}
+          if (!this.bossMusic) { this.bossMusic = this.sound.add(BOSS_RIN_CONFIG.musicKey, { loop: true, volume: 1.0 }); }
+          if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
+          return;
+        }
         // 停止常规刷怪
         if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
         // 生成Boss Utsuho（默认场地中上方）
@@ -4648,7 +4665,9 @@ updateEnemies() {
           if (this.battleBgm?.isPlaying) this.battleBgm.stop();
         } catch (_) {}
         if (!this.bossMusic) {
-          this.bossMusic = this.sound.add(BOSS_UTSUHO_CONFIG.musicKey, { loop: true, volume: 1.5 });
+          const key = (this.level === 10) ? BOSS_RIN_CONFIG.musicKey : BOSS_UTSUHO_CONFIG.musicKey;
+          const vol = (this.level === 10) ? 1.0 : 1.5;
+          this.bossMusic = this.sound.add(key, { loop: true, volume: vol });
         }
         if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
       } else {
