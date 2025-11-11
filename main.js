@@ -6740,6 +6740,17 @@ consumeSpellbladeIfReady(enemy) {
               this.physics.velocityFromRotation(ang, 150, c.body.velocity);
             }
           }
+          // P3：死一个刷一个（总量上限 250）
+          if (Number.isFinite(ai.m3_totalToSpawn) && Number.isFinite(ai.m3_spawned) && ai.m3_spawned < ai.m3_totalToSpawn) {
+            const typeKey = "kedama"; const tierKey = ENEMY_RARITIES.BASIC;
+            const typeConfig = ENEMY_TYPE_CONFIG[typeKey]; const tierConfig = typeConfig?.tiers?.[tierKey];
+            if (typeConfig && tierConfig) {
+              const pos = this.findEnemySpawnPosition({ typeKey, tierKey, typeConfig, tierConfig })
+                        || { x: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE), y: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE) };
+              this.spawnEnemyWithEffect({ typeKey, tierKey, typeConfig, tierConfig }, pos);
+              ai.m3_spawned += 1;
+            }
+          }
         } catch (_) {}
       }
     }
@@ -9461,16 +9472,21 @@ updateBossUI(target) {
     if (!ai.m3_initialized) {
       ai.m3_initialized = true;
       // 取消锁血无敌
-      // 召唤 250 basic 毛玉
+      // P3 刷怪规则：总量250，先刷50，之后“死一个刷一个”直至总量达成
       const typeKey = "kedama";
       const tierKey = ENEMY_RARITIES.BASIC;
       const typeConfig = ENEMY_TYPE_CONFIG[typeKey];
       const tierConfig = typeConfig?.tiers?.[tierKey];
+      ai.m3_totalToSpawn = 250;
+      ai.m3_spawned = 0;
       if (typeConfig && tierConfig) {
-        for (let i = 0; i < 250; i += 1) {
+        const initial = 50;
+        const toSpawn = Math.max(0, Math.min(initial, ai.m3_totalToSpawn - ai.m3_spawned));
+        for (let i = 0; i < toSpawn; i += 1) {
           const pos = this.findEnemySpawnPosition({ typeKey, tierKey, typeConfig, tierConfig })
                     || { x: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE), y: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE) };
           this.spawnEnemyWithEffect({ typeKey, tierKey, typeConfig, tierConfig }, pos);
+          ai.m3_spawned += 1;
         }
       }
       // 初始化计数
