@@ -4947,13 +4947,7 @@ showHealNumber(x, y, amount) {
     const baseDamage = Number.isFinite(amount) ? amount : 0;
     if (baseDamage <= 0) return 0;
 
-    // Rin 第三阶段无敌：对其伤害为0
-    try {
-      if (targetStatsOrObj?.isBoss && targetStatsOrObj?.bossKind === "Rin") {
-        const ai = targetStatsOrObj?.ai;
-        if (ai && ai.mode === 3) return 0;
-      }
-    } catch (_) {}
+    // 取消 Rin 第三阶段锁血无敌：不再拦截伤害
 
     const minOutput = Number.isFinite(minimumOutput) ? Math.max(0, Math.ceil(minimumOutput)) : 0;
 
@@ -9381,8 +9375,7 @@ updateBossUI(target) {
       ai.mode = 3;
       // 第三阶段：直到场上小怪清空
       ai.m3_initialized = false;
-      // 设置Boss无敌
-      boss.invulnerable = true;
+      // 取消锁血无敌
       return;
     }
     if (ai.mode === 3) {
@@ -9414,9 +9407,9 @@ updateBossUI(target) {
         key: "r_bullet_needle",
         sizeTiles: BOSS_RIN_CONFIG.hitboxes.bullets.needle.size,
         judgeTiles: BOSS_RIN_CONFIG.hitboxes.bullets.needle.judge,
-        count: 15,
+        count: 30,
         phaseDeg: Phaser.Math.Between(0, 359),
-        forwardSpeed: 150,
+        forwardSpeed: 200,
         owner: boss,
       }, BOSS_RIN_CONFIG.bulletMagicDamage);
       ai.m1_nextDashAt = now + ai.m1_cooldownMs;
@@ -9467,7 +9460,7 @@ updateBossUI(target) {
     const boss = this.boss; const ai = boss.ai;
     if (!ai.m3_initialized) {
       ai.m3_initialized = true;
-      boss.invulnerable = true;
+      // 取消锁血无敌
       // 召唤 250 basic 毛玉
       const typeKey = "kedama";
       const tierKey = ENEMY_RARITIES.BASIC;
