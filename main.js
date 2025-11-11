@@ -6454,6 +6454,7 @@ const totalDamage =
 
   handlePlayerEnemyContact(_player, enemy) {
     const now = this.time.now;
+    if (enemy && enemy.isChest) return;
     if (!enemy.lastDamageTick || now - enemy.lastDamageTick >= 650) {
       /* 修改：Boss 接触伤害按Boss配置，否则用默认常量，不改变原有逻辑 */
       const dmg = (enemy.isBoss && enemy.contactDamage) ? enemy.contactDamage : ENEMY_CONTACT_DAMAGE;
@@ -9329,7 +9330,7 @@ updateBossUI(target) {
       mode: 1,
       modeEndsAt: BOSS_RIN_CONFIG.modeDurations.m1,
       // Mode1 dash
-      m1_nextDashAt: 600, // 首次冲刺前等待0.6s
+      m1_nextDashAt: 1200, // 首次冲刺前等待0.6s
       m1_dashEndAt: 0,
       m1_dashIndex: 0,
       m1_dashDurationMs: 600,
@@ -9338,8 +9339,8 @@ updateBossUI(target) {
       // Mode2 ring corpses
       m2_phaseDeg: Phaser.Math.Between(0, 359),
       m2_nextEmitAt: 0,
-      m2_emitInterval: 3000,
-      m2_corpseSpeed: 150,
+      m2_emitInterval: 1500,
+      m2_corpseSpeed: 60,
       // Mode3 survival
       m3_initialized: false,
       m3_counts: { kedamaKills: 0 },
