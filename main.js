@@ -962,6 +962,8 @@ class GameScene extends Phaser.Scene {
       this.level = 20;
       this.rank = 20;
     }
+    // 初始化：根据关卡确定是否为 Boss 关（第10关和每20关）
+    this.isBossStage = (this.level === 10) || (this.level % 20 === 0);
     this.lastDamageTimestamp = 0;
     this.nextNoDamageRankCheck = 0;
     this.roundTimeLeft = ROUND_DURATION;
@@ -1447,13 +1449,15 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       this.openShop("debug");
     }
 
-    if (!this.battleBgm) {
-      this.battleBgm = this.sound.add("battle_bgm", { loop: true, volume: 0.4 });
-      this.battleBgm.play();
-      this.events.once("shutdown", () => { if (this.battleBgm?.isPlaying) this.battleBgm.stop(); });
-      this.events.once("destroy", () => { if (this.battleBgm) { this.battleBgm.stop(); this.battleBgm.destroy(); this.battleBgm = null; } });
-    } else if (!this.battleBgm.isPlaying) {
-      this.battleBgm.play();
+    if (!this.isBossStage) {
+      if (!this.battleBgm) {
+        this.battleBgm = this.sound.add("battle_bgm", { loop: true, volume: 0.4 });
+        this.battleBgm.play();
+        this.events.once("shutdown", () => { if (this.battleBgm?.isPlaying) this.battleBgm.stop(); });
+        this.events.once("destroy", () => { if (this.battleBgm) { this.battleBgm.stop(); this.battleBgm.destroy(); this.battleBgm = null; } });
+      } else if (!this.battleBgm.isPlaying) {
+        this.battleBgm.play();
+      }
     }
 
     // Debug Boss 模式：停止一切音乐 -> 生成Utsuho -> 再播放Boss曲
@@ -3706,8 +3710,29 @@ this.events.once("destroy", offSkills);
     this.scheduleSpawnTimer();
   }
   scheduleSpawnTimer() {
-    if (this.debugBossMode || this.isBossStage) {
+    // Debug Boss：仅调试用，后续由专属逻辑处理
+    if (this.debugBossMode) {
       if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
+      return;
+    }
+    // 正式 Boss 关（第10关与每20关）：不刷怪，直接生成 Boss
+    if (this.isBossStage) {
+      if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
+      if (!this.boss) {
+        if (this.level === 10) {
+          this.spawnBoss(BOSS_RIN_CONFIG);
+          this.createBossUI(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
+          this.showBossHeader(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
+          try { if (this.battleBgm?.isPlaying) this.battleBgm.stop(); } catch (_) {}
+          if (!this.bossMusic) { this.bossMusic = this.sound.add(BOSS_RIN_CONFIG.musicKey, { loop: true, volume: 1.0 }); }
+          if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
+        } else {
+          this.spawnBossById("Utsuho", { x: WORLD_SIZE/2, y: Math.floor(WORLD_SIZE * 0.25) });
+          try { if (this.battleBgm?.isPlaying) this.battleBgm.stop(); } catch (_) {}
+          if (!this.bossMusic) { this.bossMusic = this.sound.add(BOSS_UTSUHO_CONFIG.musicKey, { loop: true, volume: 1.5 }); }
+          if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
+        }
+      }
       return;
     }
     if (this.roundComplete || this.roundAwaitingDecision) {
@@ -3751,6 +3776,7 @@ this.events.once("destroy", offSkills);
   }
 
   spawnMapPlaces() {
+    if (this.isBossStage) return; // Boss关卡不生成商店/宝箱
     if (!this.places) this.places = this.physics.add.staticGroup();
     this.shopPlaces = [];
     // 先放商店
