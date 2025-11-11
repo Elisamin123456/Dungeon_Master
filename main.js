@@ -1,4 +1,4 @@
-/* ==== »ù´¡³£Á¿ ==== */
+ï»¿/* ==== åŸºç¡€å¸¸é‡ ==== */
 import { EQUIPMENT_DATA, EQUIPMENT_IDS, ITEM_TIERS } from "./equipmentData.js";
 
 const GAME_WIDTH = 640;
@@ -21,9 +21,9 @@ const CAMERA_ZOOM_MAX = 3.5;
 const CAMERA_ZOOM_STEP = 0.25;
 const Q_TALISMAN_SPEED = 100;
 const Q_TALISMAN_BOUNDARY_PADDING = 16;
-// QÊ©·¨Ãé×¼Ö¸Ê¾Æ÷²ÎÊı
-const Q_AIM_CONE_ANGLE_DEG = 30;            // Ç°·½ÉÈĞÎ½Ç¶È
-const Q_AIM_RADIUS = 8 * TILE_SIZE;         // ÉÈĞÎ°ë¾¶£¨ÒÔ¸ñÎªµ¥Î»»»ËãÏñËØ£©
+// Qæ–½æ³•ç„å‡†æŒ‡ç¤ºå™¨å‚æ•°
+const Q_AIM_CONE_ANGLE_DEG = 30;            // å‰æ–¹æ‰‡å½¢è§’åº¦
+const Q_AIM_RADIUS = 8 * TILE_SIZE;         // æ‰‡å½¢åŠå¾„ï¼ˆä»¥æ ¼ä¸ºå•ä½æ¢ç®—åƒç´ ï¼‰
 
 const EQUIPMENT_SLOT_COUNT = 6;
 const BROKEN_KINGS_BLADE_ID = "brokenKingsBlade";
@@ -48,15 +48,15 @@ const HEXTECH_ALTERNATOR_ID = "hextechAlternator";
 const LIANDRYS_ANGUISH_ID = "liandrysAnguish";
 const INFINITY_ORB_ID = "infinityOrb";
 const RIFTMAKER_ID = "riftmaker";
-// ĞÂÔö£º±¾´ÎÊµÏÖÉæ¼°µÄ×°±¸ ID
-const RABADONS_DEATHCAP_ID = "rabadonsDeathcap";     // ÃğÊÀÕßµÄËÀÍöÖ®Ã±
-const NAVORI_QUICKBLADES_ID = "navoriQuickblades";   // Ñ¶ÈĞ
-const THE_COLLECTOR_ID = "theCollector";             // ÊÕ¼¯Õß
+// æ–°å¢ï¼šæœ¬æ¬¡å®ç°æ¶‰åŠçš„è£…å¤‡ ID
+const RABADONS_DEATHCAP_ID = "rabadonsDeathcap";     // ç­ä¸–è€…çš„æ­»äº¡ä¹‹å¸½
+const NAVORI_QUICKBLADES_ID = "navoriQuickblades";   // è®¯åˆƒ
+const THE_COLLECTOR_ID = "theCollector";             // æ”¶é›†è€…
 const SOULSTEALER_CODEX_ID = "soulstealerCodex";
 // Consumables
 const HEALTH_POTION_ID = "healthPotion";
 const REFILLABLE_POTION_ID = "refillablePotion";
-const EQUIPMENT_TOOLTIP_DEFAULT = "²é¿´Êó±êÒÆ¶¯µ½µÄÎ»ÖÃ";
+const EQUIPMENT_TOOLTIP_DEFAULT = "æŸ¥çœ‹é¼ æ ‡ç§»åŠ¨åˆ°çš„ä½ç½®";
 const DEBUG_INITIAL_RANK = 10;
 const DEBUG_SCENARIO = (() => {
   if (typeof window === "undefined") {
@@ -72,7 +72,7 @@ const DEBUG_SCENARIO = (() => {
   }
 })();
 
-/* ==== Boss µ÷ÊÔ¿ª¹ØÓë²âÊÔÅäÖÃ ==== */
+/* ==== Boss è°ƒè¯•å¼€å…³ä¸æµ‹è¯•é…ç½® ==== */
 const DEBUG_BOSS = (() => {
   if (typeof window === "undefined") return false;
   try {
@@ -108,10 +108,10 @@ const DEBUG_SHOP = (() => {
 })();
 
 const SHOP_ITEM_COUNT = 3;
-const SHOP_REFRESH_COST = 10; // ³õÊ¼Ë¢ĞÂ·ÑÓÃ£¨¶¯Ì¬Ë¢ĞÂ½«»ùÓÚ´ËÖµ£©
+const SHOP_REFRESH_COST = 10; // åˆå§‹åˆ·æ–°è´¹ç”¨ï¼ˆåŠ¨æ€åˆ·æ–°å°†åŸºäºæ­¤å€¼ï¼‰
 const SHOP_DEBUG_START_GOLD = 100000;
 
-// ===== ËéÆ¬ÉÌµê£ºÊı¾İÓë³£Á¿ =====
+// ===== ç¢ç‰‡å•†åº—ï¼šæ•°æ®ä¸å¸¸é‡ =====
 const SHARD_RARITIES = Object.freeze({ BASIC: "basic", MID: "mid", EPIC: "epic", LEGENDARY: "legendary" });
 const SHARD_COSTS = Object.freeze({
   [SHARD_RARITIES.BASIC]: 300,
@@ -120,69 +120,69 @@ const SHARD_COSTS = Object.freeze({
   [SHARD_RARITIES.LEGENDARY]: 3500,
 });
 
-// Í¨ÓÃËéÆ¬Í¼±ê£¨¸´ÓÃPowerup£©
+// é€šç”¨ç¢ç‰‡å›¾æ ‡ï¼ˆå¤ç”¨Powerupï¼‰
 const SHARD_ICON = "assets/item/legendary/Powerup.png";
 
-// ËéÆ¬¶¨Òå£¨½öÓÃÓÚÉÌµêÓë½áËã£¬Ö±½Ó×÷ÓÃÓÚÃæ°å£¬ÎŞĞè½øÈë×°±¸À¸£©
-// ËµÃ÷£º°Ù·Ö±È×Ö¶ÎÍ³Ò»Ê¹ÓÃ 0~1 Ğ¡Êı±íÊ¾¡£
+// ç¢ç‰‡å®šä¹‰ï¼ˆä»…ç”¨äºå•†åº—ä¸ç»“ç®—ï¼Œç›´æ¥ä½œç”¨äºé¢æ¿ï¼Œæ— éœ€è¿›å…¥è£…å¤‡æ ï¼‰
+// è¯´æ˜ï¼šç™¾åˆ†æ¯”å­—æ®µç»Ÿä¸€ä½¿ç”¨ 0~1 å°æ•°è¡¨ç¤ºã€‚
 const SHARDS = [
   // Basic (300G)
-  { id: "shard_ad_basic",        name: "¹¥»÷ËéÆ¬",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["¹¥»÷Á¦ +10"],                                  effects: { attackDamageFlat: 10 } },
-  { id: "shard_as_basic",        name: "¹¥ËÙËéÆ¬",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["¹¥ËÙ +15%"],                                  effects: { attackSpeedPct: 0.15 } },
-  { id: "shard_hp_basic",        name: "ÉúÃüËéÆ¬",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["ÉúÃüÖµ +100"],                                 effects: { maxHpFlat: 100 } },
-  { id: "shard_ar_basic",        name: "»¤¼×ËéÆ¬",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["»¤¼× +15"],                                   effects: { armorFlat: 15 } },
-  { id: "shard_def_basic",       name: "·ÀÓùËéÆ¬",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["·ÀÓù +5"],                                    effects: { defenseFlat: 5 } },
-  { id: "shard_ms_basic",        name: "ÒÆËÙËéÆ¬",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["ËÙ¶È +10"],                                   effects: { moveSpeedFlat: 10 } },
-  { id: "shard_haste_basic",     name: "ÀäÈ´ËéÆ¬",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["¼¼ÄÜ¼±ËÙ +10"],                               effects: { abilityHaste: 10 } },
-  { id: "shard_mana_basic",      name: "·¨Á¦ËéÆ¬",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["·¨Á¦Öµ +100"],                                 effects: { maxManaFlat: 100 } },
-  { id: "shard_ap_basic",        name: "Ä§·¨ËéÆ¬",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["·¨ÊõÇ¿¶È +20"],                                effects: { abilityPowerFlat: 20 } },
-  { id: "shard_cr_basic",        name: "±©»÷ËéÆ¬",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["±©»÷ÂÊ +8%"],                                  effects: { critChancePct: 0.08 } },
-  { id: "shard_heal_basic",      name: "ÖÎÁÆËéÆ¬",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["ÉúÃü»Ø¸´ +10/Ãë"],                             effects: { hpRegenPerSecond: 10 } },
+  { id: "shard_ad_basic",        name: "æ”»å‡»ç¢ç‰‡",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["æ”»å‡»åŠ› +10"],                                  effects: { attackDamageFlat: 10 } },
+  { id: "shard_as_basic",        name: "æ”»é€Ÿç¢ç‰‡",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["æ”»é€Ÿ +15%"],                                  effects: { attackSpeedPct: 0.15 } },
+  { id: "shard_hp_basic",        name: "ç”Ÿå‘½ç¢ç‰‡",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["ç”Ÿå‘½å€¼ +100"],                                 effects: { maxHpFlat: 100 } },
+  { id: "shard_ar_basic",        name: "æŠ¤ç”²ç¢ç‰‡",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["æŠ¤ç”² +15"],                                   effects: { armorFlat: 15 } },
+  { id: "shard_def_basic",       name: "é˜²å¾¡ç¢ç‰‡",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["é˜²å¾¡ +5"],                                    effects: { defenseFlat: 5 } },
+  { id: "shard_ms_basic",        name: "ç§»é€Ÿç¢ç‰‡",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["é€Ÿåº¦ +10"],                                   effects: { moveSpeedFlat: 10 } },
+  { id: "shard_haste_basic",     name: "å†·å´ç¢ç‰‡",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["æŠ€èƒ½æ€¥é€Ÿ +10"],                               effects: { abilityHaste: 10 } },
+  { id: "shard_mana_basic",      name: "æ³•åŠ›ç¢ç‰‡",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["æ³•åŠ›å€¼ +100"],                                 effects: { maxManaFlat: 100 } },
+  { id: "shard_ap_basic",        name: "é­”æ³•ç¢ç‰‡",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["æ³•æœ¯å¼ºåº¦ +20"],                                effects: { abilityPowerFlat: 20 } },
+  { id: "shard_cr_basic",        name: "æš´å‡»ç¢ç‰‡",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["æš´å‡»ç‡ +8%"],                                  effects: { critChancePct: 0.08 } },
+  { id: "shard_heal_basic",      name: "æ²»ç–—ç¢ç‰‡",   rarity: SHARD_RARITIES.BASIC,      cost: SHARD_COSTS.basic,     icon: SHARD_ICON, description: ["ç”Ÿå‘½å›å¤ +10/ç§’"],                             effects: { hpRegenPerSecond: 10 } },
 
   // Mid (800G)
-  { id: "shard_ad_mid",          name: "¹¥»÷ËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["¹¥»÷Á¦ +30"],                                  effects: { attackDamageFlat: 30 } },
-  { id: "shard_as_mid",          name: "¹¥ËÙËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["¹¥ËÙ +45%"],                                  effects: { attackSpeedPct: 0.45 } },
-  { id: "shard_hp_mid",          name: "ÉúÃüËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["ÉúÃüÖµ +300"],                                 effects: { maxHpFlat: 300 } },
-  { id: "shard_ar_mid",          name: "»¤¼×ËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["»¤¼× +45"],                                   effects: { armorFlat: 45 } },
-  { id: "shard_def_mid",         name: "·ÀÓùËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["·ÀÓù +15"],                                   effects: { defenseFlat: 15 } },
-  { id: "shard_ms_mid",          name: "ÒÆËÙËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["ËÙ¶È +30"],                                   effects: { moveSpeedFlat: 30 } },
-  { id: "shard_haste_mid",       name: "ÀäÈ´ËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["¼¼ÄÜ¼±ËÙ +30"],                               effects: { abilityHaste: 30 } },
-  { id: "shard_mana_mid",        name: "·¨Á¦ËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["·¨Á¦Öµ +300"],                                 effects: { maxManaFlat: 300 } },
-  { id: "shard_ap_mid",          name: "Ä§·¨ËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["·¨ÊõÇ¿¶È +60"],                                effects: { abilityPowerFlat: 60 } },
-  { id: "shard_cr_mid",          name: "±©»÷ËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["±©»÷ÂÊ +24%"],                                 effects: { critChancePct: 0.24 } },
-  { id: "shard_heal_mid",        name: "ÖÎÁÆËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["ÉúÃü»Ø¸´ +30/Ãë"],                             effects: { hpRegenPerSecond: 30 } },
-  { id: "shard_arp_mid",         name: "´©¼×ËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["»¤¼×´©Í¸ +15"],                               effects: { armorPenFlat: 15 } },
-  { id: "shard_onhit_mid",       name: "ÌØĞ§ËéÆ¬",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["ÆÕ¹¥ÌØĞ§ÉËº¦ +30"],                           effects: { onHitPhysicalFlat: 30 } },
+  { id: "shard_ad_mid",          name: "æ”»å‡»ç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["æ”»å‡»åŠ› +30"],                                  effects: { attackDamageFlat: 30 } },
+  { id: "shard_as_mid",          name: "æ”»é€Ÿç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["æ”»é€Ÿ +45%"],                                  effects: { attackSpeedPct: 0.45 } },
+  { id: "shard_hp_mid",          name: "ç”Ÿå‘½ç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["ç”Ÿå‘½å€¼ +300"],                                 effects: { maxHpFlat: 300 } },
+  { id: "shard_ar_mid",          name: "æŠ¤ç”²ç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["æŠ¤ç”² +45"],                                   effects: { armorFlat: 45 } },
+  { id: "shard_def_mid",         name: "é˜²å¾¡ç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["é˜²å¾¡ +15"],                                   effects: { defenseFlat: 15 } },
+  { id: "shard_ms_mid",          name: "ç§»é€Ÿç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["é€Ÿåº¦ +30"],                                   effects: { moveSpeedFlat: 30 } },
+  { id: "shard_haste_mid",       name: "å†·å´ç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["æŠ€èƒ½æ€¥é€Ÿ +30"],                               effects: { abilityHaste: 30 } },
+  { id: "shard_mana_mid",        name: "æ³•åŠ›ç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["æ³•åŠ›å€¼ +300"],                                 effects: { maxManaFlat: 300 } },
+  { id: "shard_ap_mid",          name: "é­”æ³•ç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["æ³•æœ¯å¼ºåº¦ +60"],                                effects: { abilityPowerFlat: 60 } },
+  { id: "shard_cr_mid",          name: "æš´å‡»ç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["æš´å‡»ç‡ +24%"],                                 effects: { critChancePct: 0.24 } },
+  { id: "shard_heal_mid",        name: "æ²»ç–—ç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["ç”Ÿå‘½å›å¤ +30/ç§’"],                             effects: { hpRegenPerSecond: 30 } },
+  { id: "shard_arp_mid",         name: "ç©¿ç”²ç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["æŠ¤ç”²ç©¿é€ +15"],                               effects: { armorPenFlat: 15 } },
+  { id: "shard_onhit_mid",       name: "ç‰¹æ•ˆç¢ç‰‡",   rarity: SHARD_RARITIES.MID,        cost: SHARD_COSTS.mid,       icon: SHARD_ICON, description: ["æ™®æ”»ç‰¹æ•ˆä¼¤å®³ +30"],                           effects: { onHitPhysicalFlat: 30 } },
 
   // Epic (1200G)
-  { id: "shard_ad_epic",         name: "¹¥»÷ËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["¹¥»÷Á¦ +20%"],                                 effects: { attackDamagePct: 0.20 } },
-  { id: "shard_as_epic",         name: "¹¥ËÙËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["¹¥ËÙ +75%"],                                  effects: { attackSpeedPct: 0.75 } },
-  { id: "shard_hp_epic",         name: "ÉúÃüËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["ÉúÃüÖµ +20%"],                                 effects: { maxHpPct: 0.20 } },
-  { id: "shard_ar_epic",         name: "»¤¼×ËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["»¤¼× +50%"],                                  effects: { armorPct: 0.50 } },
-  { id: "shard_def_epic",        name: "·ÀÓùËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["·ÀÓù +25"],                                   effects: { defenseFlat: 25 } },
-  { id: "shard_ms_epic",         name: "ÒÆËÙËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["ËÙ¶È +50%"],                                  effects: { moveSpeedPct: 0.50 } },
-  { id: "shard_haste_epic",      name: "ÀäÈ´ËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["¼¼ÄÜ¼±ËÙ +50"],                               effects: { abilityHaste: 50 } },
-  { id: "shard_mana_epic",       name: "·¨Á¦ËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["·¨Á¦Öµ +50%"],                                 effects: { maxManaPct: 0.50 } },
-  { id: "shard_ap_epic",         name: "Ä§·¨ËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["·¨ÊõÇ¿¶È +20%"],                               effects: { abilityPowerPct: 0.20 } },
-  { id: "shard_cr_epic",         name: "±©»÷ËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["±©»÷ÂÊ +40%"],                                 effects: { critChancePct: 0.40 } },
-  { id: "shard_heal_epic",       name: "ÖÎÁÆËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["ÉúÃü»Ø¸´ +50/Ãë"],                             effects: { hpRegenPerSecond: 50 } },
-  { id: "shard_arp_epic",        name: "´©¼×ËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["»¤¼×´©Í¸ +20 + 50%"],                         effects: { armorPenFlat: 20, armorPenPct: 0.50 } },
-  { id: "shard_onhit_epic",      name: "ÌØĞ§ËéÆ¬",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["ÆÕ¹¥ÌØĞ§ÉËº¦ +40 + 40% ¹¥»÷Á¦"],               effects: { onHitPhysicalFlat: 40, onHitAdRatio: 0.40 } },
+  { id: "shard_ad_epic",         name: "æ”»å‡»ç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["æ”»å‡»åŠ› +20%"],                                 effects: { attackDamagePct: 0.20 } },
+  { id: "shard_as_epic",         name: "æ”»é€Ÿç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["æ”»é€Ÿ +75%"],                                  effects: { attackSpeedPct: 0.75 } },
+  { id: "shard_hp_epic",         name: "ç”Ÿå‘½ç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["ç”Ÿå‘½å€¼ +20%"],                                 effects: { maxHpPct: 0.20 } },
+  { id: "shard_ar_epic",         name: "æŠ¤ç”²ç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["æŠ¤ç”² +50%"],                                  effects: { armorPct: 0.50 } },
+  { id: "shard_def_epic",        name: "é˜²å¾¡ç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["é˜²å¾¡ +25"],                                   effects: { defenseFlat: 25 } },
+  { id: "shard_ms_epic",         name: "ç§»é€Ÿç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["é€Ÿåº¦ +50%"],                                  effects: { moveSpeedPct: 0.50 } },
+  { id: "shard_haste_epic",      name: "å†·å´ç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["æŠ€èƒ½æ€¥é€Ÿ +50"],                               effects: { abilityHaste: 50 } },
+  { id: "shard_mana_epic",       name: "æ³•åŠ›ç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["æ³•åŠ›å€¼ +50%"],                                 effects: { maxManaPct: 0.50 } },
+  { id: "shard_ap_epic",         name: "é­”æ³•ç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["æ³•æœ¯å¼ºåº¦ +20%"],                               effects: { abilityPowerPct: 0.20 } },
+  { id: "shard_cr_epic",         name: "æš´å‡»ç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["æš´å‡»ç‡ +40%"],                                 effects: { critChancePct: 0.40 } },
+  { id: "shard_heal_epic",       name: "æ²»ç–—ç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["ç”Ÿå‘½å›å¤ +50/ç§’"],                             effects: { hpRegenPerSecond: 50 } },
+  { id: "shard_arp_epic",        name: "ç©¿ç”²ç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["æŠ¤ç”²ç©¿é€ +20 + 50%"],                         effects: { armorPenFlat: 20, armorPenPct: 0.50 } },
+  { id: "shard_onhit_epic",      name: "ç‰¹æ•ˆç¢ç‰‡",   rarity: SHARD_RARITIES.EPIC,       cost: SHARD_COSTS.epic,      icon: SHARD_ICON, description: ["æ™®æ”»ç‰¹æ•ˆä¼¤å®³ +40 + 40% æ”»å‡»åŠ›"],               effects: { onHitPhysicalFlat: 40, onHitAdRatio: 0.40 } },
 
   // Legendary (3500G)
-  { id: "shard_ad_legendary",    name: "¹¥»÷ËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["¹¥»÷Á¦ +60%"],                                 effects: { attackDamagePct: 0.60 } },
-  { id: "shard_as_legendary",    name: "¹¥ËÙËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["¹¥ËÙ +150%"],                                 effects: { attackSpeedPct: 1.50 } },
-  { id: "shard_hp_legendary",    name: "ÉúÃüËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["ÉúÃüÖµ +60%"],                                 effects: { maxHpPct: 0.60 } },
-  { id: "shard_ar_legendary",    name: "»¤¼×ËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["»¤¼× +150%"],                                 effects: { armorPct: 1.50 } },
-  { id: "shard_def_legendary",   name: "·ÀÓùËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["·ÀÓù +80"],                                   effects: { defenseFlat: 80 } },
-  { id: "shard_ms_legendary",    name: "ÒÆËÙËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["ËÙ¶È +100%"],                                 effects: { moveSpeedPct: 1.00 } },
-  { id: "shard_haste_legendary", name: "ÀäÈ´ËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["¼¼ÄÜ¼±ËÙ +150"],                              effects: { abilityHaste: 150 } },
-  { id: "shard_mana_legendary",  name: "·¨Á¦ËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["·¨Á¦Öµ +150%"],                                effects: { maxManaPct: 1.50 } },
-  { id: "shard_ap_legendary",    name: "Ä§·¨ËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["·¨ÊõÇ¿¶È +60%"],                               effects: { abilityPowerPct: 0.60 } },
-  { id: "shard_cd_legendary",    name: "±©»÷ËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["±©»÷ÉËº¦ +100%"] ,                           effects: { critDamageBonusPct: 1.00 } },
-  { id: "shard_heal_legendary",  name: "ÖÎÁÆËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["ÉúÃü»Ø¸´ +150/Ãë"],                            effects: { hpRegenPerSecond: 150 } },
-  { id: "shard_arp_legendary",   name: "´©¼×ËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["»¤¼×´©Í¸ +60 + 70%"],                        effects: { armorPenFlat: 60, armorPenPct: 0.70 } },
-  { id: "shard_onhit_legendary", name: "ÌØĞ§ËéÆ¬",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["ÆÕ¹¥ÌØĞ§ÉËº¦ +120 + 70% ¹¥»÷Á¦"],            effects: { onHitPhysicalFlat: 120, onHitAdRatio: 0.70 } },
+  { id: "shard_ad_legendary",    name: "æ”»å‡»ç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["æ”»å‡»åŠ› +60%"],                                 effects: { attackDamagePct: 0.60 } },
+  { id: "shard_as_legendary",    name: "æ”»é€Ÿç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["æ”»é€Ÿ +150%"],                                 effects: { attackSpeedPct: 1.50 } },
+  { id: "shard_hp_legendary",    name: "ç”Ÿå‘½ç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["ç”Ÿå‘½å€¼ +60%"],                                 effects: { maxHpPct: 0.60 } },
+  { id: "shard_ar_legendary",    name: "æŠ¤ç”²ç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["æŠ¤ç”² +150%"],                                 effects: { armorPct: 1.50 } },
+  { id: "shard_def_legendary",   name: "é˜²å¾¡ç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["é˜²å¾¡ +80"],                                   effects: { defenseFlat: 80 } },
+  { id: "shard_ms_legendary",    name: "ç§»é€Ÿç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["é€Ÿåº¦ +100%"],                                 effects: { moveSpeedPct: 1.00 } },
+  { id: "shard_haste_legendary", name: "å†·å´ç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["æŠ€èƒ½æ€¥é€Ÿ +150"],                              effects: { abilityHaste: 150 } },
+  { id: "shard_mana_legendary",  name: "æ³•åŠ›ç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["æ³•åŠ›å€¼ +150%"],                                effects: { maxManaPct: 1.50 } },
+  { id: "shard_ap_legendary",    name: "é­”æ³•ç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["æ³•æœ¯å¼ºåº¦ +60%"],                               effects: { abilityPowerPct: 0.60 } },
+  { id: "shard_cd_legendary",    name: "æš´å‡»ç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["æš´å‡»ä¼¤å®³ +100%"] ,                           effects: { critDamageBonusPct: 1.00 } },
+  { id: "shard_heal_legendary",  name: "æ²»ç–—ç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["ç”Ÿå‘½å›å¤ +150/ç§’"],                            effects: { hpRegenPerSecond: 150 } },
+  { id: "shard_arp_legendary",   name: "ç©¿ç”²ç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["æŠ¤ç”²ç©¿é€ +60 + 70%"],                        effects: { armorPenFlat: 60, armorPenPct: 0.70 } },
+  { id: "shard_onhit_legendary", name: "ç‰¹æ•ˆç¢ç‰‡",   rarity: SHARD_RARITIES.LEGENDARY,  cost: SHARD_COSTS.legendary, icon: SHARD_ICON, description: ["æ™®æ”»ç‰¹æ•ˆä¼¤å®³ +120 + 70% æ”»å‡»åŠ›"],            effects: { onHitPhysicalFlat: 120, onHitAdRatio: 0.70 } },
 ];
 
 const SHARD_BY_ID = Object.freeze(Object.fromEntries(SHARDS.map(s => [s.id, { ...s, isShard: true }])));
@@ -203,17 +203,17 @@ Object.values(EQUIPMENT_DATA).forEach((item) => {
 });
 
 const SHOP_TEXT = Object.freeze({
-  title: "ÊôĞÔËéÆ¬ÉÌµê",
-  goldPrefix: "½ğ±Ò£º",
-  // Ë¢ĞÂ°´Å¥ÎÄ°¸ÔÚÔËĞĞÊ±¶¯Ì¬¸üĞÂ£¬ÕâÀïÖ»×÷Õ¼Î»
-  refresh: `Ë¢ĞÂ (-${SHOP_REFRESH_COST})`,
-  continueRun: "¼ÌĞø",
-  exitRun: "½áÊøÌ½ÏÕ",
-  notEnoughGold: "½ğ±Ò²»×ã¡£",
-  inventoryFull: "¿â´æÒÑÂú¡£",
-  offerPurchased: "ÒÑ¹ºÂò",
-  offerUnavailable: "ÉÌÆ·²»¿ÉÓÃ¡£",
-  refreshed: "ÁĞ±íÒÑË¢ĞÂ¡£",
+  title: "å±æ€§ç¢ç‰‡å•†åº—",
+  goldPrefix: "é‡‘å¸ï¼š",
+  // åˆ·æ–°æŒ‰é’®æ–‡æ¡ˆåœ¨è¿è¡Œæ—¶åŠ¨æ€æ›´æ–°ï¼Œè¿™é‡Œåªä½œå ä½
+  refresh: `åˆ·æ–° (-${SHOP_REFRESH_COST})`,
+  continueRun: "ç»§ç»­",
+  exitRun: "ç»“æŸæ¢é™©",
+  notEnoughGold: "é‡‘å¸ä¸è¶³ã€‚",
+  inventoryFull: "åº“å­˜å·²æ»¡ã€‚",
+  offerPurchased: "å·²è´­ä¹°",
+  offerUnavailable: "å•†å“ä¸å¯ç”¨ã€‚",
+  refreshed: "åˆ—è¡¨å·²åˆ·æ–°ã€‚",
 });
 
 const ITEMS_BY_TIER = Object.freeze({
@@ -273,13 +273,13 @@ const randomSample = (array, count, rng = shopRandom) => {
   return pool.slice(0, limit);
 };
 
-/* Ô­Ê¼ dummy Boss£¨±£ÁôÒÔ±ãÆäËû¹Ø¿¨¿Éµ÷ÓÃ£© */
+/* åŸå§‹ dummy Bossï¼ˆä¿ç•™ä»¥ä¾¿å…¶ä»–å…³å¡å¯è°ƒç”¨ï¼‰ */
 const BOSS_TEST_CONFIG = {
   id: "Dummy",
   textureKey: "boss_dummy",
   spritePath: "assets/enemy/dummy.png",
-  name: "ÑµÁ·¼ÙÈË",
-  title: "²âÊÔBoss",
+  name: "è®­ç»ƒå‡äºº",
+  title: "æµ‹è¯•Boss",
   maxHp: 120000,
   armor: 200,
   tiles: 4,
@@ -287,65 +287,65 @@ const BOSS_TEST_CONFIG = {
   musicPath: "music/boss.mp3",
 };
 
-/* ==== ĞÂÔö£ºUtsuho Boss ÅäÖÃ£¨ÁéÎÚÂ·¿Õ£üÉñÖ®»ğ£© ==== */
+/* ==== æ–°å¢ï¼šUtsuho Boss é…ç½®ï¼ˆçµä¹Œè·¯ç©ºï½œç¥ä¹‹ç«ï¼‰ ==== */
 const BOSS_UTSUHO_CONFIG = {
   id: "Utsuho",
-  // ÌùÍ¼¼ü
+  // è´´å›¾é”®
   textureIdle: "utsuho_idle",
   textureMoveDown: "utsuho_movedown",
-  textureMoveRight: "utsuho_moveright", // Ïò×óÊ±½« flipX=true
+  textureMoveRight: "utsuho_moveright", // å‘å·¦æ—¶å°† flipX=true
   textureDeath: "utsuho_death",
-  // »ù±¾ĞÅÏ¢
-  name: "ë‘õÂ·¡¡¿Õ",
-  title: "µØªz¤ÎÈË¹¤Ì«ê–",
-  tiles: 6, // BossÌùÍ¼´óĞ¡£º6¸ñ
-  // Ãæ°åÓëÕ½¶·ÊıÖµ
+  // åŸºæœ¬ä¿¡æ¯
+  name: "éœŠçƒè·¯ã€€ç©º",
+  title: "åœ°ç„ã®äººå·¥å¤ªé™½",
+  tiles: 6, // Bossè´´å›¾å¤§å°ï¼š6æ ¼
+  // é¢æ¿ä¸æˆ˜æ–—æ•°å€¼
   maxHp: 66666,
   armor: 66,
-  contactDamage: 100, // Óë Boss ±¾Ìå½Ó´¥ÉËº¦£¨ÎïÀí£©
-  bulletMagicDamage: 66, // Boss µ¯Ä»ÉËº¦£¨·¨Êõ£©
+  contactDamage: 100, // ä¸ Boss æœ¬ä½“æ¥è§¦ä¼¤å®³ï¼ˆç‰©ç†ï¼‰
+  bulletMagicDamage: 66, // Boss å¼¹å¹•ä¼¤å®³ï¼ˆæ³•æœ¯ï¼‰
   moveSpeed: 100,
-  // ³å´Ì²ÎÊı
+  // å†²åˆºå‚æ•°
   dashInitSpeed: 6,
-  dashAccel: 666, // ËÙ¶È¼ÓËÙ¶È£¨µ¥Î»£ºÏñËØ/Ãë^2£©
-  // ²ÉÑù×ÊÔ´Â·¾¶
+  dashAccel: 666, // é€Ÿåº¦åŠ é€Ÿåº¦ï¼ˆå•ä½ï¼šåƒç´ /ç§’^2ï¼‰
+  // é‡‡æ ·èµ„æºè·¯å¾„
   assets: {
     basePath: "assets/boss/Utsuho/",
-    warning: "assets/boss/Utsuho/Nuclearwarning.png", // ÌáÊ¾ÌùÍ¼ 16¸ñ
+    warning: "assets/boss/Utsuho/Nuclearwarning.png", // æç¤ºè´´å›¾ 16æ ¼
     bullets: {
       bigyellow: "assets/boss/Utsuho/bullet/bigyellow.png",
       blue: "assets/boss/Utsuho/bullet/blue.png",
       nuclearbomb: "assets/boss/Utsuho/bullet/nuclearbomb.png",
       nuclearhazard: "assets/boss/Utsuho/bullet/nuclearhazard.png",
-      nuclearspawn: "assets/boss/Utsuho/bullet/nuclearspawn.png", // ½öÌùÍ¼
+      nuclearspawn: "assets/boss/Utsuho/bullet/nuclearspawn.png", // ä»…è´´å›¾
       yellow: "assets/boss/Utsuho/bullet/yellow.png",
     }
   },
-  // BGM£¨ÒªÇó£ºÉú³Éºó²Å²¥·Å£©
+  // BGMï¼ˆè¦æ±‚ï¼šç”Ÿæˆåæ‰æ’­æ”¾ï¼‰
   musicKey: "utsuho_bgm",
   musicPath: "music/boss.mp3",
-  // Ä£Ê½Ê±³¤£¨ºÁÃë£©
+  // æ¨¡å¼æ—¶é•¿ï¼ˆæ¯«ç§’ï¼‰
   modeDurations: { m1: 41000, m2: 35000, m3: 70000, m4: 35000 },
-  // ÅĞ¶¨Óë³ß´ç£¨µ¥Î»£º¸ñ£©
+  // åˆ¤å®šä¸å°ºå¯¸ï¼ˆå•ä½ï¼šæ ¼ï¼‰
   hitboxes: {
     bullets: {
       bigyellow: { size: 3, judge: 1 },
       blue: { size: 1, judge: 1 },
       nuclearbomb: { size: 16, judge: 10 },
       nuclearhazard: { size: 0.5, judge: 0.5 },
-      nuclearspawn: { size: 5, judge: 0 }, // ½öÌùÍ¼£¬ÎŞÅĞ¶¨
+      nuclearspawn: { size: 5, judge: 0 }, // ä»…è´´å›¾ï¼Œæ— åˆ¤å®š
       yellow: { size: 3, judge: 1 },
     },
     warningSize: 64
   }
 };
 
-/* ==== »ğŸgÃ¨ Ÿû Boss ÅäÖÃ ==== */
+/* ==== ç«ç„”çŒ« ç‡ Boss é…ç½® ==== */
 const BOSS_RIN_CONFIG = {
   id: "Rin",
   textureKey: "rin_texture",
-  name: "»ğŸgÃ¨¡¡Ÿû",
-  title: "±³ĞÅ—‰ÁxµÄËÀÃ¨",
+  name: "ç«ç„”çŒ«ã€€ç‡",
+  title: "èƒŒä¿¡æ£„ç¾©çš„æ­»çŒ«",
   tiles: 6,
   maxHp: 100000,
   armor: 0,
@@ -365,7 +365,7 @@ const BOSS_RIN_CONFIG = {
   },
   musicKey: "rin_bgm",
   musicPath: "music/boss_rin.mp3",
-  // Ä£Ê½Ê±³¤£ºm1=28.8s, m2=19.2s£¬m3Îª»÷É±Ğ¡¹Öºó½áÊø£¨²»Éè¹Ì¶¨Ê±³¤£©
+  // æ¨¡å¼æ—¶é•¿ï¼šm1=28.8s, m2=19.2sï¼Œm3ä¸ºå‡»æ€å°æ€ªåç»“æŸï¼ˆä¸è®¾å›ºå®šæ—¶é•¿ï¼‰
   modeDurations: { m1: 28800, m2: 19200 },
   hitboxes: {
     bullets: {
@@ -375,15 +375,15 @@ const BOSS_RIN_CONFIG = {
   },
 };
 
-/* ==== Boss ×¢²á±í£º±ãÓÚÆäËû¹Ø¿¨µ÷ÓÃ ==== */
+/* ==== Boss æ³¨å†Œè¡¨ï¼šä¾¿äºå…¶ä»–å…³å¡è°ƒç”¨ ==== */
 const BOSS_REGISTRY = {
   [BOSS_TEST_CONFIG.id]: BOSS_TEST_CONFIG,
   [BOSS_UTSUHO_CONFIG.id]: BOSS_UTSUHO_CONFIG,
   [BOSS_RIN_CONFIG.id]: BOSS_RIN_CONFIG,
 };
 
-/* ==== ×°±¸Êı¾İ ==== */
-/* ==== »ØºÏÓëÊıÖµ ==== */
+/* ==== è£…å¤‡æ•°æ® ==== */
+/* ==== å›åˆä¸æ•°å€¼ ==== */
 const ROUND_DURATION = 60000;
 const NO_DAMAGE_RANK_INTERVAL = 60000;
 const RANK_INITIAL = 10;
@@ -397,7 +397,7 @@ const UNIT_TO_PIXEL = PIXELS_PER_TILE / STAT_UNITS_PER_TILE;
 const statUnitsToPixels = (value) => value * UNIT_TO_PIXEL;
 const statUnitsToTiles = (value) => value / STAT_UNITS_PER_TILE;
 
-/* ==== Íæ¼Ò²ÎÊı ==== */
+/* ==== ç©å®¶å‚æ•° ==== */
 const PLAYER_BASE_SPEED = 120;
 const PLAYER_FOCUS_MULTIPLIER = 0.35;
 const PLAYER_MANA_MAX = 200;
@@ -406,7 +406,7 @@ const PLAYER_TILE_SCALE = 2;
 const PLAYER_ANIMATION_FRAME_RATE = 4;
 const PLAYER_HITBOX_RADIUS = PLAYER_FOCUS_RADIUS;
 
-/* ==== ÊäÈë°ó¶¨ ==== */
+/* ==== è¾“å…¥ç»‘å®š ==== */
 const MOVEMENT_KEY_BINDINGS = [
   { code: "W", direction: "up" },
   { code: "S", direction: "down" },
@@ -414,7 +414,7 @@ const MOVEMENT_KEY_BINDINGS = [
   { code: "D", direction: "right" },
 ];
 
-/* ==== ×ÖÌå¹¤¾ß ==== */
+/* ==== å­—ä½“å·¥å…· ==== */
 const FONT_SIZE_REGEX = /-?\d+(\.\d+)?/;
 const extractFontSizeValue = (value, fallback = 16) => {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -443,15 +443,15 @@ const setFontSizeByScale = (text, scale) => {
   text.setFontSize(targetSize);
 };
 
-/* ==== ÎäÆ÷/µ¯Ä»/µĞÈË ==== */
+/* ==== æ­¦å™¨/å¼¹å¹•/æ•Œäºº ==== */
 const WEAPON_ORBIT_RADIUS = 25;
-// »ù´¡×ªËÙ£¨Ô¶³Ì/Ä¬ÈÏ£©¡£½üÕ½ÒÔ´ËÎª»ù×¼ÌåÏÖ¡°¹¥ËÙ=×ªËÙ¡±£¬ÏÖÓ¦½«½üÕ½³õÊ¼×ªËÙÌáÉıÎªµ±Ç°µÄ 2 ±¶¡£
-const WEAPON_ORBIT_SPEED = 180; // deg/s£¨»ù´¡£©
-const MELEE_BASE_ORBIT_SPEED_MULTIPLIER = 2; // ½üÕ½³õÊ¼×ªËÙ¡Á2
-// Focus(Shift) ¶ÔÒõÑôÓñ¹ìµÀµÄÓ°Ïì
-const FOCUS_ORBIT_RADIUS_MULTIPLIER = 0.6; // °´×¡ShiftÊ±£º°ë¾¶ËõĞ¡Îª60%
-const FOCUS_ORBIT_SPEED_MULTIPLIER = 2;    // °´×¡ShiftÊ±£º×ªËÙ¡Á2
-// E¼¼ÄÜĞÎÌ¬¼Ó³É£ºÔ¶³Ì+20%¹¥ËÙ£»½üÕ½½«Õâ20%×ª»¯ÎªÒõÑôÓñµÄ×ªËÙ
+// åŸºç¡€è½¬é€Ÿï¼ˆè¿œç¨‹/é»˜è®¤ï¼‰ã€‚è¿‘æˆ˜ä»¥æ­¤ä¸ºåŸºå‡†ä½“ç°â€œæ”»é€Ÿ=è½¬é€Ÿâ€ï¼Œç°åº”å°†è¿‘æˆ˜åˆå§‹è½¬é€Ÿæå‡ä¸ºå½“å‰çš„ 2 å€ã€‚
+const WEAPON_ORBIT_SPEED = 180; // deg/sï¼ˆåŸºç¡€ï¼‰
+const MELEE_BASE_ORBIT_SPEED_MULTIPLIER = 2; // è¿‘æˆ˜åˆå§‹è½¬é€ŸÃ—2
+// Focus(Shift) å¯¹é˜´é˜³ç‰è½¨é“çš„å½±å“
+const FOCUS_ORBIT_RADIUS_MULTIPLIER = 0.6; // æŒ‰ä½Shiftæ—¶ï¼šåŠå¾„ç¼©å°ä¸º60%
+const FOCUS_ORBIT_SPEED_MULTIPLIER = 2;    // æŒ‰ä½Shiftæ—¶ï¼šè½¬é€ŸÃ—2
+// EæŠ€èƒ½å½¢æ€åŠ æˆï¼šè¿œç¨‹+20%æ”»é€Ÿï¼›è¿‘æˆ˜å°†è¿™20%è½¬åŒ–ä¸ºé˜´é˜³ç‰çš„è½¬é€Ÿ
 const E_RANGED_ATTACK_SPEED_MULTIPLIER = 1.2;
 const BULLET_SPEED = 170;
 const BULLET_LIFETIME = 4500; // ms
@@ -486,7 +486,7 @@ const ENEMY_SPAWN_ATTEMPTS = 36;
 
 const ENEMY_SPAWN_DELAY_MS = 2000;
 
-// ¡ª¡ª µØÍ¼µØµã£ºÉÌµêÓë±¦Ïä ¡ª¡ª //
+// â€”â€” åœ°å›¾åœ°ç‚¹ï¼šå•†åº—ä¸å®ç®± â€”â€” //
 const MAP_SHOP_COUNT = 2;
 const MAP_CHEST_COUNT = 10;
 
@@ -761,9 +761,9 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
   },
 });
 
-/* ==== Íæ¼Ò»ù´¡Ãæ°å ==== */
+/* ==== ç©å®¶åŸºç¡€é¢æ¿ ==== */
 const PLAYER_BASE_STATS = {
-  name: "²©ÀöÁéÃÎ",
+  name: "åšä¸½çµæ¢¦",
   attackDamage: 50,
   abilityPower: 0,
 
@@ -781,11 +781,11 @@ const PLAYER_BASE_STATS = {
   armorPenFlat: 0,
 };
 
-/* ==== Ô¤¼ÓÔØ³¡¾° ==== */
+/* ==== é¢„åŠ è½½åœºæ™¯ ==== */
 class PreloadScene extends Phaser.Scene {
   constructor() { super("PreloadScene"); }
   preload() {
-    // ¼ÓÔØ±ùÈ­Ğ§¹û
+    // åŠ è½½å†°æ‹³æ•ˆæœ
     this.load.image("ice_effect", "assets/item/effect/ice.png");
     
     this.load.image("floor", "assets/ground/defultground.png");
@@ -797,7 +797,7 @@ class PreloadScene extends Phaser.Scene {
     ].forEach((k)=> this.load.image(k, `assets/player/reimu/${k}.png`));
     this.load.image("weapon", "assets/weapon/yinyangball.png");
     this.load.image("bullet", "assets/bullet/spell.png");
-    // ×Óµ¯×²Ç½±¬Õ¨ÌØĞ§
+    // å­å¼¹æ’å¢™çˆ†ç‚¸ç‰¹æ•ˆ
     this.load.image("effect_explosion", "assets/effect/explosion.png");
     this.load.image("enemy", "assets/enemy/test_robot.png");
     this.load.image("point", "assets/item/point.png");
@@ -822,7 +822,7 @@ class PreloadScene extends Phaser.Scene {
     this.load.image("enemy_spawn_epic", "assets/enemy/spawn/epic_spawn.png");
     this.load.image("enemy_spawn_legendary", "assets/enemy/spawn/legendary.png");
 
-    // µØÍ¼µØµã£ºÉÌµêÓë±¦Ïä
+    // åœ°å›¾åœ°ç‚¹ï¼šå•†åº—ä¸å®ç®±
     this.load.image("place_shop", "assets/place/shop.png");
     this.load.image("place_chest", "assets/place/chest.png");
     this.load.image("enemy_bullet_basic", "assets/enemy/bullets/basic.png");
@@ -831,70 +831,70 @@ class PreloadScene extends Phaser.Scene {
     this.load.image("enemy_bullet_legendary", "assets/enemy/bullets/legendary.png");
     this.load.image("enemy_bullet_gun", "assets/enemy/bullets/gun.png");
     this.load.image("enemy_bullet_kunai", "assets/enemy/bullets/kunai.png");
-    this.load.image("itemBrokenKingsBlade", "assets/item/legendary/ÆÆ°ÜÍõÕßÖ®ÈĞ.png");
-    this.load.image("itemWitsEnd", "assets/item/legendary/ÖÇ»ÛÄ©ÈĞ.png");
-    this.load.image("itemNashorsTooth", "assets/item/legendary/ÄÉÊ²Ö®ÑÀ.png");
-    this.load.image("itemGuinsoosRageblade", "assets/item/legendary/¹íË÷µÄ¿ñ±©Ö®ÈĞ.png");
+    this.load.image("itemBrokenKingsBlade", "assets/item/legendary/ç ´è´¥ç‹è€…ä¹‹åˆƒ.png");
+    this.load.image("itemWitsEnd", "assets/item/legendary/æ™ºæ…§æœ«åˆƒ.png");
+    this.load.image("itemNashorsTooth", "assets/item/legendary/çº³ä»€ä¹‹ç‰™.png");
+    this.load.image("itemGuinsoosRageblade", "assets/item/legendary/é¬¼ç´¢çš„ç‹‚æš´ä¹‹åˆƒ.png");
     this.load.image("item_effect_arrow", "assets/item/effect/arrow.png");
     this.load.image("item_effect_sunfire", "assets/item/effect/sunfire.png");
     this.load.image("item_effect_tiamat", "assets/item/effect/tiamat.png");
     this.load.image("item_effect_titanic", "assets/item/effect/Titanichydra.png");
     this.load.audio("utsuho_bgm", "music/boss.mp3"); 
     this.load.audio("battle_bgm", "music/battle.mp3");
-    // ÒÆ³ıµĞÈËchargeÒôĞ§¼ÓÔØ
+    // ç§»é™¤æ•ŒäººchargeéŸ³æ•ˆåŠ è½½
     this.load.audio("enemyexploded", "se/enemyexploded.wav");
     this.load.audio("itempick", "se/itempick.wav");
     this.load.audio("pause", "se/pause.wav");
     this.load.audio("playershoot", "se/playershoot.wav");
     this.load.audio("pldead", "se/pldead.wav");
-    // ĞÂÔö£ºÍæ¼Ò¼¼ÄÜÓëÊÜÉË¡¢ÆÕ¹¥ÃüÖĞÒôĞ§£¨²»Ó²±àÂë½ÇÉ«Ãû£¬Ê¹ÓÃÍ¨ÓÃkey£©
+    // æ–°å¢ï¼šç©å®¶æŠ€èƒ½ä¸å—ä¼¤ã€æ™®æ”»å‘½ä¸­éŸ³æ•ˆï¼ˆä¸ç¡¬ç¼–ç è§’è‰²åï¼Œä½¿ç”¨é€šç”¨keyï¼‰
     this.load.audio("player_castQ", "se/Reimu_castQ.wav");
     this.load.audio("player_castE", "se/Reimu_castE.wav");
     this.load.audio("player_castR", "se/Reimu_castR.wav");
-    // Space ÉÁ±ÜÒôĞ§
+    // Space é—ªé¿éŸ³æ•ˆ
     this.load.audio("player_dash", "se/Flash.wav");
     this.load.audio("player_gethit", "se/gethit.wav");
     this.load.audio("enemyhit", "se/enemyhit.wav");
     this.load.audio("orbhit", "se/orbhit.wav");
-    // Ò©Ë®ÒôĞ§
+    // è¯æ°´éŸ³æ•ˆ
     this.load.audio("potion", "se/Potion.wav");
-    // PreloadScene.preload ÄÚÆäËü this.load.* Ö®ºó×·¼Ó£ºÔ¤ÔØ¼¼ÄÜÍ¼£¨°üº¬ÉÁ±Ü SPACE£©
+    // PreloadScene.preload å†…å…¶å®ƒ this.load.* ä¹‹åè¿½åŠ ï¼šé¢„è½½æŠ€èƒ½å›¾ï¼ˆåŒ…å«é—ªé¿ SPACEï¼‰
     [
       "Q","E","R","SPACE",
       "Qmelee","Qspell",
       "R1","R2","R3","R4","R5","R6","R7","R8"
     ].forEach(k=>{
-      // Ê¹ÓÃÍ³Ò» key: skill_<KEY>
+      // ä½¿ç”¨ç»Ÿä¸€ key: skill_<KEY>
       try {
         this.load.image(`skill_${k}`, `assets/player/reimu/skill/${k}.png`);
       } catch (e) {
-        // ºöÂÔ¼ÓÔØ´íÎó£¨Â·¾¶È±Ê§Ê±ä¯ÀÀÆ÷ img fallback ÈÔ¿É¹¤×÷£©
+        // å¿½ç•¥åŠ è½½é”™è¯¯ï¼ˆè·¯å¾„ç¼ºå¤±æ—¶æµè§ˆå™¨ img fallback ä»å¯å·¥ä½œï¼‰
         // eslint-disable-next-line no-console
         console.warn("Failed to queue skill preload", k, e);
       }
     });
 
 
-    /* Ô¤ÔØ dummy Boss ×ÊÔ´ÓëBGM£¨±£Áô£© */
+    /* é¢„è½½ dummy Boss èµ„æºä¸BGMï¼ˆä¿ç•™ï¼‰ */
     this.load.image(BOSS_TEST_CONFIG.textureKey, BOSS_TEST_CONFIG.spritePath);
     this.load.audio(BOSS_TEST_CONFIG.musicKey, BOSS_TEST_CONFIG.musicPath);
 
-    /* ==== ĞÂÔö£ºÔ¤ÔØ Utsuho Ïà¹Ø×ÊÔ´ ==== */
-    // Boss ÉíÌå
+    /* ==== æ–°å¢ï¼šé¢„è½½ Utsuho ç›¸å…³èµ„æº ==== */
+    // Boss èº«ä½“
     this.load.image(BOSS_UTSUHO_CONFIG.textureIdle, `${BOSS_UTSUHO_CONFIG.assets.basePath}Utsuho.png`);
     this.load.image(BOSS_UTSUHO_CONFIG.textureMoveDown, `${BOSS_UTSUHO_CONFIG.assets.basePath}Utsuho_movedown.png`);
     this.load.image(BOSS_UTSUHO_CONFIG.textureMoveRight, `${BOSS_UTSUHO_CONFIG.assets.basePath}Utsuho_moveright.png`);
     this.load.image(BOSS_UTSUHO_CONFIG.textureDeath, `${BOSS_UTSUHO_CONFIG.assets.basePath}Utsuhodeath.png`);
-    // ÌáÊ¾¿ò
+    // æç¤ºæ¡†
     this.load.image("utsuho_warning", BOSS_UTSUHO_CONFIG.assets.warning);
-    // µ¯Ä»²ÉÑù
+    // å¼¹å¹•é‡‡æ ·
     this.load.image("u_bullet_bigyellow", BOSS_UTSUHO_CONFIG.assets.bullets.bigyellow);
     this.load.image("u_bullet_blue", BOSS_UTSUHO_CONFIG.assets.bullets.blue);
     this.load.image("u_bullet_nuclearbomb", BOSS_UTSUHO_CONFIG.assets.bullets.nuclearbomb);
     this.load.image("u_bullet_nuclearhazard", BOSS_UTSUHO_CONFIG.assets.bullets.nuclearhazard);
     this.load.image("u_bullet_nuclearspawn", BOSS_UTSUHO_CONFIG.assets.bullets.nuclearspawn);
     this.load.image("u_bullet_yellow", BOSS_UTSUHO_CONFIG.assets.bullets.yellow);
-    // BGM£¨Éú³Éºó²¥·Å£©
+    // BGMï¼ˆç”Ÿæˆåæ’­æ”¾ï¼‰
     this.load.audio(BOSS_UTSUHO_CONFIG.musicKey, BOSS_UTSUHO_CONFIG.musicPath);
 
     // Preload Rin boss assets
@@ -907,7 +907,7 @@ class PreloadScene extends Phaser.Scene {
   create() { this.scene.start("StartScene"); }
 }
 
-/* ==== ±êÌâ³¡¾° ==== */
+/* ==== æ ‡é¢˜åœºæ™¯ ==== */
 class StartScene extends Phaser.Scene {
   constructor() { super("StartScene"); }
   create() {
@@ -917,7 +917,7 @@ class StartScene extends Phaser.Scene {
       fontFamily: '"Zpix", monospace', fontSize: "32px", color: "#ffffff",
     }).setOrigin(0.5);
     ensureBaseFontSize(titleText);
-    const promptText = this.add.text(width/2, height/2+20, "µã»÷»ò°´ Enter ¿ªÊ¼", {
+    const promptText = this.add.text(width/2, height/2+20, "ç‚¹å‡»æˆ–æŒ‰ Enter å¼€å§‹", {
       fontFamily: '"Zpix", monospace', fontSize: "18px", color: "#d0d0ff",
     }).setOrigin(0.5);
     ensureBaseFontSize(promptText);
@@ -927,7 +927,7 @@ class StartScene extends Phaser.Scene {
   }
 }
 
-/* ==== ÓÎÏ·³¡¾° ==== */
+/* ==== æ¸¸æˆåœºæ™¯ ==== */
 class GameScene extends Phaser.Scene {
   constructor() {
     super("GameScene");
@@ -939,10 +939,10 @@ class GameScene extends Phaser.Scene {
     this.debugMode = DEBUG_SCENARIO;
     this.debugBossMode = DEBUG_BOSS;
     this.debugShopMode = DEBUG_SHOP;
-    // ¹Ø¿¨£º´Ó1¿ªÊ¼£¬Boss¹Ø¿¨Ã¿20¹Ø
+    // å…³å¡ï¼šä»1å¼€å§‹ï¼ŒBosså…³å¡æ¯20å…³
     this.isBossStage = false;
-    // Ä¬ÈÏ´ÓµÚ1¹Ø¿ªÊ¼£»µ±Ê¹ÓÃ ?debug Ê±£¬´ÓµÚ11¹Ø¿ªÊ¼±ãÓÚ²âÊÔÖĞºóÆÚ
-    this.level = (this.debugMode ? 11 : 1); // ¹Ø¿¨±ØĞëÊÇÕûÊı
+    // é»˜è®¤ä»ç¬¬1å…³å¼€å§‹ï¼›å½“ä½¿ç”¨ ?debug æ—¶ï¼Œä»ç¬¬11å…³å¼€å§‹ä¾¿äºæµ‹è¯•ä¸­åæœŸ
+    this.level = (this.debugMode ? 11 : 1); // å…³å¡å¿…é¡»æ˜¯æ•´æ•°
 
     this.level = (this.debugMode ? 10 : 1);
     this.playerStats = { ...PLAYER_BASE_STATS };
@@ -957,12 +957,12 @@ class GameScene extends Phaser.Scene {
                 this.debugShopMode ? 50 : 
                 RANK_INITIAL;
 
-    // µ±Ê¹ÓÃ ?boss£¨»òµÈ¼ÛµÄ boss µ÷ÊÔ¿ª¹Ø£©Ê±£º½«³õÊ¼¹Ø¿¨Óë³õÊ¼ rank ÉèÎª 20
+    // å½“ä½¿ç”¨ ?bossï¼ˆæˆ–ç­‰ä»·çš„ boss è°ƒè¯•å¼€å…³ï¼‰æ—¶ï¼šå°†åˆå§‹å…³å¡ä¸åˆå§‹ rank è®¾ä¸º 20
     if (this.debugBossMode) {
       this.level = 20;
       this.rank = 20;
     }
-    // ³õÊ¼»¯£º¸ù¾İ¹Ø¿¨È·¶¨ÊÇ·ñÎª Boss ¹Ø£¨µÚ10¹ØºÍÃ¿20¹Ø£©
+    // åˆå§‹åŒ–ï¼šæ ¹æ®å…³å¡ç¡®å®šæ˜¯å¦ä¸º Boss å…³ï¼ˆç¬¬10å…³å’Œæ¯20å…³ï¼‰
     this.isBossStage = (this.level === 10) || (this.level % 20 === 0);
     this.lastDamageTimestamp = 0;
     this.nextNoDamageRankCheck = 0;
@@ -978,7 +978,7 @@ class GameScene extends Phaser.Scene {
       offers: [],
       reason: null,
       lastMessage: "",
-      refreshCost: SHOP_REFRESH_COST, // ¶¯Ì¬Ë¢ĞÂ·ÑÓÃ£¨½øÈëÉÌµêÊ±ÖØÖÃÎª³õÊ¼Öµ£©
+      refreshCost: SHOP_REFRESH_COST, // åŠ¨æ€åˆ·æ–°è´¹ç”¨ï¼ˆè¿›å…¥å•†åº—æ—¶é‡ç½®ä¸ºåˆå§‹å€¼ï¼‰
     };
     this.shopUi = null;
     this.shopUiHandlers = [];
@@ -990,14 +990,14 @@ class GameScene extends Phaser.Scene {
     this.pauseOverlayElements = [];
     this.pauseOverlayBackground = null;
     this.pauseDecisionHandler = null;
-    // ¡ª¡ª Run stats for HTML overlay ¡ª¡ª //
+    // â€”â€” Run stats for HTML overlay â€”â€” //
     this.runStats = { dealtPhys: 0, dealtMagic: 0, taken: 0, heal: 0, gold: 0 };
     this._statsOverlayHandlers = null;
-    // ¡ª¡ª Q¼¼ÄÜÃé×¼×´Ì¬ ¡ª¡ª //
-    this.qAiming = false;           // ÊÇ·ñÔÚ°´×¡Q½øĞĞÃé×¼
-    this.qAimGraphics = null;       // QµÄÊ©·¨·¶Î§Í¼ĞÎ
-    this.qAimAngle = Math.PI / 2;   // µ±Ç°Ãé×¼½Ç¶È£¨»¡¶È£©
-    // ¡ª¡ª Game Over ¸²¸Ç²ã ¡ª¡ª //
+    // â€”â€” QæŠ€èƒ½ç„å‡†çŠ¶æ€ â€”â€” //
+    this.qAiming = false;           // æ˜¯å¦åœ¨æŒ‰ä½Qè¿›è¡Œç„å‡†
+    this.qAimGraphics = null;       // Qçš„æ–½æ³•èŒƒå›´å›¾å½¢
+    this.qAimAngle = Math.PI / 2;   // å½“å‰ç„å‡†è§’åº¦ï¼ˆå¼§åº¦ï¼‰
+    // â€”â€” Game Over è¦†ç›–å±‚ â€”â€” //
     this.isGameOver = false;
     this.gameOverOverlayElements = [];
     this.gameOverOverlayBackground = null;
@@ -1013,32 +1013,32 @@ class GameScene extends Phaser.Scene {
     this.heartsteelStacks = 0;
     this.heartsteelBonusHp = 0;
     this.heartsteelGainPerKill = 0;
-    this.heartsteelOwnerSlotIndex = null; // ĞÄÖ®¸Öµş²ãÓµÓĞÕß²ÛÎ»£¨ÓÃÓÚÅĞ¶¨ºó³ö²»¼Ì³Ğ£©
-    // ¡ª¡ª É±ÈËÊé£¨²ãÊıÓë½ø¶È£© ¡ª¡ª //
-    this.darkSealStacks = 0;            // µ±Ç°É±ÈËÊé²ãÊı
-    this.darkSealKillProgress = 0;      // Ğ¡±ø»÷É±¼ÆÊı£¨Ã¿100»»1²ã£©
-    this.darkSealOwnerSlotIndex = null; // É±ÈËÊéµş²ãÓµÓĞÕß²ÛÎ»
-    // ¡ª¡ª Å®ÉñÀá/³ãÌìÊ¹ ²ãÊı£¨ÊÍ·Å¼¼ÄÜµş²ã£© ¡ª¡ª //
-    this.manaStackCount = 0;            // µ±Ç°ÒÑµşµÄ¡°²ãÊı¡±£¨Ã¿²ã+manaPerCast ×î´óµ½cap£©
-    this.manaStackPerCast = 0;          // Ã¿²ãÌá¹©µÄ·¨Á¦Öµ£¨Í¨³£5£©
-    this.manaStackCap = 0;              // ¿Éµş¼ÓµÄ×î´ó·¨Á¦£¨tear=700£¬seraph=1400£©
-    this.manaSpendHealPerPoint = 0;     // ÏûºÄ·¨Á¦Ê±µÄÖÎÁÆÁ¿/µã£¨³ãÌìÊ¹=1£©
-    // ¡ª¡ª ÏûºÄÆ·£ºÒ©Ë® ¡ª¡ª //
-    this.healthPotionCount = 0;           // ÉúÃüÒ©Ë®ÊıÁ¿£¨×î¶à100£©
-    this.healthPotionOwnerSlotIndex = null; // ÉúÃüÒ©Ë®ËùÔÚ²ÛÎ»
-    this.refillablePotionCharges = 0;      // ¸´ÓÃĞÔÒ©Ë®¿ÉÓÃ´ÎÊı£¨0~5£©
+    this.heartsteelOwnerSlotIndex = null; // å¿ƒä¹‹é’¢å å±‚æ‹¥æœ‰è€…æ§½ä½ï¼ˆç”¨äºåˆ¤å®šåå‡ºä¸ç»§æ‰¿ï¼‰
+    // â€”â€” æ€äººä¹¦ï¼ˆå±‚æ•°ä¸è¿›åº¦ï¼‰ â€”â€” //
+    this.darkSealStacks = 0;            // å½“å‰æ€äººä¹¦å±‚æ•°
+    this.darkSealKillProgress = 0;      // å°å…µå‡»æ€è®¡æ•°ï¼ˆæ¯100æ¢1å±‚ï¼‰
+    this.darkSealOwnerSlotIndex = null; // æ€äººä¹¦å å±‚æ‹¥æœ‰è€…æ§½ä½
+    // â€”â€” å¥³ç¥æ³ª/ç‚½å¤©ä½¿ å±‚æ•°ï¼ˆé‡Šæ”¾æŠ€èƒ½å å±‚ï¼‰ â€”â€” //
+    this.manaStackCount = 0;            // å½“å‰å·²å çš„â€œå±‚æ•°â€ï¼ˆæ¯å±‚+manaPerCast æœ€å¤§åˆ°capï¼‰
+    this.manaStackPerCast = 0;          // æ¯å±‚æä¾›çš„æ³•åŠ›å€¼ï¼ˆé€šå¸¸5ï¼‰
+    this.manaStackCap = 0;              // å¯å åŠ çš„æœ€å¤§æ³•åŠ›ï¼ˆtear=700ï¼Œseraph=1400ï¼‰
+    this.manaSpendHealPerPoint = 0;     // æ¶ˆè€—æ³•åŠ›æ—¶çš„æ²»ç–—é‡/ç‚¹ï¼ˆç‚½å¤©ä½¿=1ï¼‰
+    // â€”â€” æ¶ˆè€—å“ï¼šè¯æ°´ â€”â€” //
+    this.healthPotionCount = 0;           // ç”Ÿå‘½è¯æ°´æ•°é‡ï¼ˆæœ€å¤š100ï¼‰
+    this.healthPotionOwnerSlotIndex = null; // ç”Ÿå‘½è¯æ°´æ‰€åœ¨æ§½ä½
+    this.refillablePotionCharges = 0;      // å¤ç”¨æ€§è¯æ°´å¯ç”¨æ¬¡æ•°ï¼ˆ0~5ï¼‰
     this.refillablePotionMaxCharges = 5;
-    this.refillablePotionOwnerSlotIndex = null; // ¸´ÓÃĞÔÒ©Ë®ËùÔÚ²ÛÎ»
-    // ¡ª¡ª °×Â¥½£¶¯Á¿ ¡ª¡ª //
-    this.bailouMomentumStacks = 0;      // µ±Ç°¶¯Á¿²ãÊı
-    this.bailouMomentumExpires = [];    // Ã¿²ã¹ıÆÚÊ±¼ä´Á£¨ms£©
-    this.bailouMomentumSpeedPerStack = 0; // Ã¿²ãÌá¹©µÄÆ½Ö±ÒÆËÙ
-    // ¡ª¡ª ËéÆ¬ÏµÍ³ ¡ª¡ª //
+    this.refillablePotionOwnerSlotIndex = null; // å¤ç”¨æ€§è¯æ°´æ‰€åœ¨æ§½ä½
+    // â€”â€” ç™½æ¥¼å‰‘åŠ¨é‡ â€”â€” //
+    this.bailouMomentumStacks = 0;      // å½“å‰åŠ¨é‡å±‚æ•°
+    this.bailouMomentumExpires = [];    // æ¯å±‚è¿‡æœŸæ—¶é—´æˆ³ï¼ˆmsï¼‰
+    this.bailouMomentumSpeedPerStack = 0; // æ¯å±‚æä¾›çš„å¹³ç›´ç§»é€Ÿ
+    // â€”â€” ç¢ç‰‡ç³»ç»Ÿ â€”â€” //
     this.shardState = {
       purchases: { basic: 0, mid: 0, epic: 0, legendary: 0 },
     };
     this.shardBonuses = {
-      // Æ½Ö±¼Ó³É
+      // å¹³ç›´åŠ æˆ
       attackDamageFlat: 0,
       attackSpeedPct: 0,
       abilityPowerFlat: 0,
@@ -1053,23 +1053,23 @@ class GameScene extends Phaser.Scene {
       abilityHaste: 0,
       armorPenFlat: 0,
       hpRegenPerSecond: 0,
-      // ³ËÇø£¨°Ù·Ö±È£©
+      // ä¹˜åŒºï¼ˆç™¾åˆ†æ¯”ï¼‰
       attackDamagePct: 0,
       abilityPowerPct: 0,
       armorPct: 0,
       maxHpPct: 0,
       maxManaPct: 0,
-      // ´©¼×ÓëÌØĞ§
+      // ç©¿ç”²ä¸ç‰¹æ•ˆ
       armorPenPct: 0,
       onHitPhysicalFlat: 0,
       onHitAdRatio: 0,
     };
     this.playerSpeedBuffMultiplier = 1;
     this.playerSpeedBuffExpiresAt = 0;
-    this.lastSpellbladeUsedAt = 0;  // ×·×ÙÒ«¹â×°±¸µÄÀäÈ´Ê±¼ä
-    this.lastPotionUsedAt = 0;      // Ò©Ë®Ê¹ÓÃCDÊ±¼ä´Á
-    this.equipmentCooldowns = {};    // ×·×ÙËùÓĞ×°±¸CD: { slotIndex: { expiresAt: number, duration: number } }
-    this.equipmentTriggers = {};     // ×·×Ù×°±¸´¥·¢×´Ì¬: { slotIndex: { active: boolean, expiresAt: number } }
+    this.lastSpellbladeUsedAt = 0;  // è¿½è¸ªè€€å…‰è£…å¤‡çš„å†·å´æ—¶é—´
+    this.lastPotionUsedAt = 0;      // è¯æ°´ä½¿ç”¨CDæ—¶é—´æˆ³
+    this.equipmentCooldowns = {};    // è¿½è¸ªæ‰€æœ‰è£…å¤‡CD: { slotIndex: { expiresAt: number, duration: number } }
+    this.equipmentTriggers = {};     // è¿½è¸ªè£…å¤‡è§¦å‘çŠ¶æ€: { slotIndex: { active: boolean, expiresAt: number } }
     this.draggedEquipmentSlot = null;
     this.equipmentUi = null;
     this.equipmentUiHandlers = [];
@@ -1080,7 +1080,7 @@ class GameScene extends Phaser.Scene {
       pause: { volume: 0.25 },
       playershoot: { volume: 1 },
       pldead: { volume: 0.25 },
-      // ĞÂÔöÒôĞ§Ä¬ÈÏÒôÁ¿
+      // æ–°å¢éŸ³æ•ˆé»˜è®¤éŸ³é‡
       player_castQ: { volume: 2.5 },
       player_castE: { volume: 2.5 },
       player_castR: { volume: 2.5 },
@@ -1090,15 +1090,15 @@ class GameScene extends Phaser.Scene {
       orbhit: { volume: 0.8 },
       potion: { volume: 1.2 },
     };
-    // Í¬Ò»ÖÖÒôĞ§ËØ²Ä´¥·¢×îĞ¡¼ä¸ô£¨ms£©
+    // åŒä¸€ç§éŸ³æ•ˆç´ æè§¦å‘æœ€å°é—´éš”ï¼ˆmsï¼‰
     this.sfxLastPlayed = {};
     this.sfxMinIntervalMs = 200;
-// ¡ª¡ª ¼¼ÄÜĞÎÌ¬ÓëÊıÖµ ¡ª¡ª //
-this.playerCombatMode = "ranged";   // ranged | melee£¨EÇĞ»»£©£¬³õÊ¼Ô¶³Ì
-this.modeAttackSpeedMultiplier = 1; // Ô¶³Ì+20%¹¥ËÙ
-this.weaponHitbox = null;           // ½üÕ½Ä£Ê½ÏÂ£¬ÒõÑô±¦ÓñµÄÎïÀíÅĞ¶¨Ìå
+// â€”â€” æŠ€èƒ½å½¢æ€ä¸æ•°å€¼ â€”â€” //
+this.playerCombatMode = "ranged";   // ranged | meleeï¼ˆEåˆ‡æ¢ï¼‰ï¼Œåˆå§‹è¿œç¨‹
+this.modeAttackSpeedMultiplier = 1; // è¿œç¨‹+20%æ”»é€Ÿ
+this.weaponHitbox = null;           // è¿‘æˆ˜æ¨¡å¼ä¸‹ï¼Œé˜´é˜³å®ç‰çš„ç‰©ç†åˆ¤å®šä½“
 
-// ¡ª¡ª ¼¼ÄÜCD/À¶ºÄÅäÖÃ ¡ª¡ª //
+// â€”â€” æŠ€èƒ½CD/è“è€—é…ç½® â€”â€” //
 this.skillConfig = {
   Q: { baseCd: 10000, mana: 60 },
   E: { baseCd: 5000,  mana: 0  },
@@ -1108,22 +1108,22 @@ this.skillConfig = {
 this.skillReadyAt = { Q:0, E:0, R:0, DASH:0 };
 this.skillCooldownDuration = { Q:0, E:0, R:0, DASH:0 };
 
-// ¡ª¡ª Ô¤ÀÀÌáÊ¾£¨¸´ÓÃÒÑÓĞÇøÓò£¬²»ĞÂÔö UI£© ¡ª¡ª //
-this.skillTooltipTarget = null; // ¸´ÓÃ£ºÓÅÏÈ¼¼ÄÜÃæ°å£¬Æä´Î equipmentDetails
+// â€”â€” é¢„è§ˆæç¤ºï¼ˆå¤ç”¨å·²æœ‰åŒºåŸŸï¼Œä¸æ–°å¢ UIï¼‰ â€”â€” //
+this.skillTooltipTarget = null; // å¤ç”¨ï¼šä¼˜å…ˆæŠ€èƒ½é¢æ¿ï¼Œå…¶æ¬¡ equipmentDetails
 
-// ¡ª¡ª R ¼¼ÄÜ£ºÃÎÏëÃîÖé ¡ª¡ª //
-    this.mikoOrbsGroup = null;      // ÎïÀí×é
-    this.mikoOrbs = [];             // ÊµÀıÁĞ±í
+// â€”â€” R æŠ€èƒ½ï¼šæ¢¦æƒ³å¦™ç  â€”â€” //
+    this.mikoOrbsGroup = null;      // ç‰©ç†ç»„
+    this.mikoOrbs = [];             // å®ä¾‹åˆ—è¡¨
 
-    // ¡ª¡ª µØÍ¼µØµã×é£¨ÉÌµêµÈ£© ¡ª¡ª //
-    this.places = null;             // ¾²Ì¬ÎïÌå×é£¨ÉÌµê·ÅÕâÀï£©
-    this.shopPlaces = [];           // ³¡ÉÏÉÌµêÒıÓÃ
+    // â€”â€” åœ°å›¾åœ°ç‚¹ç»„ï¼ˆå•†åº—ç­‰ï¼‰ â€”â€” //
+    this.places = null;             // é™æ€ç‰©ä½“ç»„ï¼ˆå•†åº—æ”¾è¿™é‡Œï¼‰
+    this.shopPlaces = [];           // åœºä¸Šå•†åº—å¼•ç”¨
 
-// ¡ª¡ª ÉÁ±ÜÓëÎŞµĞ ¡ª¡ª //
+// â€”â€” é—ªé¿ä¸æ— æ•Œ â€”â€” //
 this.playerInvulnerableUntil = 0;
-this.playerWallCollider = null; // ±£´æÍæ¼Ò-Ç½ÌåÅö×²Ìå
+this.playerWallCollider = null; // ä¿å­˜ç©å®¶-å¢™ä½“ç¢°æ’ä½“
 
-    // ¹íË÷µş²ãÏà¹Ø
+    // é¬¼ç´¢å å±‚ç›¸å…³
     this.guinsooStacks = 0;
     this.guinsooStacksExpireAt = 0;
     this.guinsooFullProcCounter = 0;
@@ -1143,18 +1143,18 @@ this.playerWallCollider = null; // ±£´æÍæ¼Ò-Ç½ÌåÅö×²Ìå
     this.auraSprite = null;
     this.auraTween = null;
 
-    // ¡ª¡ª »ù´¡Óë×°±¸Çı¶¯µÄ×ÊÔ´»Ø¸´ ¡ª¡ª //
-    this.baseManaRegenPerSecond = 5;   // »ù´¡»ØÀ¶£º5 mana/s
-    this.manaRegenFlatPerSecond = 0;   // ×°±¸Ìá¹©µÄÆ½Ö±»ØÀ¶£¨/s£©
-    this.manaRegenMultiplier = 1;      // ×°±¸Ìá¹©µÄ»ØÀ¶±¶ÂÊ£¨Ïà³Ë£©
-    this.hpRegenPerSecondFlat = 0;     // ×°±¸Ìá¹©µÄÉúÃü»Ø¸´£¨/s£©
-    this._manaRegenCarry = 0;          // Ğ¡ÊıÀÛ¼Ó±ÜÃâ¶¶¶¯
-    this._hpRegenCarry = 0;            // Ğ¡ÊıÀÛ¼Ó±ÜÃâ¶¶¶¯
+    // â€”â€” åŸºç¡€ä¸è£…å¤‡é©±åŠ¨çš„èµ„æºå›å¤ â€”â€” //
+    this.baseManaRegenPerSecond = 5;   // åŸºç¡€å›è“ï¼š5 mana/s
+    this.manaRegenFlatPerSecond = 0;   // è£…å¤‡æä¾›çš„å¹³ç›´å›è“ï¼ˆ/sï¼‰
+    this.manaRegenMultiplier = 1;      // è£…å¤‡æä¾›çš„å›è“å€ç‡ï¼ˆç›¸ä¹˜ï¼‰
+    this.hpRegenPerSecondFlat = 0;     // è£…å¤‡æä¾›çš„ç”Ÿå‘½å›å¤ï¼ˆ/sï¼‰
+    this._manaRegenCarry = 0;          // å°æ•°ç´¯åŠ é¿å…æŠ–åŠ¨
+    this._hpRegenCarry = 0;            // å°æ•°ç´¯åŠ é¿å…æŠ–åŠ¨
 
-    // BossÏà¹Ø
+    // Bossç›¸å…³
     this.boss = null;
     this.bossMusic = null;
-    this.bossKind = null; // ĞÂÔö£ºµ±Ç°BossÀàĞÍID
+    this.bossKind = null; // æ–°å¢ï¼šå½“å‰Bossç±»å‹ID
     this.bossUi = {
       gfx: null,
       nameText: null,
@@ -1165,8 +1165,8 @@ this.playerWallCollider = null; // ±£´æÍæ¼Ò-Ç½ÌåÅö×²Ìå
       barH: 14,
     };
 
-    /* ==== ĞÂÔö£ºBoss µ¯Ä»·Ö×é ==== */
-    this.bossBullets = null; // Boss×Óµ¯£¨º¬ºËµ¯/»Æµ¯/À¶µ¯/Î£º¦Î¢Á£µÈ£©
+    /* ==== æ–°å¢ï¼šBoss å¼¹å¹•åˆ†ç»„ ==== */
+    this.bossBullets = null; // Bosså­å¼¹ï¼ˆå«æ ¸å¼¹/é»„å¼¹/è“å¼¹/å±å®³å¾®ç²’ç­‰ï¼‰
   }
 
   create() {
@@ -1185,26 +1185,26 @@ this.playerWallCollider = null; // ±£´æÍæ¼Ò-Ç½ÌåÅö×²Ìå
     this.updateResourceBars();
     this.initializeShopSystem();
 
-    // µØÍ¼Ëæ»ú·ÅÖÃ£ºÉÌµêÓë±¦Ïä
+    // åœ°å›¾éšæœºæ”¾ç½®ï¼šå•†åº—ä¸å®ç®±
     this.spawnMapPlaces();
 
-    /* ==== ĞÂÔö£ºBossµ¯Ä»·Ö×éÓëÅö×² ==== */
+    /* ==== æ–°å¢ï¼šBosså¼¹å¹•åˆ†ç»„ä¸ç¢°æ’ ==== */
     this.bossBullets = this.physics.add.group();
-    // ×Ô»úÓëBoss×Óµ¯ÅĞ¶¨£º·¨ÊõÉËº¦£¨°´BossÅäÖÃ£©
+    // è‡ªæœºä¸Bosså­å¼¹åˆ¤å®šï¼šæ³•æœ¯ä¼¤å®³ï¼ˆæŒ‰Bossé…ç½®ï¼‰
     this.physics.add.overlap(this.player, this.bossBullets, (player, bullet) => {
       if (!bullet.active) return;
-      // »ù´¡ÉËº¦
+      // åŸºç¡€ä¼¤å®³
       let dmg = bullet.magicDamage ?? 0;
-      // ºËµ¯µÈ¿É¸½¼Ó¡°°´×Ô»ú×î´óÉúÃü°Ù·Ö±È¡±ÉËº¦
+      // æ ¸å¼¹ç­‰å¯é™„åŠ â€œæŒ‰è‡ªæœºæœ€å¤§ç”Ÿå‘½ç™¾åˆ†æ¯”â€ä¼¤å®³
       if (bullet.percentMaxHpDamage && bullet.percentMaxHpDamage > 0) {
         const maxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
         const extra = Math.round(maxHp * bullet.percentMaxHpDamage);
-        if (extra > 0) dmg += extra; // Í¬Ê±Ôì³É¶îÍâÉËº¦
+        if (extra > 0) dmg += extra; // åŒæ—¶é€ æˆé¢å¤–ä¼¤å®³
       }
       if (dmg > 0) this.applyMagicDamageToPlayer(dmg);
       this.destroyBossBullet(bullet);
     });
-    // µĞ/Boss×Óµ¯ÓëÇ½Ìå·¢ÉúÅö×²£ºÄ¬ÈÏÏú»Ù£»µ«ºËµ¯²»²ÎÓëÅö×²£¨¿É´©Ç½¡¢²»ÏûÊ§£©
+    // æ•Œ/Bosså­å¼¹ä¸å¢™ä½“å‘ç”Ÿç¢°æ’ï¼šé»˜è®¤é”€æ¯ï¼›ä½†æ ¸å¼¹ä¸å‚ä¸ç¢°æ’ï¼ˆå¯ç©¿å¢™ã€ä¸æ¶ˆå¤±ï¼‰
     if (this.wallGroup) {
       this.physics.add.collider(
         this.bossBullets,
@@ -1213,11 +1213,11 @@ this.playerWallCollider = null; // ±£´æÍæ¼Ò-Ç½ÌåÅö×²Ìå
           if (bullet && bullet.active) this.spawnWallHitExplosion(bullet.x, bullet.y);
           this.destroyBossBullet(bullet);
         },
-        // processCallback£ºÎªºËµ¯·µ»Ø false£¬Ìø¹ıÅö×²´¦ÀíÓë·ÖÀë
+        // processCallbackï¼šä¸ºæ ¸å¼¹è¿”å› falseï¼Œè·³è¿‡ç¢°æ’å¤„ç†ä¸åˆ†ç¦»
         (bullet, _wall) => {
           if (!bullet || !bullet.active) return false;
           const key = bullet.texture?.key;
-          // ºËµ¯ºöÂÔÇ½ÌåÅö×²£¨²»·ÖÀë¡¢²»´¥·¢Ïú»Ù£©
+          // æ ¸å¼¹å¿½ç•¥å¢™ä½“ç¢°æ’ï¼ˆä¸åˆ†ç¦»ã€ä¸è§¦å‘é”€æ¯ï¼‰
           if (key === "u_bullet_nuclearbomb") return false;
           return true;
         },
@@ -1233,7 +1233,7 @@ this.playerWallCollider = null; // ±£´æÍæ¼Ò-Ç½ÌåÅö×²Ìå
     this.roundAwaitingDecision = false;
     this.updateOverlayScale();
     this.updateHUD();
-// ½üÕ½ÃüÖĞÌå£¨Óë weaponSprite Í¬Î»£©
+// è¿‘æˆ˜å‘½ä¸­ä½“ï¼ˆä¸ weaponSprite åŒä½ï¼‰
 this.weaponHitbox = this.physics.add.image(this.player.x, this.player.y, "weapon").setVisible(false).setDepth(8);
 this.weaponHitbox.body.setAllowGravity(false);
 this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.height/2-8);
@@ -1241,40 +1241,40 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
   if (!enemy.active || this.playerCombatMode!=="melee") return;
   const now = this.time.now;
   if (!enemy.lastOrbHitAt || now - enemy.lastOrbHitAt >= 300) {
-    // ½« E µÄ½üÕ½ÃüÖĞÊÓÎª¡°ÆÕ¹¥¡±£º¿É´¥·¢¹¥»÷ÌØĞ§Óë·¨Êõ±©»÷
+    // å°† E çš„è¿‘æˆ˜å‘½ä¸­è§†ä¸ºâ€œæ™®æ”»â€ï¼šå¯è§¦å‘æ”»å‡»ç‰¹æ•ˆä¸æ³•æœ¯æš´å‡»
 
     const preHp = enemy.hp;
-    const baseAD = PLAYER_BASE_STATS.attackDamage; // »ù´¡AD
+    const baseAD = PLAYER_BASE_STATS.attackDamage; // åŸºç¡€AD
     const ap = this.playerStats.abilityPower || 0;
-    const baseMagic = Math.max(0, Math.round(baseAD + ap)); // 100%»ù´¡AD + 100%AP£¨Ä§·¨£©
+    const baseMagic = Math.max(0, Math.round(baseAD + ap)); // 100%åŸºç¡€AD + 100%APï¼ˆé­”æ³•ï¼‰
 
-    // ÆÕÍ¨±©»÷ÂÊÓ°Ïì£¨¶Ô¸Ã»ù´¡Ä§·¨ÉËº¦ÉúĞ§£©
-    const critChanceRaw = this.playerStats?.critChance ?? 0;          // ¿ÉÄÜÊÇ0¨C1»ò0¨C100
+    // æ™®é€šæš´å‡»ç‡å½±å“ï¼ˆå¯¹è¯¥åŸºç¡€é­”æ³•ä¼¤å®³ç”Ÿæ•ˆï¼‰
+    const critChanceRaw = this.playerStats?.critChance ?? 0;          // å¯èƒ½æ˜¯0â€“1æˆ–0â€“100
     const critChance01 = critChanceRaw > 1 ? critChanceRaw / 100 : critChanceRaw;
     const critChance = Math.min(1, Math.max(0, critChance01));
-    const critDamagePct = this.playerStats?.critDamage ?? 150;        // 150% = 1.5±¶
+    const critDamagePct = this.playerStats?.critDamage ?? 150;        // 150% = 1.5å€
     const baseIsCrit = Math.random() < critChance;
     const baseMagicFinal = baseIsCrit ? Math.round(baseMagic * (critDamagePct / 100)) : baseMagic;
 
-    // ¹¹½¨ÉËº¦ÌõÄ¿£¨ÓëÔ¶³ÌÆÕ¹¥Ò»ÖÂµÄ¹é²¢/Õ¹Ê¾Á÷³Ì£©
+    // æ„å»ºä¼¤å®³æ¡ç›®ï¼ˆä¸è¿œç¨‹æ™®æ”»ä¸€è‡´çš„å½’å¹¶/å±•ç¤ºæµç¨‹ï¼‰
     const entries = [];
 
-    // »ù´¡ÉËº¦£¨°´Ä§·¨½áËã£¬¶¨ÒåÎª basic£¬²»×ßÆÕÍ¨±©»÷£©
+    // åŸºç¡€ä¼¤å®³ï¼ˆæŒ‰é­”æ³•ç»“ç®—ï¼Œå®šä¹‰ä¸º basicï¼Œä¸èµ°æ™®é€šæš´å‡»ï¼‰
     entries.push({ type: "magic", amount: baseMagicFinal, source: baseIsCrit ? "basic_crit" : "basic", isOnHit: false, isCrit: baseIsCrit });
 
-    // Ò«¹â£¨ÈôÓĞ£©
+    // è€€å…‰ï¼ˆè‹¥æœ‰ï¼‰
     let spellbladeHit = null;
     if (this.nextAttackTriggersSpellblade) {
       spellbladeHit = this.consumeSpellbladeIfReady(enemy);
     }
 
-    // Í¨ÓÃ on-hit Æ½Ö±ÉËº¦
+    // é€šç”¨ on-hit å¹³ç›´ä¼¤å®³
     const flatOnHitPhys = Math.max(0, Math.round(this.playerEquipmentStats?.onHitPhysicalFlat || 0));
     if (flatOnHitPhys > 0) entries.push({ type: "physical", amount: flatOnHitPhys, source: "onhit_phys_flat", isOnHit: true });
     const flatOnHitMagic = Math.max(0, Math.round(this.playerEquipmentStats?.onHitMagicFlat || 0));
     if (flatOnHitMagic > 0) entries.push({ type: "magic", amount: flatOnHitMagic, source: "onhit_magic_flat", isOnHit: true });
 
-    // ÆÆ°ÜÍõÕßÖ®ÈĞ£º°Ù·Ö±ÈÉúÃü£¨°´ on-hit ´¦Àí£©
+    // ç ´è´¥ç‹è€…ä¹‹åˆƒï¼šç™¾åˆ†æ¯”ç”Ÿå‘½ï¼ˆæŒ‰ on-hit å¤„ç†ï¼‰
     if (this.hasItemEquipped(BROKEN_KINGS_BLADE_ID)) {
       const blade = EQUIPMENT_DATA[BROKEN_KINGS_BLADE_ID];
       const eff = blade.effects;
@@ -1294,7 +1294,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
       }
     }
 
-    // ÖÇ»ÛÄ©ÈĞ¡¢ÄÉÊ²¡¢¹íË÷¡¢¾Ş¾Å£¨ÓëÔ¶³ÌÆÕ¹¥ÏàÍ¬£©
+    // æ™ºæ…§æœ«åˆƒã€çº³ä»€ã€é¬¼ç´¢ã€å·¨ä¹ï¼ˆä¸è¿œç¨‹æ™®æ”»ç›¸åŒï¼‰
     let witsOnHitDamagePerProc = 0;
     if (this.hasItemEquipped(WITS_END_ID)) {
       const eff = EQUIPMENT_DATA[WITS_END_ID].effects;
@@ -1329,7 +1329,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
       if (bonusDamage > 0) entries.push({ type: "physical", amount: bonusDamage, source: "titanic_primary", isOnHit: true });
     }
 
-    // ¹é²¢²¢Ì×¼õÉË
+    // å½’å¹¶å¹¶å¥—å‡ä¼¤
     const damageGroups = { basic: { physical: 0, magic: 0 }, onHit: { physical: 0, magic: 0 } };
     for (const e of entries) {
       const times = e.isOnHit ? extraProcMultiplier : 1;
@@ -1338,7 +1338,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
         if (dealt <= 0) continue;
         const group = e.isOnHit ? damageGroups.onHit : damageGroups.basic;
         group[e.type] += dealt;
-        // ÖÇ»ÛÄ©ÈĞ£ºãĞÖµÖÎÁÆ
+        // æ™ºæ…§æœ«åˆƒï¼šé˜ˆå€¼æ²»ç–—
         if (e.source === "wits") {
           const hpPct = this.currentHp / this.playerStats.maxHp;
           if (hpPct < (EQUIPMENT_DATA[WITS_END_ID].effects.witsHealThresholdHpPct || 0.5)) {
@@ -1350,7 +1350,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
       }
     }
 
-    // µÍÑª·¨±©£¨ÎŞÇî·¨Çò£©
+    // ä½è¡€æ³•æš´ï¼ˆæ— ç©·æ³•çƒï¼‰
     let magicBasicWasSpellCrit = false;
     const baseWasNormalCrit = baseIsCrit;
     let magicOnHitWasSpellCrit = false;
@@ -1370,7 +1370,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
       }
     }
 
-    // ÏÔÊ¾£¨ÓëÔ¶³ÌÆÕ¹¥Ò»ÖÂÑùÊ½£©£ºÏÈ basic£¬ÔÙ on-hit
+    // æ˜¾ç¤ºï¼ˆä¸è¿œç¨‹æ™®æ”»ä¸€è‡´æ ·å¼ï¼‰ï¼šå…ˆ basicï¼Œå† on-hit
     let displayOrder = 0;
     if (damageGroups.basic.physical > 0) this.displayDamageWithSeparation(enemy.x, enemy.y, damageGroups.basic.physical, "physical", displayOrder++);
     if (damageGroups.basic.magic > 0) {
@@ -1380,7 +1380,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
     if (damageGroups.onHit.physical > 0) this.displayDamageWithSeparation(enemy.x, enemy.y, damageGroups.onHit.physical, "physical", displayOrder++);
     if (damageGroups.onHit.magic > 0) this.displayDamageWithSeparation(enemy.x, enemy.y, damageGroups.onHit.magic, magicOnHitWasSpellCrit ? "spellcrit" : "magic", displayOrder++);
 
-    // ¶ÀÁ¢ÏÔÊ¾£ºÒ«¹â£¨´ø S Ç°×º£©
+    // ç‹¬ç«‹æ˜¾ç¤ºï¼šè€€å…‰ï¼ˆå¸¦ S å‰ç¼€ï¼‰
     let spellbladeDamage = 0;
     if (spellbladeHit && spellbladeHit.amount > 0) {
       spellbladeDamage = spellbladeHit.amount;
@@ -1388,7 +1388,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
       this.showDamageNumber(enemy.x, enemy.y, spellbladeDamage, stype, { isSpellblade: true });
     }
 
-    // Êµ¿ÛÑª
+    // å®æ‰£è¡€
     const totalDamage =
       damageGroups.basic.physical + damageGroups.basic.magic +
       damageGroups.onHit.physical + damageGroups.onHit.magic +
@@ -1398,7 +1398,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
     if (enemy.isBoss && typeof enemy.setData === "function") enemy.setData("hp", enemy.hp);
     if (enemy.isBoss) this.updateBossUI(enemy);
 
-    // Åü¿³ÓëºóĞø£º¶¨ÒåÎªÆÕ¹¥
+    // åŠˆç ä¸åç»­ï¼šå®šä¹‰ä¸ºæ™®æ”»
     const meleeAngle = Phaser.Math.Angle.Between(this.player.x, this.player.y, enemy.x, enemy.y);
     this.triggerCleaveEffects(enemy, { angle: meleeAngle, scale: 1 });
     enemy.lastOrbHitAt = now;
@@ -1408,10 +1408,10 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
     } else {
       this.maybeExecuteTheCollector(enemy);
     }
-    // Ñ¶ÈĞ£ºÆÕ¹¥ÃüÖĞ·µ»¹
+    // è®¯åˆƒï¼šæ™®æ”»å‘½ä¸­è¿”è¿˜
     this.applyNavoriQuickbladesOnHitRefund();
 
-    // ÎïÀíÎüÑª£¨Ö»¶ÔÎïÀí×Ü¶î£©
+    // ç‰©ç†å¸è¡€ï¼ˆåªå¯¹ç‰©ç†æ€»é¢ï¼‰
     const ls = this.playerEquipmentStats.physicalLifeSteal ?? 0;
     if (ls > 0) {
       const physicalTotal = damageGroups.basic.physical + damageGroups.onHit.physical;
@@ -1425,7 +1425,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
       }
     }
 
-    // Omnivamp£¨ÈÎÒâÉËº¦£©
+    // Omnivampï¼ˆä»»æ„ä¼¤å®³ï¼‰
     const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
     if (omni > 0) {
       const healAny = Math.max(0, Math.round(totalDamage * omni));
@@ -1437,7 +1437,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
     }
   }
 });
-// ½üÕ½ÃüÖĞÒ²¿ÉÒÔÇåÀí Rin Ê¬Ìå£¨²»Éú³É round ×Óµ¯£©
+// è¿‘æˆ˜å‘½ä¸­ä¹Ÿå¯ä»¥æ¸…ç† Rin å°¸ä½“ï¼ˆä¸ç”Ÿæˆ round å­å¼¹ï¼‰
 this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
   if (corpse && corpse.active) this.killRinCorpse(corpse, false);
 });
@@ -1460,12 +1460,12 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       }
     }
 
-    // Debug Boss Ä£Ê½£ºÍ£Ö¹Ò»ÇĞÒôÀÖ -> Éú³ÉUtsuho -> ÔÙ²¥·ÅBossÇú
+    // Debug Boss æ¨¡å¼ï¼šåœæ­¢ä¸€åˆ‡éŸ³ä¹ -> ç”ŸæˆUtsuho -> å†æ’­æ”¾Bossæ›²
     if (this.debugBossMode) {
       try { this.sound.stopAll(); } catch (_) {}
       if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
 
-      // Éú³ÉÓÚ³¡µØÖĞÉÏ·½
+      // ç”Ÿæˆäºåœºåœ°ä¸­ä¸Šæ–¹
       let __dbgWant = "Utsuho";
       try {
         const params = new URLSearchParams(window.location.search);
@@ -1478,7 +1478,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
         this.spawnBoss(BOSS_RIN_CONFIG);
         this.createBossUI(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
         this.showBossHeader(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
-        // ÉèÖÃRinµ÷ÊÔ³õÊ¼×°±¸£ºÒûÑª½£ + ÆÆ°ÜÍõÕßÖ®ÈĞ
+        // è®¾ç½®Rinè°ƒè¯•åˆå§‹è£…å¤‡ï¼šé¥®è¡€å‰‘ + ç ´è´¥ç‹è€…ä¹‹åˆƒ
         try {
           this.playerEquipmentSlots = new Array(EQUIPMENT_SLOT_COUNT).fill(null);
           this.refreshEquipmentUI();
@@ -1496,7 +1496,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
         }
       }
 
-      // Éú³Éºó²Å²¥·Å Boss ÒôÀÖ
+      // ç”Ÿæˆåæ‰æ’­æ”¾ Boss éŸ³ä¹
       this.bossMusic = this.sound.add(BOSS_UTSUHO_CONFIG.musicKey, { loop: true, volume: 1.5 });
       this.bossMusic.play();
       if (__dbgWant === "Rin") {
@@ -1505,7 +1505,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
         this.bossMusic.play();
       }
 
-      // ÍË³ö»òÏú»Ù³¡¾°Ê±ÇåÀí
+      // é€€å‡ºæˆ–é”€æ¯åœºæ™¯æ—¶æ¸…ç†
       this.events.once("shutdown", () => {
         this.clearBossUI();
         if (this.bossMusic) { this.bossMusic.stop(); this.bossMusic.destroy(); this.bossMusic = null; }
@@ -1517,7 +1517,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
     }
   }
 
-  /* ==== UI °ó¶¨ ==== */
+  /* ==== UI ç»‘å®š ==== */
   setupUIBindings() {
     this.ui = {
       hpBar: document.getElementById("hp-bar"),
@@ -1610,10 +1610,10 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
     if (!this.skillTooltipTarget) this.skillTooltipTarget = this.ui.equipmentDetails;
 
     const descriptions = {
-      Q: "Q¡¸Ñı¹ÖÆÆ»µÕß¡¹\nCD 10s  ÏûºÄ 60MP\n½üÕ½£º°´ÌùÍ¼ÎïÀíÅö×²ÅĞ¶¨£¨8¸ñ´óĞ¡£©£¬Ôì³É·¨ÉË(100%AP)¡£\nÔ¶³Ì£ºÕıÇ°·½30¡ãÈıÃ¶´©Í¸·ûÔı£¨ÎïÉË=100%AD+50%AP£©¡£",
-      E: "E¡¸ÒõÑô¹íÉñÓñ¡¹ÇĞ»»£¨CD 5s£©\nÔ¶³Ì£ºÓÕµ¼»¤·û£¬°ë¾¶600ÆÕ¹¥£¬¹¥ËÙ+20%¡£\n½üÕ½£ºÒõÑô±¦Óñ¾Ş»¯Óë°ë¾¶¡Á2Ğı×ª£¬½Ó´¥Ôì³É(100%»ù´¡AD+100%AP)·¨ÉË¡£",
-      R: "R¡¸ÃÎÏë·âÓ¡¡¹\nCD 58s  ÏûºÄ 180MP\nÁ¢¼´ÖÎÁÆ(500%AP+500)¡£ÕÙ»½6Ã¶ÃÎÏëÃîÖé£¬ÏÈÎ§ÈÆ2Ãë£¨Ğı×ªÊ±Åö×²Ôì³É(100%AP+200)·¨ÉË£©£¬Ëæºó×·×î½üµĞÈËÃüÖĞºóÔÚ4¸ñ·¶Î§ÄÚ±¬Õ¨²¢Ôì³É(100%AP+200)·¨ÉË£¬Çå³ıµĞ·½×Óµ¯¡£",
-      DASH: "ÉÁ±Ü£¨Space£©\nCD 5s\nÏòÇ°Î»ÒÆ50£¬¶ÌÔİÎŞµĞ£»ºöÂÔµØĞÎÅö×²£¨±ß½ç³ıÍâ£©¡£",
+      Q: "Qã€Œå¦–æ€ªç ´åè€…ã€\nCD 10s  æ¶ˆè€— 60MP\nè¿‘æˆ˜ï¼šæŒ‰è´´å›¾ç‰©ç†ç¢°æ’åˆ¤å®šï¼ˆ8æ ¼å¤§å°ï¼‰ï¼Œé€ æˆæ³•ä¼¤(100%AP)ã€‚\nè¿œç¨‹ï¼šæ­£å‰æ–¹30Â°ä¸‰æšç©¿é€ç¬¦æœ­ï¼ˆç‰©ä¼¤=100%AD+50%APï¼‰ã€‚",
+      E: "Eã€Œé˜´é˜³é¬¼ç¥ç‰ã€åˆ‡æ¢ï¼ˆCD 5sï¼‰\nè¿œç¨‹ï¼šè¯±å¯¼æŠ¤ç¬¦ï¼ŒåŠå¾„600æ™®æ”»ï¼Œæ”»é€Ÿ+20%ã€‚\nè¿‘æˆ˜ï¼šé˜´é˜³å®ç‰å·¨åŒ–ä¸åŠå¾„Ã—2æ—‹è½¬ï¼Œæ¥è§¦é€ æˆ(100%åŸºç¡€AD+100%AP)æ³•ä¼¤ã€‚",
+      R: "Rã€Œæ¢¦æƒ³å°å°ã€\nCD 58s  æ¶ˆè€— 180MP\nç«‹å³æ²»ç–—(500%AP+500)ã€‚å¬å”¤6æšæ¢¦æƒ³å¦™ç ï¼Œå…ˆå›´ç»•2ç§’ï¼ˆæ—‹è½¬æ—¶ç¢°æ’é€ æˆ(100%AP+200)æ³•ä¼¤ï¼‰ï¼Œéšåè¿½æœ€è¿‘æ•Œäººå‘½ä¸­ååœ¨4æ ¼èŒƒå›´å†…çˆ†ç‚¸å¹¶é€ æˆ(100%AP+200)æ³•ä¼¤ï¼Œæ¸…é™¤æ•Œæ–¹å­å¼¹ã€‚",
+      DASH: "é—ªé¿ï¼ˆSpaceï¼‰\nCD 5s\nå‘å‰ä½ç§»50ï¼ŒçŸ­æš‚æ— æ•Œï¼›å¿½ç•¥åœ°å½¢ç¢°æ’ï¼ˆè¾¹ç•Œé™¤å¤–ï¼‰ã€‚",
     };
 
     const showTip = (key) => {
@@ -1660,7 +1660,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
   getBossHpRatioSafe(target) {
   if (!target) return 0;
 
-  // ¶ÁÈ¡ÊıÖµ£ºÓÅÏÈÊôĞÔ£¬Æä´Î DataManager
+  // è¯»å–æ•°å€¼ï¼šä¼˜å…ˆå±æ€§ï¼Œå…¶æ¬¡ DataManager
   const rawHp    = Number.isFinite(target.hp)     ? target.hp
                    : Number(target.getData?.("hp"));
   const rawMaxHp = Number.isFinite(target.maxHp)  ? target.maxHp
@@ -1669,11 +1669,11 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
   const hp    = Number.isFinite(rawHp)    ? rawHp    : 0;
   const maxHp = Number.isFinite(rawMaxHp) ? rawMaxHp : 0;
 
-  // ·ÖÄ¸±£»¤£ºmaxHp<=0 Ê±ÓÃ 1£»Èô hp>0 µ« maxHp==0£¬Ò²ÓÃ hp ×ö·ÖÄ¸±ÜÃâ NaN
+  // åˆ†æ¯ä¿æŠ¤ï¼šmaxHp<=0 æ—¶ç”¨ 1ï¼›è‹¥ hp>0 ä½† maxHp==0ï¼Œä¹Ÿç”¨ hp åšåˆ†æ¯é¿å… NaN
   const denom = (maxHp > 0) ? maxHp : (hp > 0 ? hp : 1);
   let ratio = hp / denom;
 
-  // ¶µµ×µ½ [0, 1]
+  // å…œåº•åˆ° [0, 1]
   if (!Number.isFinite(ratio)) ratio = 0;
   ratio = Math.max(0, Math.min(1, ratio));
   return ratio;
@@ -1687,9 +1687,9 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       if (this.ui.bossTitle) this.ui.bossTitle.textContent = "";
   }
 
-/* ==== µĞÈËÍ¨ÓÃ·¢µ¯¹¤¾ß£¨¼ÓÈë GameScene Ô­ĞÍÄÚ£© ==== */
+/* ==== æ•Œäººé€šç”¨å‘å¼¹å·¥å…·ï¼ˆåŠ å…¥ GameScene åŸå‹å†…ï¼‰ ==== */
 
-// µĞÈË³¯Ïò×Ô»ú ¡ÀspreadDeg µÄµ¥·¢£¨·¨ÊõÉËº¦=caster/torret ×ÔÉí AP£©
+// æ•Œäººæœå‘è‡ªæœº Â±spreadDeg çš„å•å‘ï¼ˆæ³•æœ¯ä¼¤å®³=caster/torret è‡ªèº« APï¼‰
 enemyFireAimedSpread(enemy, baseSpeed, textureKey, spreadDeg, fixedOffsetDeg = null) {
   if (!enemy?.active || !this.player) return;
   const base = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
@@ -1699,8 +1699,8 @@ enemyFireAimedSpread(enemy, baseSpeed, textureKey, spreadDeg, fixedOffsetDeg = n
   const ang = base + off;
   this.spawnBossBullet({
     key: textureKey,
-    sizeTiles: 1,           // µĞµ¯Ä¬ÈÏ 1 ¸ñÍâ¹Û
-    judgeTiles: 0.5,        // Ä¬ÈÏ 0.5 ¸ñÅĞ¶¨
+    sizeTiles: 1,           // æ•Œå¼¹é»˜è®¤ 1 æ ¼å¤–è§‚
+    judgeTiles: 0.5,        // é»˜è®¤ 0.5 æ ¼åˆ¤å®š
     from: { x: enemy.x, y: enemy.y },
     dirAngleDeg: Phaser.Math.RadToDeg(ang),
     forwardSpeed: baseSpeed,
@@ -1710,8 +1710,8 @@ enemyFireAimedSpread(enemy, baseSpeed, textureKey, spreadDeg, fixedOffsetDeg = n
   }, enemy.abilityPower ?? 0, true);
 }
 
-// µĞÈË»·×´µ¯£¨·¨ÊõÉËº¦=×ÔÉí AP£©
-// phaseDeg Îª¿ÕÔòËæ»úÏàÎ»£»center ¿ÉÖ¸¶¨×ø±ê£¬²»¸øÔòÓÃµĞÈËµ±Ç°Î»ÖÃ
+// æ•Œäººç¯çŠ¶å¼¹ï¼ˆæ³•æœ¯ä¼¤å®³=è‡ªèº« APï¼‰
+// phaseDeg ä¸ºç©ºåˆ™éšæœºç›¸ä½ï¼›center å¯æŒ‡å®šåæ ‡ï¼Œä¸ç»™åˆ™ç”¨æ•Œäººå½“å‰ä½ç½®
 enemyFireRing(enemy, {
   count, speed, textureKey, phaseDeg = null, center = null,
 }) {
@@ -1732,22 +1732,22 @@ enemyFireRing(enemy, {
   }, enemy.abilityPower ?? 0);
 }
 
-/* ==== Charger£¨kedama£©AI ==== */
-/* ×Ô¶¯Ñ°Â·£»½øÈë detectionRadius ºóĞîÁ¦ windupMs£¬ËæºóÒÔ chargeSpeed ³å·æ£»×²Ç½½áÊø²¢½øÈëÀäÈ´ */
+/* ==== Chargerï¼ˆkedamaï¼‰AI ==== */
+/* è‡ªåŠ¨å¯»è·¯ï¼›è¿›å…¥ detectionRadius åè“„åŠ› windupMsï¼Œéšåä»¥ chargeSpeed å†²é”‹ï¼›æ’å¢™ç»“æŸå¹¶è¿›å…¥å†·å´ */
 updateChargerAI(enemy, now, delta) {
-  // Ğı×ªÌùÍ¼£¨½Ç¶ÈÊôĞÔµ¥Î»Îª¶È£©
+  // æ—‹è½¬è´´å›¾ï¼ˆè§’åº¦å±æ€§å•ä½ä¸ºåº¦ï¼‰
   if (enemy.idleRotationSpeed) {
-    const mul = delta / 16.6667; // 60fps »ù×¼Ëõ·Å
+    const mul = delta / 16.6667; // 60fps åŸºå‡†ç¼©æ”¾
     enemy.angle = (enemy.angle + enemy.idleRotationSpeed * mul) % 360;
   }
 
   const toPlayer = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
   const slowFactor = (enemy.slowUntil && now < enemy.slowUntil) ? (1 - (enemy.slowPct || 0)) : 1;
 
-  // ×´Ì¬»ú£ºidle -> windup -> dashing -> idle
+  // çŠ¶æ€æœºï¼šidle -> windup -> dashing -> idle
   switch (enemy.aiState) {
     case "idle": {
-      // ½øÈëĞîÁ¦ÅĞ¶¨
+      // è¿›å…¥è“„åŠ›åˆ¤å®š
       if (toPlayer <= (enemy.detectionRadius ?? 300) && (!enemy.attackCooldownUntil || now >= enemy.attackCooldownUntil)) {
         enemy.aiState = "windup";
         enemy.attackChargeUntil = now + (enemy.windupMs ?? 1000);
@@ -1756,7 +1756,7 @@ updateChargerAI(enemy, now, delta) {
         enemy.body.setVelocity(0, 0);
         return;
       }
-      // ÆÕÍ¨×·»÷£º×Ô¶¯Ñ°Â·
+      // æ™®é€šè¿½å‡»ï¼šè‡ªåŠ¨å¯»è·¯
       const chaseSpeed = (enemy.moveSpeed ?? 70) * slowFactor;
       const navTarget = this.resolveEnemyNavigationTarget(enemy, now);
       const nav = enemy.nav;
@@ -1777,7 +1777,7 @@ updateChargerAI(enemy, now, delta) {
       } else {
         this.physics.moveToObject(enemy, this.player, chaseSpeed);
       }
-      // ¿¨×¡´¦Àí
+      // å¡ä½å¤„ç†
       this.handleEnemyStuckState(enemy, chaseSpeed, toPlayer, now);
       return;
     }
@@ -1786,7 +1786,7 @@ updateChargerAI(enemy, now, delta) {
       if (now >= enemy.attackChargeUntil) {
         const ang = Phaser.Math.Angle.Between(enemy.x, enemy.y, enemy.chargeTargetX, enemy.chargeTargetY);
         enemy.dashDirection = ang;
-        enemy.dashingTimeoutAt = now + 1500; // ¶µµ×³¬Ê±£¬·ÀÖ¹ÎŞÏŞ³å
+        enemy.dashingTimeoutAt = now + 1500; // å…œåº•è¶…æ—¶ï¼Œé˜²æ­¢æ— é™å†²
         enemy.aiState = "dashing";
         return;
       }
@@ -1795,9 +1795,9 @@ updateChargerAI(enemy, now, delta) {
     case "dashing": {
       const spd = (enemy.chargeSpeed ?? 200) * slowFactor;
       this.physics.velocityFromRotation(enemy.dashDirection ?? 0, spd, enemy.body.velocity);
-      // ³å´Ì²ĞÓ°£º»ÒÉ«£¬½ÏµÍÍ¸Ã÷¶È£¬0.8s
+      // å†²åˆºæ®‹å½±ï¼šç°è‰²ï¼Œè¾ƒä½é€æ˜åº¦ï¼Œ0.8s
       this.maybeEmitAfterimage(enemy, 50, { alphaStart: 0.6, duration: 800, tint: 0x999999, depthOffset: -1 });
-      // ×²Ç½¼´½áÊø
+      // æ’å¢™å³ç»“æŸ
       const b = enemy.body.blocked;
       const hitWall = b?.left || b?.right || b?.up || b?.down;
       if (hitWall || now >= (enemy.dashingTimeoutAt ?? now)) {
@@ -1813,13 +1813,13 @@ updateChargerAI(enemy, now, delta) {
 }
 
 
-/* ==== Caster£¨yousei£©AI ==== */
-/* ¾àÀë<= detectionRadius Ê±½øÈëÑ­»·£ºÒÆ¶¯ 2s -> Í£Ö¹ 2s ·Åµ¯£¨¡À30¡ã É¢Éä£¬¼ä¸ôÓÉ tier Ö¸¶¨£©£¬·´¸´¡£ */
+/* ==== Casterï¼ˆyouseiï¼‰AI ==== */
+/* è·ç¦»<= detectionRadius æ—¶è¿›å…¥å¾ªç¯ï¼šç§»åŠ¨ 2s -> åœæ­¢ 2s æ”¾å¼¹ï¼ˆÂ±30Â° æ•£å°„ï¼Œé—´éš”ç”± tier æŒ‡å®šï¼‰ï¼Œåå¤ã€‚ */
 updateCasterAI(enemy, now, _delta) {
   const dist = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
   const inRange = dist <= (enemy.detectionRadius ?? 1200);
   if (!inRange) {
-    // Î´´¥·¢¾ÍÆÕÍ¨×·»÷
+    // æœªè§¦å‘å°±æ™®é€šè¿½å‡»
     const speed = enemy.moveSpeed ?? 80;
     const navTarget = this.resolveEnemyNavigationTarget(enemy, now);
     if (navTarget) {
@@ -1835,7 +1835,7 @@ updateCasterAI(enemy, now, _delta) {
     return;
   }
 
-  // ÒÑ´¥·¢Ñ­»·
+  // å·²è§¦å‘å¾ªç¯
   const moveMs = enemy.moveDurationMs ?? 2000;
   const atkMs = enemy.attackDurationMs ?? 2000;
   const shotInt = enemy.shotIntervalMs ?? 500;
@@ -1848,7 +1848,7 @@ updateCasterAI(enemy, now, _delta) {
   }
 
   if (enemy.cyclePhase === "move") {
-    // ×·×Å×Ô»úÒÆ¶¯
+    // è¿½ç€è‡ªæœºç§»åŠ¨
     const speed = enemy.moveSpeed ?? 80;
     const navTarget = this.resolveEnemyNavigationTarget(enemy, now);
     if (navTarget) {
@@ -1862,16 +1862,16 @@ updateCasterAI(enemy, now, _delta) {
     if (now >= enemy.nextPhaseChangeAt) {
       enemy.cyclePhase = "attack";
       enemy.nextPhaseChangeAt = now + atkMs;
-      enemy.nextShotTime = now; // ½øÈë¹¥»÷½×¶ÎÁ¢¼´¿ª»ğÒ»´Î
+      enemy.nextShotTime = now; // è¿›å…¥æ”»å‡»é˜¶æ®µç«‹å³å¼€ç«ä¸€æ¬¡
       enemy.body.setVelocity(0, 0);
     }
     return;
   }
 
   if (enemy.cyclePhase === "attack") {
-    enemy.body.setVelocity(0, 0); // Í£Ö¹ÒÆ¶¯
+    enemy.body.setVelocity(0, 0); // åœæ­¢ç§»åŠ¨
     if (now >= enemy.nextShotTime) {
-      // ÔÚ£¨×Ô»ú·½Ïò£©¡Àspread ·¢Ò»·¢
+      // åœ¨ï¼ˆè‡ªæœºæ–¹å‘ï¼‰Â±spread å‘ä¸€å‘
       this.enemyFireAimedSpread(enemy, bulletSpeed, enemy.tierConfig?.bulletTextureKey ?? "enemy_bullet_basic", spread);
       enemy.nextShotTime = now + shotInt;
     }
@@ -1883,20 +1883,20 @@ updateCasterAI(enemy, now, _delta) {
 }
 
 
-/* ==== Turret£¨orb£©AI ==== */
-/* ¾²Ö¹£»Ã¿ attackIntervalMs ·¢Ò»È¦»·×´µ¯Ä»£¨Ëæ»úÏàÎ»£©¡£×Ô»ú½øÈë proximityRadius 100 Ê±£º
-   1) ´¥·¢Ò»´ÎĞÔ¶îÍâ»·£¨³¯Ïò×Ô»úÏàÎ»¡¢gun.png¡¢ËÙ¶È/ÊıÁ¿°´ tier£©£»
-   2) epic/legendary ÆÚ¼ä³ÖĞø·¢³ö kunai Ëæ»ú ¡À30¡ã É¢Éä£¨¼ä¸ô°´ tier£©£¬Àë¿ª½üÉí·¶Î§ÔİÍ£¡£ */
+/* ==== Turretï¼ˆorbï¼‰AI ==== */
+/* é™æ­¢ï¼›æ¯ attackIntervalMs å‘ä¸€åœˆç¯çŠ¶å¼¹å¹•ï¼ˆéšæœºç›¸ä½ï¼‰ã€‚è‡ªæœºè¿›å…¥ proximityRadius 100 æ—¶ï¼š
+   1) è§¦å‘ä¸€æ¬¡æ€§é¢å¤–ç¯ï¼ˆæœå‘è‡ªæœºç›¸ä½ã€gun.pngã€é€Ÿåº¦/æ•°é‡æŒ‰ tierï¼‰ï¼›
+   2) epic/legendary æœŸé—´æŒç»­å‘å‡º kunai éšæœº Â±30Â° æ•£å°„ï¼ˆé—´éš”æŒ‰ tierï¼‰ï¼Œç¦»å¼€è¿‘èº«èŒƒå›´æš‚åœã€‚ */
 updateTurretAI(enemy, now, _delta) {
-  // ±¦Ïä£º±ê¼Ç isChest ÔòÍêÈ«²»Ö´ĞĞÅÚÌ¨·¢µ¯Âß¼­
+  // å®ç®±ï¼šæ ‡è®° isChest åˆ™å®Œå…¨ä¸æ‰§è¡Œç‚®å°å‘å¼¹é€»è¾‘
   if (enemy.isChest) {
     enemy.body.setVelocity(0, 0);
     return;
   }
-  // ±£³Ö¾²Ö¹
+  // ä¿æŒé™æ­¢
   enemy.body.setVelocity(0, 0);
 
-  // ring sprite Î»ÖÃ&Ğı×ª
+  // ring sprite ä½ç½®&æ—‹è½¬
   if (enemy.ringSprite) {
     enemy.ringSprite.setPosition(enemy.x, enemy.y);
     enemy.ringSprite.rotation += (enemy.ringSpriteRotationSpeed ?? 0.01);
@@ -1914,12 +1914,12 @@ updateTurretAI(enemy, now, _delta) {
     enemy.nextAttackTime = now + atkInt;
   }
 
-  // ½üÉíÅĞ¶¨
+  // è¿‘èº«åˆ¤å®š
   const proxR = cfg.proximityRadius ?? 100;
   const dist = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
   const inProx = dist <= proxR;
 
-  // Ò»´ÎĞÔ¶îÍâ»·£¨gun.png£©£¬ÏàÎ»³¯Ïò×Ô»ú
+  // ä¸€æ¬¡æ€§é¢å¤–ç¯ï¼ˆgun.pngï¼‰ï¼Œç›¸ä½æœå‘è‡ªæœº
   if (inProx && !enemy.extraBurstTriggered && cfg.extraRing) {
     const ang = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
     this.enemyFireRing(enemy, {
@@ -1931,23 +1931,23 @@ updateTurretAI(enemy, now, _delta) {
     enemy.extraBurstTriggered = true;
   }
 
-  // epic/legendary ½üÉíÁ¬·¢ kunai
+  // epic/legendary è¿‘èº«è¿å‘ kunai
   if (cfg.extraKunai && inProx) {
     const k = cfg.extraKunai;
     if (!enemy.nextKunaiShotTime) enemy.nextKunaiShotTime = now;
     if (now >= enemy.nextKunaiShotTime) {
-      // ÔÚ£¨×Ô»ú·½Ïò£©¡Àspread ÂÒÊıÒ»·¢
+      // åœ¨ï¼ˆè‡ªæœºæ–¹å‘ï¼‰Â±spread ä¹±æ•°ä¸€å‘
       this.enemyFireAimedSpread(enemy, k.speed ?? 15, k.textureKey ?? "enemy_bullet_kunai", k.spreadDeg ?? 30);
       enemy.nextKunaiShotTime = now + (k.intervalMs ?? 500);
     }
   } else {
-    // Àë¿ª½üÉí·¶Î§ÔİÍ£ kunai
+    // ç¦»å¼€è¿‘èº«èŒƒå›´æš‚åœ kunai
     enemy.nextKunaiShotTime = now + 100;
   }
 }
 
 
-  /* ==== ×°±¸ÏµÍ³ ==== */
+  /* ==== è£…å¤‡ç³»ç»Ÿ ==== */
   initializeEquipmentSystem() {
     if (this.equipmentUiHandlers && this.equipmentUiHandlers.length > 0) {
       this.teardownEquipmentSystem();
@@ -2051,7 +2051,7 @@ updateSpellbladeOverlays() {
   this.equipmentUi.slots.forEach(({ element }, index) => {
     const itemId = this.playerEquipmentSlots[index];
     if (!this.isSpellbladeItem(itemId)) {
-      // ÇåÀí²ĞÁô
+      // æ¸…ç†æ®‹ç•™
       element?.querySelectorAll('.spellblade-cd, .spellblade-ready')?.forEach(el => el.remove());
       return;
     }
@@ -2091,7 +2091,7 @@ updateSpellbladeOverlays() {
       const itemId = this.playerEquipmentSlots[index];
       const item = this.getEquipmentDefinition(itemId);
       
-      // ÇåÀíÖ®Ç°µÄCDºÍÖ¸Ê¾Æ÷ÔªËØ
+      // æ¸…ç†ä¹‹å‰çš„CDå’ŒæŒ‡ç¤ºå™¨å…ƒç´ 
       element.querySelectorAll('.spellblade-cd, .spellblade-ready').forEach(el => el.remove());
       
       if (item && icon) {
@@ -2100,11 +2100,11 @@ updateSpellbladeOverlays() {
         element.classList.add("has-item");
         element.setAttribute("draggable", "true");
         
-        // ´¦ÀíÒ«¹â×°±¸
+        // å¤„ç†è€€å…‰è£…å¤‡
         if (this.isSpellbladeItem(itemId)) {
           const isOnCooldown = !this.canTriggerSpellblade(now);
           
-          // Ìí¼ÓCDÕÚÕÖ
+          // æ·»åŠ CDé®ç½©
           const cdMask = document.createElement('div');
           cdMask.className = 'spellblade-cd';
           if (isOnCooldown) {
@@ -2115,7 +2115,7 @@ updateSpellbladeOverlays() {
           }
           element.appendChild(cdMask);
           
-          // Ìí¼Ó¾ÍĞ÷Ö¸Ê¾Æ÷
+          // æ·»åŠ å°±ç»ªæŒ‡ç¤ºå™¨
           const readyIndicator = document.createElement('div');
           readyIndicator.className = 'spellblade-ready';
           if (!isOnCooldown) {
@@ -2165,11 +2165,11 @@ updateSpellbladeOverlays() {
     }
     if (item.id === HEALTH_POTION_ID) {
       const n = Number.isFinite(this.healthPotionCount) ? this.healthPotionCount : 0;
-      return n > 0 ? `${n}` : null; // ÓÃÍêÖ±½ÓÒÆ³ı£¬²»ÏÔÊ¾0
+      return n > 0 ? `${n}` : null; // ç”¨å®Œç›´æ¥ç§»é™¤ï¼Œä¸æ˜¾ç¤º0
     }
     if (item.id === REFILLABLE_POTION_ID) {
       const n = Number.isFinite(this.refillablePotionCharges) ? this.refillablePotionCharges : 0;
-      return `${n}`; // ¿ÉÏÔÊ¾0£¬ÏÂÒ»¹Ø»Øµ½5
+      return `${n}`; // å¯æ˜¾ç¤º0ï¼Œä¸‹ä¸€å…³å›åˆ°5
     }
     return null;
   }
@@ -2258,7 +2258,7 @@ updateSpellbladeOverlays() {
     const tmp = slots[sourceIndex];
     slots[sourceIndex] = slots[targetIndex];
     slots[targetIndex] = tmp;
-    // Èôµş²ãÓµÓĞÕß²ÎÓëÁË½»»»£¬¸üĞÂÆä²ÛÎ»Ë÷Òı
+    // è‹¥å å±‚æ‹¥æœ‰è€…å‚ä¸äº†äº¤æ¢ï¼Œæ›´æ–°å…¶æ§½ä½ç´¢å¼•
     if (this.darkSealOwnerSlotIndex === sourceIndex) this.darkSealOwnerSlotIndex = targetIndex;
     else if (this.darkSealOwnerSlotIndex === targetIndex) this.darkSealOwnerSlotIndex = sourceIndex;
     if (this.heartsteelOwnerSlotIndex === sourceIndex) this.heartsteelOwnerSlotIndex = targetIndex;
@@ -2287,10 +2287,10 @@ updateSpellbladeOverlays() {
     this.titanicCleaveFlat = 0;
     this.auraEffect = null;
 
-    // ×ÊÔ´»Ø¸´ÖØÖÃ£¨½«ÓÉ×°±¸µş¼Ó£©
-    let manaRegenFlatPerSecond = 0; // /s Æ½Ö±»ØÀ¶£¨×°±¸ÀÛ¼Æ£©
-    let manaRegenMultiplier = 1;    // »ØÀ¶±¶ÂÊ£¨×°±¸ÀÛ¼Æ£¬Ïà³Ë£©
-    let hpRegenPerSecondFlat = 0;   // /s Æ½Ö±»ØÑª£¨×°±¸ÀÛ¼Æ£©
+    // èµ„æºå›å¤é‡ç½®ï¼ˆå°†ç”±è£…å¤‡å åŠ ï¼‰
+    let manaRegenFlatPerSecond = 0; // /s å¹³ç›´å›è“ï¼ˆè£…å¤‡ç´¯è®¡ï¼‰
+    let manaRegenMultiplier = 1;    // å›è“å€ç‡ï¼ˆè£…å¤‡ç´¯è®¡ï¼Œç›¸ä¹˜ï¼‰
+    let hpRegenPerSecondFlat = 0;   // /s å¹³ç›´å›è¡€ï¼ˆè£…å¤‡ç´¯è®¡ï¼‰
 
     const prevStats = this.playerStats ?? PLAYER_BASE_STATS;
     const prevMaxHp = prevStats.maxHp ?? PLAYER_BASE_STATS.maxHp;
@@ -2325,14 +2325,14 @@ updateSpellbladeOverlays() {
     let heartsteelGainPerKill = 0;
     let heartsteelCount = 0;
     let darkSealCount = 0;
-    // ·´¼×£º·´ÉËÊıÖµ
+    // åç”²ï¼šåä¼¤æ•°å€¼
     let thornsBase = 0;
     let thornsArmorRatio = 0;
-    // Å®ÉñÀá/³ãÌìÊ¹£ºµş²ã²ÎÊı
-    let manaPerCast = 0;     // È¡×î´ó
-    let manaCapBonus = 0;    // È¡×î´ó
-    let healPerManaSpent = 0; // ÀÛ¼Ó
-    // °×Â¥½££º¶¯Á¿£¨Æ½Ö±ËÙ¶È/×î´ó²ãÊı£©
+    // å¥³ç¥æ³ª/ç‚½å¤©ä½¿ï¼šå å±‚å‚æ•°
+    let manaPerCast = 0;     // å–æœ€å¤§
+    let manaCapBonus = 0;    // å–æœ€å¤§
+    let healPerManaSpent = 0; // ç´¯åŠ 
+    // ç™½æ¥¼å‰‘ï¼šåŠ¨é‡ï¼ˆå¹³ç›´é€Ÿåº¦/æœ€å¤§å±‚æ•°ï¼‰
     let bailouSpeedPerStack = 0;
     let bailouMaxStacks = 0;
 
@@ -2359,7 +2359,7 @@ updateSpellbladeOverlays() {
       if (stats.manaFlat) addMana += stats.manaFlat;
       if (stats.critChancePct) {
         const v = stats.critChancePct;
-        // Ö§³Öµ¥¼ş×°±¸Ğ´·¨Îª 30 »ò 0.30£¬ÖğÏî¹éÒ»»¯µ½ [0,1]
+        // æ”¯æŒå•ä»¶è£…å¤‡å†™æ³•ä¸º 30 æˆ– 0.30ï¼Œé€é¡¹å½’ä¸€åŒ–åˆ° [0,1]
         addCritChancePct += (v > 1 ? v / 100 : v);
       }
       if (stats.critDamageBonusPct) addCritDamageBonusPct += stats.critDamageBonusPct;
@@ -2370,7 +2370,7 @@ updateSpellbladeOverlays() {
 
       const effects = item.effects ?? {};
 
-      // ¡ª¡ª »ØÀ¶/»ØÑªÀàĞ§¹û ¡ª¡ª //
+      // â€”â€” å›è“/å›è¡€ç±»æ•ˆæœ â€”â€” //
       if (Number.isFinite(effects.manaRegenPerSecond)) {
         manaRegenFlatPerSecond += Math.max(0, effects.manaRegenPerSecond);
       }
@@ -2399,7 +2399,7 @@ updateSpellbladeOverlays() {
       }
       if (item.id === TIAMAT_ID) {
         this.hasTiamat = true;
-        // ÌáÑÇÂíÌØ·¶Î§£ºÔ¶³Ì 2 ¸ñ£¬½üÕ½ 3 ¸ñ£¨»ùÓÚ TILE_SIZE£©
+        // æäºšé©¬ç‰¹èŒƒå›´ï¼šè¿œç¨‹ 2 æ ¼ï¼Œè¿‘æˆ˜ 3 æ ¼ï¼ˆåŸºäº TILE_SIZEï¼‰
         const baseTiles = (this.playerCombatMode === "ranged") ? 2 : 3;
         const adjustedRadius = Math.max(0, TILE_SIZE * baseTiles);
         this.tiamatCleaveRadius = Math.max(this.tiamatCleaveRadius, adjustedRadius);
@@ -2408,7 +2408,7 @@ updateSpellbladeOverlays() {
       }
       if (item.id === TITANIC_HYDRA_ID) {
         this.hasTitanicHydra = true;
-        // ¾ŞĞÍ¾ÅÍ·Éß·¶Î§£ºÔ¶³Ì 2.5 ¸ñ£¬½üÕ½ 4 ¸ñ
+        // å·¨å‹ä¹å¤´è›‡èŒƒå›´ï¼šè¿œç¨‹ 2.5 æ ¼ï¼Œè¿‘æˆ˜ 4 æ ¼
         const baseTiles = (this.playerCombatMode === "ranged") ? 2.5 : 4;
         const adjustedRadius = Math.max(0, TILE_SIZE * baseTiles);
         this.titanicCleaveRadius = Math.max(this.titanicCleaveRadius, adjustedRadius);
@@ -2434,14 +2434,14 @@ updateSpellbladeOverlays() {
           spellBonusMagicFlat += v;
         }
       }
-      // ·´ÉË£¨·´¼×/¾£¼¬Ö®¼×£©
+      // åä¼¤ï¼ˆåç”²/è†æ£˜ä¹‹ç”²ï¼‰
       if (Number.isFinite(effects.thornsBase)) thornsBase += Math.max(0, effects.thornsBase);
       if (Number.isFinite(effects.thornsArmorRatio)) thornsArmorRatio += Math.max(0, effects.thornsArmorRatio);
-      // Å®ÉñÀá/³ãÌìÊ¹µş²ã²ÎÊı
+      // å¥³ç¥æ³ª/ç‚½å¤©ä½¿å å±‚å‚æ•°
       if (Number.isFinite(effects.manaPerCast)) manaPerCast = Math.max(manaPerCast, Math.max(0, effects.manaPerCast));
       if (Number.isFinite(effects.manaCapBonus)) manaCapBonus = Math.max(manaCapBonus, Math.max(0, effects.manaCapBonus));
       if (Number.isFinite(effects.healPerManaSpent)) healPerManaSpent += Math.max(0, effects.healPerManaSpent);
-      // °×Â¥½££º¶¯Á¿²ÎÊı
+      // ç™½æ¥¼å‰‘ï¼šåŠ¨é‡å‚æ•°
       if (item.id === BAILOU_SWORD_ID) {
         const sp = Number.isFinite(effects.momentumSpeedPerStack) ? Math.max(0, effects.momentumSpeedPerStack) : 0;
         const mx = Number.isFinite(effects.momentumMaxStacks) ? Math.max(0, effects.momentumMaxStacks) : 0;
@@ -2489,11 +2489,11 @@ updateSpellbladeOverlays() {
       if (item.id === HEALTH_POTION_ID) { hpPotionSlots.push(i); }
       if (item.id === REFILLABLE_POTION_ID) { refillPotionSlots.push(i); }
       if (effects.maxHpPerKill) {
-        // ĞÄÖ®¸Ö»÷É±ÔöÒæ£º¶à¼ş²»µş¼ÓÇóºÍ£¬È¡×î´ó£¬±ÜÃâµş²ã·­±¶
+        // å¿ƒä¹‹é’¢å‡»æ€å¢ç›Šï¼šå¤šä»¶ä¸å åŠ æ±‚å’Œï¼Œå–æœ€å¤§ï¼Œé¿å…å å±‚ç¿»å€
         heartsteelGainPerKill = Math.max(heartsteelGainPerKill, effects.maxHpPerKill);
       }
 
-      // É±ÈËÊé£º¸ù¾İµ±Ç°²ãÊıÔö¼ÓAPÓëÒÆËÙ
+      // æ€äººä¹¦ï¼šæ ¹æ®å½“å‰å±‚æ•°å¢åŠ APä¸ç§»é€Ÿ
       if (item.id === DARK_SEAL_ID && !appliedUniques.has(DARK_SEAL_ID)) {
         darkSealCount += 1; darkSealSlots.push(i);
         const apPer = Number.isFinite(effects.stackApPerKill) ? effects.stackApPerKill : 5;
@@ -2502,12 +2502,12 @@ updateSpellbladeOverlays() {
         const stacks = Math.max(0, this.darkSealStacks || 0);
         addAP += apPer * stacks;
         if (stacks >= msThreshold) moveSpeedPct += msBonusPct;
-        // ±ÜÃâ¶à°ÑÉ±ÈËÊéÖØ¸´Ó¦ÓÃ²ãÊıÊÕÒæ
+        // é¿å…å¤šæŠŠæ€äººä¹¦é‡å¤åº”ç”¨å±‚æ•°æ”¶ç›Š
         appliedUniques.add(DARK_SEAL_ID);
       }
     }
 
-    // ¡ª¡ª ËéÆ¬£ºÆ½Ö±¼Ó³Éµş¼Ó ¡ª¡ª //
+    // â€”â€” ç¢ç‰‡ï¼šå¹³ç›´åŠ æˆå åŠ  â€”â€” //
     if (!this.shardBonuses) this.shardBonuses = {};
     addAD += Math.max(0, this.shardBonuses.attackDamageFlat || 0);
     addASPct += Math.max(0, this.shardBonuses.attackSpeedPct || 0);
@@ -2516,7 +2516,7 @@ updateSpellbladeOverlays() {
     addDEF += Math.max(0, this.shardBonuses.defenseFlat || 0);
     addHp += Math.max(0, this.shardBonuses.maxHpFlat || 0);
     addMana += Math.max(0, this.shardBonuses.maxManaFlat || 0);
-    // ËéÆ¬±©»÷ÂÊ£ºÒàÖ§³Ö 30 »ò 0.30 µÄÁ½ÖÖĞ´·¨£¬ÖğÏî¹éÒ»»¯
+    // ç¢ç‰‡æš´å‡»ç‡ï¼šäº¦æ”¯æŒ 30 æˆ– 0.30 çš„ä¸¤ç§å†™æ³•ï¼Œé€é¡¹å½’ä¸€åŒ–
     {
       const v = Math.max(0, this.shardBonuses.critChancePct || 0);
       addCritChancePct += (v > 1 ? v / 100 : v);
@@ -2537,7 +2537,7 @@ updateSpellbladeOverlays() {
     const heartsteelBonusHp = heartsteelGainPerKill > 0 ? this.heartsteelBonusHp : 0;
     base.maxHp = Math.max(1, Math.round(baseMaxHpValue + addHp + heartsteelBonusHp));
     const baseMaxMana = base.maxMana ?? PLAYER_MANA_MAX;
-    // Å®ÉñÀá/³ãÌìÊ¹µş²ãÉúĞ§
+    // å¥³ç¥æ³ª/ç‚½å¤©ä½¿å å±‚ç”Ÿæ•ˆ
     this.manaStackPerCast = Math.max(0, manaPerCast);
     this.manaStackCap = Math.max(0, manaCapBonus);
     this.manaSpendHealPerPoint = Math.max(0, healPerManaSpent);
@@ -2551,7 +2551,7 @@ updateSpellbladeOverlays() {
     }
     const bonusManaFromStacks = (this.manaStackCount || 0) * (this.manaStackPerCast || 0);
     base.maxMana = Math.max(0, Math.round(baseMaxMana + addMana + bonusManaFromStacks));
-    // ±©»÷ÂÊ£ºÏÈ¼ÇÂ¼Î´·â¶¥ÖµÓÃÓÚÏÔÊ¾£¬ÔÙ¶ÔÄÚÂß¼­·â¶¥
+    // æš´å‡»ç‡ï¼šå…ˆè®°å½•æœªå°é¡¶å€¼ç”¨äºæ˜¾ç¤ºï¼Œå†å¯¹å†…é€»è¾‘å°é¡¶
     {
       const uncapped01 = (base.critChance ?? 0) + addCritChancePct;
       base.critChanceUncapped = Math.max(0, uncapped01);
@@ -2559,7 +2559,7 @@ updateSpellbladeOverlays() {
     }
     base.critDamage = Math.max(0, Math.round((base.critDamage ?? 0) + addCritDamageBonusPct * 100));
 
-    // °×Â¥½£¶¯Á¿£º½«µ±Ç°²ãÊı»»ËãÎªÆ½Ö±ÒÆËÙ
+    // ç™½æ¥¼å‰‘åŠ¨é‡ï¼šå°†å½“å‰å±‚æ•°æ¢ç®—ä¸ºå¹³ç›´ç§»é€Ÿ
     this.bailouMomentumSpeedPerStack = Math.max(0, bailouSpeedPerStack);
     if (bailouMaxStacks > 0) this.bailouMomentumStacks = Math.min(this.bailouMomentumStacks || 0, bailouMaxStacks);
     const bailouFlat = (this.bailouMomentumStacks || 0) * (this.bailouMomentumSpeedPerStack || 0);
@@ -2572,7 +2572,7 @@ updateSpellbladeOverlays() {
     base.cooldownReduction = abilityHaste > 0 ? 1 - (100 / (100 + abilityHaste)) : 0;
     base.armorPenFlat = Math.max(0, (base.armorPenFlat ?? 0) + armorPenFlat);
 
-    // ¡ª¡ª ËéÆ¬³ËÇø£ºÔÚ»ù´¡ÊıÖµÈ·¶¨ºóµş³Ë ¡ª¡ª //
+    // â€”â€” ç¢ç‰‡ä¹˜åŒºï¼šåœ¨åŸºç¡€æ•°å€¼ç¡®å®šåå ä¹˜ â€”â€” //
     {
       const adPct = Math.max(0, this.shardBonuses.attackDamagePct || 0);
       if (adPct > 0) base.attackDamage = Math.max(1, Math.round(base.attackDamage * (1 + adPct)));
@@ -2614,7 +2614,7 @@ updateSpellbladeOverlays() {
     this.playerEquipmentStats.thornsBase = Math.max(0, thornsBase);
     this.playerEquipmentStats.thornsArmorRatio = Math.max(0, thornsArmorRatio);
 
-    // ¡ª¡ª ³öÊÛµş²ã×°±¸Ê±£ºÇåÀíÒÅÁôµÄ²ãÊıÊıÖµ ¡ª¡ª //
+    // â€”â€” å‡ºå”®å å±‚è£…å¤‡æ—¶ï¼šæ¸…ç†é—ç•™çš„å±‚æ•°æ•°å€¼ â€”â€” //
     if (heartsteelCount === 0) {
       this.heartsteelStacks = 0;
       this.heartsteelBonusHp = 0;
@@ -2626,13 +2626,13 @@ updateSpellbladeOverlays() {
       this.darkSealKillProgress = 0;
     }
 
-    // ¡ª¡ª µş²ã×°±¸¶à¼şÊ±£ººó³ö²»¼Ì³ĞÏÈ³öµÄ²ãÊı£¨ÒÔ¡°ÓµÓĞÕß²ÛÎ»¡±Îª×¼£©¡ª¡ª //
-    // É±ÈËÊé£ºÈôÈÔÓĞÉ±ÈËÊéµ«ÓµÓĞÕß²»ÔÚ×°±¸À¸ÖĞ£¬ÊÓÎª³öÊÛÁË¡°´ø²ãÊı¡±µÄÄÇÒ»±¾£¬Çå¿Õ²ãÊı²¢×ªÒÆÓµÓĞÕß
+    // â€”â€” å å±‚è£…å¤‡å¤šä»¶æ—¶ï¼šåå‡ºä¸ç»§æ‰¿å…ˆå‡ºçš„å±‚æ•°ï¼ˆä»¥â€œæ‹¥æœ‰è€…æ§½ä½â€ä¸ºå‡†ï¼‰â€”â€” //
+    // æ€äººä¹¦ï¼šè‹¥ä»æœ‰æ€äººä¹¦ä½†æ‹¥æœ‰è€…ä¸åœ¨è£…å¤‡æ ä¸­ï¼Œè§†ä¸ºå‡ºå”®äº†â€œå¸¦å±‚æ•°â€çš„é‚£ä¸€æœ¬ï¼Œæ¸…ç©ºå±‚æ•°å¹¶è½¬ç§»æ‹¥æœ‰è€…
     if (darkSealSlots.length > 0) {
       if (this.darkSealOwnerSlotIndex == null) {
         this.darkSealOwnerSlotIndex = darkSealSlots[0];
       } else if (!darkSealSlots.includes(this.darkSealOwnerSlotIndex)) {
-        // Ô­ÓµÓĞÕß±»ÒÆ³ı£¨Í¨³£ÎªÂô³ö£©£¬ºó³öµÄ²»¼Ì³Ğ²ãÊı
+        // åŸæ‹¥æœ‰è€…è¢«ç§»é™¤ï¼ˆé€šå¸¸ä¸ºå–å‡ºï¼‰ï¼Œåå‡ºçš„ä¸ç»§æ‰¿å±‚æ•°
         this.darkSealStacks = 0;
         this.darkSealKillProgress = 0;
         this.darkSealOwnerSlotIndex = darkSealSlots[0];
@@ -2640,7 +2640,7 @@ updateSpellbladeOverlays() {
     } else {
       this.darkSealOwnerSlotIndex = null;
     }
-    // ĞÄÖ®¸Ö£ºÍ¬Àí£¬ÈôÔ­ÓµÓĞÕß±»ÒÆ³ıµ«»¹ÓĞÆäËüĞÄÖ®¸Ö£¬Çå¿Õµş²ã²¢×ªÒÆÓµÓĞÕß
+    // å¿ƒä¹‹é’¢ï¼šåŒç†ï¼Œè‹¥åŸæ‹¥æœ‰è€…è¢«ç§»é™¤ä½†è¿˜æœ‰å…¶å®ƒå¿ƒä¹‹é’¢ï¼Œæ¸…ç©ºå å±‚å¹¶è½¬ç§»æ‹¥æœ‰è€…
     if (heartsteelSlots.length > 0) {
       if (this.heartsteelOwnerSlotIndex == null) {
         this.heartsteelOwnerSlotIndex = heartsteelSlots[0];
@@ -2653,24 +2653,24 @@ updateSpellbladeOverlays() {
       this.heartsteelOwnerSlotIndex = null;
     }
 
-    // ¡ª¡ª ÏûºÄÆ·£ºÒ©Ë®£¨È·¶¨ËùÓĞÕß²ÛÎ»£¬²¢ÔÚÊ×´Î»ñµÃÊ±ÉèÖÃ³õÊ¼ÊıÁ¿/´ÎÊı£©¡ª¡ª //
+    // â€”â€” æ¶ˆè€—å“ï¼šè¯æ°´ï¼ˆç¡®å®šæ‰€æœ‰è€…æ§½ä½ï¼Œå¹¶åœ¨é¦–æ¬¡è·å¾—æ—¶è®¾ç½®åˆå§‹æ•°é‡/æ¬¡æ•°ï¼‰â€”â€” //
     if (hpPotionSlots.length > 0) {
-      // Èç¹ûÔ­±¾Ã»ÓĞÓµÓĞÕß»òÓµÓĞÕßÒÑ²»ÔÚ£¬Ö¸¶¨ĞÂµÄÓµÓĞÕß
+      // å¦‚æœåŸæœ¬æ²¡æœ‰æ‹¥æœ‰è€…æˆ–æ‹¥æœ‰è€…å·²ä¸åœ¨ï¼ŒæŒ‡å®šæ–°çš„æ‹¥æœ‰è€…
       if (this.healthPotionOwnerSlotIndex == null || !hpPotionSlots.includes(this.healthPotionOwnerSlotIndex)) {
         const first = hpPotionSlots[0];
         this.healthPotionOwnerSlotIndex = first;
         if (!Number.isFinite(this.healthPotionCount) || this.healthPotionCount <= 0) {
-          this.healthPotionCount = 1; // ĞÂ»ñµÃÊ±ÖÁÉÙÎª1Æ¿
+          this.healthPotionCount = 1; // æ–°è·å¾—æ—¶è‡³å°‘ä¸º1ç“¶
         }
       }
-      // ÉÏÏŞ£º100
+      // ä¸Šé™ï¼š100
       this.healthPotionCount = Math.max(0, Math.min(100, Math.floor(this.healthPotionCount || 0)));
-      // ×Ô¶¯ÕûºÏ£ºÈô¶à¸ö²ÛÎ»Í¬Ê±´æÔÚÉúÃüÒ©Ë®£¬µşµ½ÓµÓĞÕß¸ñ×Ó²¢Çå¿Õ¶àÓà¸ñ
+      // è‡ªåŠ¨æ•´åˆï¼šè‹¥å¤šä¸ªæ§½ä½åŒæ—¶å­˜åœ¨ç”Ÿå‘½è¯æ°´ï¼Œå åˆ°æ‹¥æœ‰è€…æ ¼å­å¹¶æ¸…ç©ºå¤šä½™æ ¼
       if (hpPotionSlots.length > 1) {
         const extra = hpPotionSlots.length - 1;
         const owner = this.healthPotionOwnerSlotIndex ?? hpPotionSlots[0];
         const newCount = Math.max(1, Math.min(100, (this.healthPotionCount || 1) + extra));
-        // Çå¿Õ³ıÓµÓĞÕßÍâµÄÆäËü²ÛÎ»£¨±ÜÃâÖØ¸´ÕûºÏ£©
+        // æ¸…ç©ºé™¤æ‹¥æœ‰è€…å¤–çš„å…¶å®ƒæ§½ä½ï¼ˆé¿å…é‡å¤æ•´åˆï¼‰
         hpPotionSlots.forEach((slotIndex) => {
           if (slotIndex !== owner) this.playerEquipmentSlots[slotIndex] = null;
         });
@@ -2678,7 +2678,7 @@ updateSpellbladeOverlays() {
         this.healthPotionCount = newCount;
       }
     } else {
-      // ÎŞÉúÃüÒ©Ë®ÔòÇå¿Õ¼ÆÊıÓëÓµÓĞÕß
+      // æ— ç”Ÿå‘½è¯æ°´åˆ™æ¸…ç©ºè®¡æ•°ä¸æ‹¥æœ‰è€…
       this.healthPotionOwnerSlotIndex = null;
       this.healthPotionCount = 0;
     }
@@ -2687,12 +2687,12 @@ updateSpellbladeOverlays() {
       if (this.refillablePotionOwnerSlotIndex == null || !refillPotionSlots.includes(this.refillablePotionOwnerSlotIndex)) {
         const first = refillPotionSlots[0];
         this.refillablePotionOwnerSlotIndex = first;
-        // Ê×´Î»ñµÃÊ±£¬Èôµ±Ç°´ÎÊı<=0£¬Ôò×°ÌîÎªÂú
+        // é¦–æ¬¡è·å¾—æ—¶ï¼Œè‹¥å½“å‰æ¬¡æ•°<=0ï¼Œåˆ™è£…å¡«ä¸ºæ»¡
         if (!Number.isFinite(this.refillablePotionCharges) || this.refillablePotionCharges <= 0) {
           this.refillablePotionCharges = this.refillablePotionMaxCharges || 5;
         }
       }
-      // ÏŞÖÆÔÚ [0, max]
+      // é™åˆ¶åœ¨ [0, max]
       const mx = Math.max(1, this.refillablePotionMaxCharges || 5);
       this.refillablePotionCharges = Math.max(0, Math.min(mx, Math.floor(this.refillablePotionCharges || 0)));
     } else {
@@ -2718,7 +2718,7 @@ updateSpellbladeOverlays() {
       this.guinsooFullProcCounter = 0;
     }
 
-    // ½«×°±¸»ã×ÜµÄ×ÊÔ´»Ø¸´ÉúĞ§
+    // å°†è£…å¤‡æ±‡æ€»çš„èµ„æºå›å¤ç”Ÿæ•ˆ
     this.manaRegenFlatPerSecond = Math.max(0, manaRegenFlatPerSecond);
     this.manaRegenMultiplier = Math.max(0, manaRegenMultiplier);
     this.hpRegenPerSecondFlat = Math.max(0, hpRegenPerSecondFlat);
@@ -2747,7 +2747,7 @@ updateSpellbladeOverlays() {
     this.refreshEquipmentUI();
   }
 
-  // É±ÈËÊé£º°´»÷É±µş²ã£»100Ğ¡±ø=1²ã£¬»÷É±Boss¶îÍâ+1²ã¡£
+  // æ€äººä¹¦ï¼šæŒ‰å‡»æ€å å±‚ï¼›100å°å…µ=1å±‚ï¼Œå‡»æ€Bossé¢å¤–+1å±‚ã€‚
   applyDarkSealKillProgress(enemy) {
     if (!this.hasItemEquipped(DARK_SEAL_ID)) return;
     const eff = EQUIPMENT_DATA[DARK_SEAL_ID]?.effects || {};
@@ -2773,16 +2773,16 @@ updateSpellbladeOverlays() {
     this.refreshEquipmentUI();
   }
 
-  // °×Â¥½££º»÷É±µş¼Ó¶¯Á¿²ãÊı£¨³ÖĞø3Ãë£¬×î¶à10²ã£©
+  // ç™½æ¥¼å‰‘ï¼šå‡»æ€å åŠ åŠ¨é‡å±‚æ•°ï¼ˆæŒç»­3ç§’ï¼Œæœ€å¤š10å±‚ï¼‰
   applyBailouMomentumOnKill() {
     if (!this.hasItemEquipped(BAILOU_SWORD_ID)) return;
     const eff = EQUIPMENT_DATA[BAILOU_SWORD_ID]?.effects || {};
     const maxStacks = Number.isFinite(eff.momentumMaxStacks) ? Math.max(0, eff.momentumMaxStacks) : 10;
     const dur = Number.isFinite(eff.momentumDurationMs) ? Math.max(0, eff.momentumDurationMs) : 3000;
     const now = this.time.now;
-    // ÒÆ³ıÒÑ¹ıÆÚ²ã
+    // ç§»é™¤å·²è¿‡æœŸå±‚
     this.bailouMomentumExpires = (this.bailouMomentumExpires || []).filter((t) => t > now);
-    // Ôö¼ÓÒ»²ã£»ÈôÒÑÂú£¬Ë¢ĞÂ×îÔç¹ıÆÚ²ã
+    // å¢åŠ ä¸€å±‚ï¼›è‹¥å·²æ»¡ï¼Œåˆ·æ–°æœ€æ—©è¿‡æœŸå±‚
     if ((this.bailouMomentumExpires.length || 0) < maxStacks) {
       this.bailouMomentumExpires.push(now + dur);
     } else {
@@ -2805,7 +2805,7 @@ updateSpellbladeOverlays() {
       this.attackTimer.remove();
       this.attackTimer = null;
     }
-    // Ô¶³ÌĞÎÌ¬£º¹¥ËÙ+20%£»½üÕ½£ºÍ£»ğ£¨µ«¼ÆÊ±Æ÷ÈÔÔÚ£¬tryFireBullet »áÔçÍË£©
+    // è¿œç¨‹å½¢æ€ï¼šæ”»é€Ÿ+20%ï¼›è¿‘æˆ˜ï¼šåœç«ï¼ˆä½†è®¡æ—¶å™¨ä»åœ¨ï¼ŒtryFireBullet ä¼šæ—©é€€ï¼‰
     const modeASMult = (this.playerCombatMode === "ranged") ? E_RANGED_ATTACK_SPEED_MULTIPLIER : 1;
     const effAS = this.playerStats.attackSpeed * this.getAttackSpeedBonusMultiplier() * modeASMult;
     const attackDelay = 1000 / Math.max(0.1, effAS);
@@ -2816,7 +2816,7 @@ updateSpellbladeOverlays() {
     });
   }
 
-  /* ==== µØÍ¼ ==== */
+  /* ==== åœ°å›¾ ==== */
   createMap() {
     this.physics.world.setBounds(0, 0, WORLD_SIZE, WORLD_SIZE);
     this.floor = this.add.tileSprite(WORLD_SIZE/2, WORLD_SIZE/2, WORLD_SIZE, WORLD_SIZE, "floor").setOrigin(0.5);
@@ -2830,8 +2830,8 @@ updateSpellbladeOverlays() {
     if (!this.wallTiles) this.wallTiles = [];
     this.wallTiles.forEach((tile) => tile?.destroy?.());
     this.wallTiles.length = 0;
-    // debug ³¡¾°²»Éú³ÉÇ½
-    // ? Boss ·¿¼ä£ºÖ»±£Áô±ß¿ò£¬ÖĞÑë²»·ÅÇ½
+    // debug åœºæ™¯ä¸ç”Ÿæˆå¢™
+    // ? Boss æˆ¿é—´ï¼šåªä¿ç•™è¾¹æ¡†ï¼Œä¸­å¤®ä¸æ”¾å¢™
     const halfTile = TILE_SIZE / 2;
     const width = MAP_TILES;
     const height = MAP_TILES;
@@ -2846,11 +2846,11 @@ updateSpellbladeOverlays() {
       isWall[y][x] = v; wallCount += v ? 1 : -1;
     };
 
-    // ÏÈ±ê¼ÇËÄÖÜ±ß¿ò
+    // å…ˆæ ‡è®°å››å‘¨è¾¹æ¡†
     for (let x = 0; x < width; x += 1) { markWall(x, 0, true); markWall(x, height-1, true); }
     for (let y = 1; y < height-1; y += 1) { markWall(0, y, true); markWall(width-1, y, true); }
 
-    // ? Boss ·¿¼ä£º½ö±£Áô±ß¿ò£¨µ÷ÊÔBossÄ£Ê½»òÕıÊ½Boss¹Ø¿¨£©
+    // ? Boss æˆ¿é—´ï¼šä»…ä¿ç•™è¾¹æ¡†ï¼ˆè°ƒè¯•Bossæ¨¡å¼æˆ–æ­£å¼Bosså…³å¡ï¼‰
     if (this.debugBossMode || this.isBossStage) {
       this.wallGrid = isWall.map((row) => row.slice());
       for (let y=0;y<height;y+=1) {
@@ -2863,7 +2863,7 @@ updateSpellbladeOverlays() {
         }
       }
       this.buildWallCollidersFromGrid(this.wallGrid, width, height);
-      return; // ¡û ¹Ø¼ü£ºÖĞ¼ä²»·ÅÇ½
+      return; // â† å…³é”®ï¼šä¸­é—´ä¸æ”¾å¢™
     }
     const isConnected = () => {
       if (isWall[startY][startX]) return false;
@@ -3267,7 +3267,7 @@ updateSpellbladeOverlays() {
     enemy.body.setVelocity(vx, vy);
   }
 
-  /* ==== Íæ¼ÒÓë¶¯»­ ==== */
+  /* ==== ç©å®¶ä¸åŠ¨ç”» ==== */
   createPlayer() {
     this.player = this.physics.add
       .sprite(WORLD_SIZE/2, WORLD_SIZE/2, this.playerIdleFrames.down)
@@ -3285,7 +3285,7 @@ updateSpellbladeOverlays() {
     this.rangeGraphics = this.add.graphics().setDepth(2);
     this.rangeGraphics.clear();
 
-    // QÊ©·¨·¶Î§Ô¤ÀÀÍ¼ĞÎ£¨ÉÈĞÎ+½üÕ½È¦£©£¬Ä¬ÈÏÒş²Ø
+    // Qæ–½æ³•èŒƒå›´é¢„è§ˆå›¾å½¢ï¼ˆæ‰‡å½¢+è¿‘æˆ˜åœˆï¼‰ï¼Œé»˜è®¤éšè—
     this.qAimGraphics = this.add.graphics().setDepth(3);
     this.qAimGraphics.clear();
 
@@ -3396,7 +3396,7 @@ updateSpellbladeOverlays() {
     this.playerFacing = nextDir;
   }
 
-  /* ==== ÎäÆ÷Óëµ¯¹ì ==== */
+  /* ==== æ­¦å™¨ä¸å¼¹è½¨ ==== */
   createWeapon() {
     this.weaponSprite = this.add.sprite(this.player.x + WEAPON_ORBIT_RADIUS, this.player.y, "weapon").setDepth(9);
     const weaponSize = PIXELS_PER_TILE;
@@ -3409,7 +3409,7 @@ updateSpellbladeOverlays() {
       g.fillStyle(0xffffff, 1); g.fillCircle(5, 5, 5);
       g.generateTexture("bullet_trail", 10, 10); g.destroy();
     }
-    if (!this.textures.exists("dash_particle")) { // ĞÂÔö£º³å´ÌÎ¢Á£
+    if (!this.textures.exists("dash_particle")) { // æ–°å¢ï¼šå†²åˆºå¾®ç²’
       const g2 = this.make.graphics({ x: 0, y: 0, add: false });
       g2.fillStyle(0xffaa00, 1); g2.fillCircle(3, 3, 3);
       g2.generateTexture("dash_particle", 6, 6); g2.destroy();
@@ -3460,14 +3460,14 @@ updateSpellbladeOverlays() {
     }
   }
 
-  /* ==== ÎïÀí×éÓëÅö×² ==== */
+  /* ==== ç‰©ç†ç»„ä¸ç¢°æ’ ==== */
   createGroups() {
     this.enemies = this.physics.add.group();
     this.bullets = this.physics.add.group();
     this.qTalismans = this.physics.add.group();
     this.loot = this.physics.add.group();
     this.places = this.physics.add.staticGroup();
-    // Rin Ê¬Ìå£¨¿É±»»÷É±µÄ×Óµ¯£©×¨ÓÃ×é
+    // Rin å°¸ä½“ï¼ˆå¯è¢«å‡»æ€çš„å­å¼¹ï¼‰ä¸“ç”¨ç»„
     this.rinCorpses = this.physics.add.group();
 
     this.physics.add.collider(this.enemies, this.wallGroup);
@@ -3476,22 +3476,22 @@ updateSpellbladeOverlays() {
     this.physics.add.overlap(this.bullets, this.enemies, this.handleBulletEnemyOverlap, null, this);
     this.physics.add.overlap(this.qTalismans, this.enemies, this.handleQTalismanEnemyOverlap, null, this);
 
-    // Íæ¼Ò×Óµ¯×²Ç½£ºÉú³ÉĞ¡±¬Õ¨ÌØĞ§²¢Ïú»Ù×Óµ¯
+    // ç©å®¶å­å¼¹æ’å¢™ï¼šç”Ÿæˆå°çˆ†ç‚¸ç‰¹æ•ˆå¹¶é”€æ¯å­å¼¹
     if (this.wallGroup) {
       this.physics.add.collider(this.bullets, this.wallGroup, (bullet, _wall) => {
         if (bullet && bullet.active) this.spawnWallHitExplosion(bullet.x, bullet.y);
         this.destroyBullet(bullet);
       });
     }
-    // Íæ¼Ò×Óµ¯¿É»÷É±Ê¬Ìå£¨²»Éú³É round ×Óµ¯£©
+    // ç©å®¶å­å¼¹å¯å‡»æ€å°¸ä½“ï¼ˆä¸ç”Ÿæˆ round å­å¼¹ï¼‰
     this.physics.add.overlap(this.bullets, this.rinCorpses, (_bullet, corpse) => {
       if (corpse && corpse.active) this.killRinCorpse(corpse, false);
     }, null, this);
-    // ·ûÔıÒ²¿ÉÇåÀíÊ¬Ìå
+    // ç¬¦æœ­ä¹Ÿå¯æ¸…ç†å°¸ä½“
     this.physics.add.overlap(this.qTalismans, this.rinCorpses, (_tal, corpse) => {
       if (corpse && corpse.active) this.killRinCorpse(corpse, false);
     }, null, this);
-    // Ê¬Ìå×²Ç½ -> ×Ô±¬²¢Éú³É round ×Óµ¯
+    // å°¸ä½“æ’å¢™ -> è‡ªçˆ†å¹¶ç”Ÿæˆ round å­å¼¹
     if (this.wallGroup) {
       this.physics.add.collider(this.rinCorpses, this.wallGroup, (corpse, _wall) => {
         if (corpse && corpse.active) this.killRinCorpse(corpse, true);
@@ -3499,7 +3499,7 @@ updateSpellbladeOverlays() {
     }
     this.physics.add.overlap(this.player, this.enemies, this.handlePlayerEnemyContact, null, this);
 
-    // ÈÃÌØ¶¨ÕÙ»½Îï£¨Rin µÄÑı¾«Ê¬Ìå£©×²Ç½×Ô±¬
+    // è®©ç‰¹å®šå¬å”¤ç‰©ï¼ˆRin çš„å¦–ç²¾å°¸ä½“ï¼‰æ’å¢™è‡ªçˆ†
     if (this.wallGroup) {
       this.physics.add.collider(this.enemies, this.wallGroup, (enemy, _wall) => {
         if (enemy && enemy.active && enemy.isRinCorpse) this.explodeRinCorpse(enemy);
@@ -3509,7 +3509,7 @@ updateSpellbladeOverlays() {
     this.physics.add.overlap(this.player, this.places, this.handlePlaceOverlap, null, this);
   }
 
-  /* ==== Ïà»ú ==== */
+  /* ==== ç›¸æœº ==== */
   setupCamera() {
     const camera = this.cameras.main;
     camera.setBounds(0, 0, WORLD_SIZE, WORLD_SIZE);
@@ -3541,10 +3541,10 @@ updateSpellbladeOverlays() {
     else if (typeof target.setScale === "function") target.setScale(scale);
   }
 
-  /* ==== ÉùÒôÓëÔİÍ£ ==== */
+  /* ==== å£°éŸ³ä¸æš‚åœ ==== */
   playSfx(key, overrides = {}) {
     if (!this.sound) return;
-    // ´¥·¢½ÚÁ÷£ºÍ¬Ò»ËØ²Ä×îĞ¡¼ä¸ô 0.2s
+    // è§¦å‘èŠ‚æµï¼šåŒä¸€ç´ ææœ€å°é—´éš” 0.2s
     const now = this.time?.now ?? performance.now();
     const last = this.sfxLastPlayed?.[key] ?? 0;
     if (now - last < (this.sfxMinIntervalMs ?? 200)) return;
@@ -3580,7 +3580,7 @@ updateSpellbladeOverlays() {
     if (this.battleBgm?.isPlaying) this.battleBgm.pause();
     if (this.attackTimer) this.attackTimer.paused = true;
     if (this.spawnTimer) this.spawnTimer.paused = true;
-    // ¸ÄÎªÊ¹ÓÃ HTML Í³¼Æ¸¡²ã£º±êÌâ¡°ÓÎÏ·ÔİÍ£¡±
+    // æ”¹ä¸ºä½¿ç”¨ HTML ç»Ÿè®¡æµ®å±‚ï¼šæ ‡é¢˜â€œæ¸¸æˆæš‚åœâ€
     this.showHtmlStatsOverlay("pause");
     this.playSfx("pause");
   }
@@ -3595,9 +3595,9 @@ updateSpellbladeOverlays() {
     }
     if (this.attackTimer) this.attackTimer.paused = false;
     if (this.spawnTimer) this.spawnTimer.paused = false;
-    // ¹Ø±Õ HTML Í³¼Æ¸¡²ã
+    // å…³é—­ HTML ç»Ÿè®¡æµ®å±‚
     this.hideHtmlStatsOverlay();
-    // ÇåÀí¾ÉµÄ Phaser ÔİÍ£¸²¸Ç²ã£¨¼æÈİ¾ÉÂß¼­£¬±ÜÃâ²ĞÁô£©
+    // æ¸…ç†æ—§çš„ Phaser æš‚åœè¦†ç›–å±‚ï¼ˆå…¼å®¹æ—§é€»è¾‘ï¼Œé¿å…æ®‹ç•™ï¼‰
     this.clearPauseOverlay();
   }
   exitToStartFromPause() {
@@ -3618,11 +3618,11 @@ updateSpellbladeOverlays() {
     this.clearPauseOverlay();
     const bg = this.add.rectangle(GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.6)
       .setScrollFactor(0).setDepth(45);
-    const title = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 24, "ÓÎÏ·ÔİÍ£", {
+    const title = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 24, "æ¸¸æˆæš‚åœ", {
       fontFamily: '"Zpix", monospace', fontSize: "18px", color: "#ffffff",
     }).setOrigin(0.5).setScrollFactor(0).setDepth(46);
     ensureBaseFontSize(title);
-    const prompt = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 + 14, "°´ ESC »ò Y ¼ÌĞøÓÎÏ·£¬°´ N ·µ»Ø±êÌâ", {
+    const prompt = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 + 14, "æŒ‰ ESC æˆ– Y ç»§ç»­æ¸¸æˆï¼ŒæŒ‰ N è¿”å›æ ‡é¢˜", {
       fontFamily: '"Zpix", monospace', fontSize: "14px", color: "#d0d0ff",
     }).setOrigin(0.5).setScrollFactor(0).setDepth(46);
     ensureBaseFontSize(prompt);
@@ -3645,7 +3645,7 @@ updateSpellbladeOverlays() {
     if (this.pauseDecisionHandler) { this.input.keyboard.off("keydown", this.pauseDecisionHandler, this); this.pauseDecisionHandler = null; }
   }
 
-  /* ==== ÊäÈë ==== */
+  /* ==== è¾“å…¥ ==== */
   setupInput() {
     this.keys = this.input.keyboard.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -3654,16 +3654,16 @@ updateSpellbladeOverlays() {
       right: Phaser.Input.Keyboard.KeyCodes.D,
       focus: Phaser.Input.Keyboard.KeyCodes.SHIFT,
     });
-// ¼¼ÄÜ¼ü
-// Q£º°´ÏÂÏÔÊ¾ËæÊó±ê·½ÏòĞı×ªµÄÊ©·¨·¶Î§£¬Ì§ÆğºóÊÍ·Å
+// æŠ€èƒ½é”®
+// Qï¼šæŒ‰ä¸‹æ˜¾ç¤ºéšé¼ æ ‡æ–¹å‘æ—‹è½¬çš„æ–½æ³•èŒƒå›´ï¼ŒæŠ¬èµ·åé‡Šæ”¾
 this.input.keyboard.on("keydown-Q", (e)=> { if (e?.repeat) return; this.startQAiming(); });
 this.input.keyboard.on("keyup-Q", ()=> this.finishQAiming());
-// ÆäËû¼¼ÄÜ£ºÒÀ¾É°´ÏÂ¼´ÊÍ·Å
+// å…¶ä»–æŠ€èƒ½ï¼šä¾æ—§æŒ‰ä¸‹å³é‡Šæ”¾
 this.input.keyboard.on("keydown-E", ()=> this.castE());
 this.input.keyboard.on("keydown-R", ()=> this.castR());
 this.input.keyboard.on("keydown-SPACE", ()=> this.castDash());
 
-// ÍË³öÊ±ÇåÀí
+// é€€å‡ºæ—¶æ¸…ç†
 const offSkills = ()=> {
   this.input.keyboard.off("keydown-Q", undefined, this);
   this.input.keyboard.off("keyup-Q", undefined, this);
@@ -3704,18 +3704,18 @@ this.events.once("destroy", offSkills);
     this.events.once("destroy", offAll);
   }
 
-  /* ==== ¼ÆÊ±Æ÷ ==== */
+  /* ==== è®¡æ—¶å™¨ ==== */
   setupTimers() {
     this.rebuildAttackTimer();
     this.scheduleSpawnTimer();
   }
   scheduleSpawnTimer() {
-    // Debug Boss£º½öµ÷ÊÔÓÃ£¬ºóĞøÓÉ×¨ÊôÂß¼­´¦Àí
+    // Debug Bossï¼šä»…è°ƒè¯•ç”¨ï¼Œåç»­ç”±ä¸“å±é€»è¾‘å¤„ç†
     if (this.debugBossMode) {
       if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
       return;
     }
-    // ÕıÊ½ Boss ¹Ø£¨µÚ10¹ØÓëÃ¿20¹Ø£©£º²»Ë¢¹Ö£¬Ö±½ÓÉú³É Boss
+    // æ­£å¼ Boss å…³ï¼ˆç¬¬10å…³ä¸æ¯20å…³ï¼‰ï¼šä¸åˆ·æ€ªï¼Œç›´æ¥ç”Ÿæˆ Boss
     if (this.isBossStage) {
       if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
       if (!this.boss) {
@@ -3744,7 +3744,7 @@ this.events.once("destroy", offSkills);
     const growthTerm = 1 + 0.2 * (rankValue - 10);
     const speedFactor = Math.max(0.1, growthTerm);
     //const intervalSeconds = Math.max(0.01, 1 / Math.sqrt(speedFactor));
-    // »ù´¡¼ä¸ô£ºËæ rank Ìá¸ß¶øËõ¶Ì£»µÚ10¹ØºóÔÙ¶îÍâ¼Ó¿ì4±¶£¨¼´¼ä¸ô¼õÎªÔ­À´µÄ1/4£©
+    // åŸºç¡€é—´éš”ï¼šéš rank æé«˜è€Œç¼©çŸ­ï¼›ç¬¬10å…³åå†é¢å¤–åŠ å¿«4å€ï¼ˆå³é—´éš”å‡ä¸ºåŸæ¥çš„1/4ï¼‰
     let intervalSeconds = Math.max(0.01, 10 / rankValue);
     if (Math.floor(this.level || 0) > 10) {
       intervalSeconds = Math.max(0.0025, intervalSeconds / 4);
@@ -3756,16 +3756,16 @@ this.events.once("destroy", offSkills);
   /* ==== HUD ==== */
   setupHUD() { this.updateOverlayScale(); this.updateHUD(); }
 
-  /* ==== µØµã£ºÉÌµê/±¦Ïä ==== */
+  /* ==== åœ°ç‚¹ï¼šå•†åº—/å®ç®± ==== */
   handlePlaceOverlap(_player, place) {
     if (!place || !place.active) return;
     if (place.placeType === "shop") {
       if (place._consumed) return;
       if (this.isShopOpen()) return;
       place._consumed = true;
-      // ´ò¿ªÉÌµê£¨²»Í£Ö¹ÒôÀÖ£©
+      // æ‰“å¼€å•†åº—ï¼ˆä¸åœæ­¢éŸ³ä¹ï¼‰
       this.openShop("inRun");
-      // ½øÈëºóÉÌµêÌùÍ¼ÏûÊ§£ºÒÆ³ı²¢Ïú»Ù
+      // è¿›å…¥åå•†åº—è´´å›¾æ¶ˆå¤±ï¼šç§»é™¤å¹¶é”€æ¯
       if (this.places) this.places.remove(place, true, true);
       else place.destroy();
       if (Array.isArray(this.shopPlaces)) {
@@ -3776,12 +3776,12 @@ this.events.once("destroy", offSkills);
   }
 
   spawnMapPlaces() {
-    if (this.isBossStage) return; // Boss¹Ø¿¨²»Éú³ÉÉÌµê/±¦Ïä
+    if (this.isBossStage) return; // Bosså…³å¡ä¸ç”Ÿæˆå•†åº—/å®ç®±
     if (!this.places) this.places = this.physics.add.staticGroup();
     this.shopPlaces = [];
-    // ÏÈ·ÅÉÌµê
+    // å…ˆæ”¾å•†åº—
     this.spawnRandomShops(MAP_SHOP_COUNT);
-    // ÔÙ·Å±¦Ïä
+    // å†æ”¾å®ç®±
     this.spawnRandomChests(MAP_CHEST_COUNT);
   }
 
@@ -3794,7 +3794,7 @@ this.events.once("destroy", offSkills);
       const shop = this.places.create(pos.x, pos.y, "place_shop");
       if (!shop) continue;
       shop.setDepth(5);
-      // ÌùÍ¼¿í¶È°´ 1 tile Ëõ·Å£¬±£³ÖÔ­Ê¼×İºá±È£¨1*2£©£¬²»Ñ¹Ëõ
+      // è´´å›¾å®½åº¦æŒ‰ 1 tile ç¼©æ”¾ï¼Œä¿æŒåŸå§‹çºµæ¨ªæ¯”ï¼ˆ1*2ï¼‰ï¼Œä¸å‹ç¼©
       this.setDisplayWidthByTilesKeepAspect(shop, 1);
       if (typeof shop.refreshBody === "function") shop.refreshBody();
       shop.placeType = "shop";
@@ -3822,14 +3822,14 @@ this.events.once("destroy", offSkills);
     for (let i = 0; i < maxAttempts; i += 1) {
       const x = Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE);
       const y = Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE);
-      // ±Ü¿ªÇ½
+      // é¿å¼€å¢™
       if (!this.isWithinWorldBounds(x, y)) continue;
       if (!this.isPositionWalkable(x, y)) continue;
-      // ¿ÉÑ¡£º±Ü¿ªÍæ¼Ò¸½½ü
+      // å¯é€‰ï¼šé¿å¼€ç©å®¶é™„è¿‘
       if (avoidPlayer && Phaser.Math.Distance.Between(x, y, px, py) < 80) continue;
-      // ±Ü¿ªÆäËüµĞÈËÓëµØµã
+      // é¿å¼€å…¶å®ƒæ•Œäººä¸åœ°ç‚¹
       if (this.isPositionOccupied(x, y, radius)) continue;
-      // ¼òµ¥¼ì²éÏÖÓĞÉÌµêÎ»ÖÃ
+      // ç®€å•æ£€æŸ¥ç°æœ‰å•†åº—ä½ç½®
       if (Array.isArray(this.shopPlaces)) {
         let tooClose = false;
         for (let j = 0; j < this.shopPlaces.length; j += 1) {
@@ -3852,10 +3852,10 @@ this.events.once("destroy", offSkills);
     chest.body.setAllowGravity(false);
     chest.enemyType = "chest";
     chest.isChest = true;
-    chest.enemyKind = "chest"; // ×¨ÓÃÀà±ğ£¬ÓÃÓÚÌø¹ıAI
+    chest.enemyKind = "chest"; // ä¸“ç”¨ç±»åˆ«ï¼Œç”¨äºè·³è¿‡AI
     chest.body.moves = false;
     if (typeof chest.body.setImmovable === "function") chest.body.setImmovable(true);
-    // ÊıÖµ£ºHP 300 »¤¼× 50
+    // æ•°å€¼ï¼šHP 300 æŠ¤ç”² 50
     chest.maxHp = 300;
     chest.hp = 300;
     chest.armor = 50;
@@ -3863,10 +3863,10 @@ this.events.once("destroy", offSkills);
     chest.attackDamage = 0;
     chest.contactDamage = 0;
     chest.abilityPower = 0;
-    chest.dropRange = { min: 0, max: 0 }; // ²»×ßÆÕÍ¨µôÂä
+    chest.dropRange = { min: 0, max: 0 }; // ä¸èµ°æ™®é€šæ‰è½
     chest.state = "idle";
 
-    // Íâ¹Û 1 tile£¬ÅĞ¶¨°ë¾¶=8
+    // å¤–è§‚ 1 tileï¼Œåˆ¤å®šåŠå¾„=8
     this.setDisplaySizeByTiles(chest, 1);
     const radiusPx = TILE_SIZE / 2; // 8
     const frameW = chest.displayWidth || chest.width || TILE_SIZE;
@@ -3895,7 +3895,7 @@ this.events.once("destroy", offSkills);
 
     this.updatePlayerMovement();
     this.updateWeapon(delta);
-    // QÃé×¼Ô¤ÀÀ
+    // Qç„å‡†é¢„è§ˆ
     this.updateQAim();
     this.updateBullets(delta);
     this.updateQTalismanProjectiles(delta);
@@ -3903,7 +3903,7 @@ this.events.once("destroy", offSkills);
     this.updateLoot(delta);
     this.updateAura(delta);
 
-    /* ==== ĞÂÔö£º¸üĞÂ Boss µ¯Ä»ÓëUtsuho AI ==== */
+    /* ==== æ–°å¢ï¼šæ›´æ–° Boss å¼¹å¹•ä¸Utsuho AI ==== */
     this.updateBossBullets(delta);
     if (this.boss && this.boss.isBoss && this.boss.bossKind === "Utsuho") {
       this.updateUtsuhoAI(delta);
@@ -3913,15 +3913,15 @@ this.events.once("destroy", offSkills);
     }
 this.updateMikoOrbs(delta);
 
-    // ¡ª¡ª »ù´¡Óë×°±¸»Ø¸´ ¡ª¡ª //
+    // â€”â€” åŸºç¡€ä¸è£…å¤‡å›å¤ â€”â€” //
     this.updateRegen(delta);
 
-    // ¡ª¡ª ×Ô¶¯Ê¹ÓÃÒ©Ë®£º²»ÒÀÀµÊÇ·ñ¸ÕÊÜµ½ÉËº¦£¬Ö»ÒªÂú×ã¡°ÒÑËğÊ§ÉúÃüÖµãĞÖµ¡±¼´¿É´¥·¢ ¡ª¡ª //
+    // â€”â€” è‡ªåŠ¨ä½¿ç”¨è¯æ°´ï¼šä¸ä¾èµ–æ˜¯å¦åˆšå—åˆ°ä¼¤å®³ï¼Œåªè¦æ»¡è¶³â€œå·²æŸå¤±ç”Ÿå‘½å€¼é˜ˆå€¼â€å³å¯è§¦å‘ â€”â€” //
     if (typeof this.tryAutoUsePotions === 'function') {
       this.tryAutoUsePotions();
     }
 
-    // °×Â¥½£¶¯Á¿¹ıÆÚ´¦Àí
+    // ç™½æ¥¼å‰‘åŠ¨é‡è¿‡æœŸå¤„ç†
     this.updateBailouMomentum(delta);
 
     this.updateRoundTimer(delta);
@@ -3929,7 +3929,7 @@ this.updateMikoOrbs(delta);
     this.updateHUD();
   }
 
-  // ¶¨Ê±ÇåÀí°×Â¥½£¶¯Á¿²ãÊı£¨¹ıÆÚÒÆ³ı²¢ÖØËãÒÆËÙ£©
+  // å®šæ—¶æ¸…ç†ç™½æ¥¼å‰‘åŠ¨é‡å±‚æ•°ï¼ˆè¿‡æœŸç§»é™¤å¹¶é‡ç®—ç§»é€Ÿï¼‰
   updateBailouMomentum(_delta) {
     if (!this.hasItemEquipped(BAILOU_SWORD_ID)) return;
     if (!Array.isArray(this.bailouMomentumExpires) || this.bailouMomentumExpires.length === 0) return;
@@ -3943,10 +3943,10 @@ this.updateMikoOrbs(delta);
     }
   }
 
-  // ¡ª¡ª Ã¿Ö¡¸üĞÂ»ù´¡/×°±¸´øÀ´µÄÉúÃüÓë·¨Á¦»Ø¸´ ¡ª¡ª //
+  // â€”â€” æ¯å¸§æ›´æ–°åŸºç¡€/è£…å¤‡å¸¦æ¥çš„ç”Ÿå‘½ä¸æ³•åŠ›å›å¤ â€”â€” //
   updateRegen(delta) {
-    const dt = Math.max(0, delta) / 1000; // Ãë
-    // ·¨Á¦»Ø¸´£º (»ù´¡ + ×°±¸Æ½Ö±) * ×°±¸±¶ÂÊ
+    const dt = Math.max(0, delta) / 1000; // ç§’
+    // æ³•åŠ›å›å¤ï¼š (åŸºç¡€ + è£…å¤‡å¹³ç›´) * è£…å¤‡å€ç‡
     const maxMana = this.playerStats?.maxMana ?? PLAYER_BASE_STATS.maxMana ?? PLAYER_MANA_MAX;
     if (maxMana > 0) {
       const perSecond = Math.max(0, (this.baseManaRegenPerSecond || 0) + (this.manaRegenFlatPerSecond || 0)) * (this.manaRegenMultiplier || 1);
@@ -3961,10 +3961,10 @@ this.updateMikoOrbs(delta);
       }
     }
 
-    // ÉúÃü»Ø¸´£º×°±¸Æ½Ö±£¨¿ÉÀ©Õ¹±¶ÂÊ£©
+    // ç”Ÿå‘½å›å¤ï¼šè£…å¤‡å¹³ç›´ï¼ˆå¯æ‰©å±•å€ç‡ï¼‰
     const maxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
     if (maxHp > 0) {
-      const perSecondHp = Math.max(0, this.hpRegenPerSecondFlat || 0); // Ä¿Ç°½öÆ½Ö±»Ø¸´
+      const perSecondHp = Math.max(0, this.hpRegenPerSecondFlat || 0); // ç›®å‰ä»…å¹³ç›´å›å¤
       if (perSecondHp > 0 && (this.currentHp ?? 0) < maxHp) {
         const gainRaw = perSecondHp * dt + (this._hpRegenCarry || 0);
         const gain = Math.floor(gainRaw);
@@ -4034,12 +4034,12 @@ this.updateMikoOrbs(delta);
     if (!isVisible) this.rangeGraphics.clear();
   }
 
-  // ¡ª¡ª QÊ©·¨·¶Î§£º°´ÏÂQ¿ªÊ¼Ãé×¼£¨ÏÔÊ¾ÉÈĞÎ+½üÕ½Ô²£©£¬Ì§ÆğQºóÊÍ·Å ¡ª¡ª //
+  // â€”â€” Qæ–½æ³•èŒƒå›´ï¼šæŒ‰ä¸‹Qå¼€å§‹ç„å‡†ï¼ˆæ˜¾ç¤ºæ‰‡å½¢+è¿‘æˆ˜åœ†ï¼‰ï¼ŒæŠ¬èµ·Qåé‡Šæ”¾ â€”â€” //
   startQAiming() {
     if (this.qAiming) return;
     if (this.isGameplaySuspended && this.isGameplaySuspended()) return;
     this.qAiming = true;
-    // ³õÊ¼»¯½Ç¶ÈÎªµ±Ç°Êó±ê·½Ïò
+    // åˆå§‹åŒ–è§’åº¦ä¸ºå½“å‰é¼ æ ‡æ–¹å‘
     const pointer = this.input?.activePointer ?? null;
     const camera = this.cameras?.main ?? null;
     if (pointer && camera) {
@@ -4050,7 +4050,7 @@ this.updateMikoOrbs(delta);
         this.lastAimAngle = angle;
       }
     }
-    // Á¢¼´»æÖÆÒ»Ö¡
+    // ç«‹å³ç»˜åˆ¶ä¸€å¸§
     this.drawQAimIndicator();
   }
 
@@ -4059,7 +4059,7 @@ this.updateMikoOrbs(delta);
     if (this.isGameplaySuspended && this.isGameplaySuspended()) { this.qAiming = false; if (this.qAimGraphics) this.qAimGraphics.clear(); return; }
     this.qAiming = false;
     if (this.qAimGraphics) this.qAimGraphics.clear();
-    // Ì§ÆğºóÊ©·¨£¨¿É·ñÊ©·¨ÓÉcastQÄÚ²¿canCastÅĞ¶¨£©
+    // æŠ¬èµ·åæ–½æ³•ï¼ˆå¯å¦æ–½æ³•ç”±castQå†…éƒ¨canCaståˆ¤å®šï¼‰
     this.castQ();
   }
 
@@ -4072,7 +4072,7 @@ this.updateMikoOrbs(delta);
       const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, worldPoint.x, worldPoint.y);
       if (Number.isFinite(angle)) {
         this.qAimAngle = angle;
-        this.lastAimAngle = angle; // ÓëcastQ±£³ÖÒ»ÖÂ
+        this.lastAimAngle = angle; // ä¸castQä¿æŒä¸€è‡´
       }
     }
     this.drawQAimIndicator();
@@ -4090,7 +4090,7 @@ this.updateMikoOrbs(delta);
     const start = angle - half;
     const end = angle + half;
 
-    // ÉÈĞÎ£¨Ô¶³ÌQÈıÃ¶·ûÔı¸²¸Ç·¶Î§£©
+    // æ‰‡å½¢ï¼ˆè¿œç¨‹Qä¸‰æšç¬¦æœ­è¦†ç›–èŒƒå›´ï¼‰
     this.qAimGraphics.fillStyle(0x44aaff, 0.18);
     this.qAimGraphics.lineStyle(1, 0x44aaff, 0.9);
     this.qAimGraphics.beginPath();
@@ -4100,7 +4100,7 @@ this.updateMikoOrbs(delta);
     this.qAimGraphics.fillPath();
     this.qAimGraphics.strokePath();
 
-    // ÖĞĞÄ·½ÏòÏß£¨¿ÉÊÓ»¯³¯Ïò£©
+    // ä¸­å¿ƒæ–¹å‘çº¿ï¼ˆå¯è§†åŒ–æœå‘ï¼‰
     const tx = cx + Math.cos(angle) * Q_AIM_RADIUS;
     const ty = cy + Math.sin(angle) * Q_AIM_RADIUS;
     this.qAimGraphics.lineStyle(1, 0x44aaff, 0.9);
@@ -4109,7 +4109,7 @@ this.updateMikoOrbs(delta);
     this.qAimGraphics.lineTo(tx, ty);
     this.qAimGraphics.strokePath();
 
-    // ½üÕ½°ëÔ²·¶Î§£¨ÒÔÃæÏòÎªÖ±¾¶·½Ïò£©
+    // è¿‘æˆ˜åŠåœ†èŒƒå›´ï¼ˆä»¥é¢å‘ä¸ºç›´å¾„æ–¹å‘ï¼‰
     const meleeRadius = 4 * TILE_SIZE;
     const mStart = angle - Math.PI / 2;
     const mEnd = angle + Math.PI / 2;
@@ -4125,48 +4125,48 @@ this.updateMikoOrbs(delta);
     this.qAimGraphics.fillPath();
     this.qAimGraphics.strokePath();
 
-    // ½üÕ½ÃüÖĞÈ¦£¨±£ÁôÏ¸Ïß°ïÖú¶¨Î»°ë¾¶£©
+    // è¿‘æˆ˜å‘½ä¸­åœˆï¼ˆä¿ç•™ç»†çº¿å¸®åŠ©å®šä½åŠå¾„ï¼‰
     this.qAimGraphics.lineStyle(1, 0xff6677, 0.5);
     this.qAimGraphics.strokeCircle(cx, cy, meleeRadius);
   }
 
   updateWeapon(delta) {
-    // Focus(Shift)ÓëĞÎÌ¬¶ÔÒõÑôÓñµÄ°ë¾¶/ËÙ¶ÈÓ°Ïì
+    // Focus(Shift)ä¸å½¢æ€å¯¹é˜´é˜³ç‰çš„åŠå¾„/é€Ÿåº¦å½±å“
     const focusDown = this.keys?.focus?.isDown === true;
     let orbitSpeed = WEAPON_ORBIT_SPEED;
-    // ½üÕ½£º½«ËùÓĞ¶îÍâ¹¥ËÙ×ª»»Îª×ªËÙ£¨×°±¸ÓëÌØĞ§£©£¬µ«²»°üº¬Ô¶³ÌĞÎÌ¬ÏÂµÄ+20%
+    // è¿‘æˆ˜ï¼šå°†æ‰€æœ‰é¢å¤–æ”»é€Ÿè½¬æ¢ä¸ºè½¬é€Ÿï¼ˆè£…å¤‡ä¸ç‰¹æ•ˆï¼‰ï¼Œä½†ä¸åŒ…å«è¿œç¨‹å½¢æ€ä¸‹çš„+20%
     if (this.playerCombatMode === "melee") {
-      // ½üÕ½³õÊ¼×ªËÙÌáÉıÎªµ±Ç°µÄ2±¶
+      // è¿‘æˆ˜åˆå§‹è½¬é€Ÿæå‡ä¸ºå½“å‰çš„2å€
       orbitSpeed *= MELEE_BASE_ORBIT_SPEED_MULTIPLIER;
       const baseAS = Math.max(0.1, PLAYER_BASE_STATS.attackSpeed || 0.1);
       const effAS = Math.max(0.1, (this.playerStats?.attackSpeed || baseAS)) * this.getAttackSpeedBonusMultiplier();
       const extraASMult = Math.max(0.1, effAS / baseAS);
       orbitSpeed *= extraASMult;
     }
-    if (focusDown) orbitSpeed *= FOCUS_ORBIT_SPEED_MULTIPLIER; // Focus£º×ªËÙ¡Á2
+    if (focusDown) orbitSpeed *= FOCUS_ORBIT_SPEED_MULTIPLIER; // Focusï¼šè½¬é€ŸÃ—2
 
-    // ÍÆ½ø½Ç¶È
+    // æ¨è¿›è§’åº¦
     const angleDelta = Phaser.Math.DegToRad((orbitSpeed * delta) / 1000);
     this.weaponAngle = (this.weaponAngle + angleDelta) % Phaser.Math.PI2;
 
-    // °ë¾¶£º½üÕ½¡Á2£»FocusÑ¹Ëõ°ë¾¶
+    // åŠå¾„ï¼šè¿‘æˆ˜Ã—2ï¼›Focuså‹ç¼©åŠå¾„
     let orbitRadius = WEAPON_ORBIT_RADIUS * (this.playerCombatMode === "melee" ? 2 : 1);
     if (focusDown) orbitRadius *= FOCUS_ORBIT_RADIUS_MULTIPLIER;
 
-    // Éè¶¨Î»ÖÃ£¨Í³Ò»ÓÃµ±Ç°°ë¾¶£©
+    // è®¾å®šä½ç½®ï¼ˆç»Ÿä¸€ç”¨å½“å‰åŠå¾„ï¼‰
     const offsetX = Math.cos(this.weaponAngle) * orbitRadius;
     const offsetY = Math.sin(this.weaponAngle) * orbitRadius;
     this.weaponSprite.setPosition(this.player.x + offsetX, this.player.y + offsetY);
     if (this.rangeVisible) this.drawRangeCircle();
 
-    // ĞÎÌ¬Íâ¹ÛÓëÃüÖĞÌå¸úËæ
+    // å½¢æ€å¤–è§‚ä¸å‘½ä¸­ä½“è·Ÿéš
     if (this.playerCombatMode === "melee") {
       const bigScale = 2;
       this.weaponSprite.setScale(bigScale);
-      // ÃüÖĞÌåÍ¬²½
+      // å‘½ä¸­ä½“åŒæ­¥
       if (this.weaponHitbox) {
         this.weaponHitbox.setPosition(this.weaponSprite.x, this.weaponSprite.y);
-        const r = 16 * bigScale; // ÃüÖĞ°ë¾¶
+        const r = 16 * bigScale; // å‘½ä¸­åŠå¾„
         this.weaponHitbox.setCircle(r, this.weaponHitbox.width/2 - r, this.weaponHitbox.height/2 - r);
         this.weaponHitbox.setVisible(false);
         this.weaponHitbox.active = true;
@@ -4229,28 +4229,28 @@ getEffectiveCooldown(baseMs) {
 }
 
 onSpellCastComplete() {
-  // ¼ì²éÊÇ·ñ¿ÉÒÔ¼¤»îÒ«¹âĞ§¹û
+  // æ£€æŸ¥æ˜¯å¦å¯ä»¥æ¿€æ´»è€€å…‰æ•ˆæœ
   const now = this.time.now;
   if (!this.canTriggerSpellblade(now)) return;
 
-  // ²éÕÒÒ«¹â×°±¸
+  // æŸ¥æ‰¾è€€å…‰è£…å¤‡
   const spellbladeItem = this.playerEquipmentSlots.find(id => this.isSpellbladeItem(id));
   if (!spellbladeItem) return;
 
   const item = this.getEquipmentDefinition(spellbladeItem);
   if (!item) return;
 
-  // ÉèÖÃÒ«¹âĞ§¹û±ê¼Ç£¬±íÊ¾ÏÂ´ÎÆÕ¹¥½«´¥·¢Ò«¹âĞ§¹û
+  // è®¾ç½®è€€å…‰æ•ˆæœæ ‡è®°ï¼Œè¡¨ç¤ºä¸‹æ¬¡æ™®æ”»å°†è§¦å‘è€€å…‰æ•ˆæœ
   this.nextAttackTriggersSpellblade = true;
 
-  // ¸üĞÂ×°±¸À¸ÏÔÊ¾
+  // æ›´æ–°è£…å¤‡æ æ˜¾ç¤º
 
   this.refreshEquipmentUI();
 
-  // ±ê¼Ç¿ÉÒÔ¶ÔÏÂÒ»¸ö¹¥»÷Ä¿±ê´¥·¢Ò«¹âÉËº¦
+  // æ ‡è®°å¯ä»¥å¯¹ä¸‹ä¸€ä¸ªæ”»å‡»ç›®æ ‡è§¦å‘è€€å…‰ä¼¤å®³
   this.nextAttackTriggersSpellblade = true;
 
-  // ÕÒµ½´¥·¢µÄ×°±¸²Û²¢Ìí¼Ó¶¯»­Ğ§¹û
+  // æ‰¾åˆ°è§¦å‘çš„è£…å¤‡æ§½å¹¶æ·»åŠ åŠ¨ç”»æ•ˆæœ
   const slotIndex = this.playerEquipmentSlots.indexOf(spellbladeItem);
   if (slotIndex >= 0) {
     const slot = this.equipmentUi?.slots[slotIndex]?.element;
@@ -4285,7 +4285,7 @@ spendCostAndStartCd(key) {
   this.skillReadyAt[key] = now + cd;
   this.updateResourceBars();
   this.updateSkillCooldownUI();
-  // ³ãÌìÊ¹£º°´ÏûºÄµÄ·¨Á¦Öµ½øĞĞÖÎÁÆ
+  // ç‚½å¤©ä½¿ï¼šæŒ‰æ¶ˆè€—çš„æ³•åŠ›å€¼è¿›è¡Œæ²»ç–—
   if (mana > 0 && (this.manaSpendHealPerPoint || 0) > 0) {
     const heal = Math.max(0, Math.round(mana * this.manaSpendHealPerPoint));
     if (heal > 0) {
@@ -4294,11 +4294,11 @@ spendCostAndStartCd(key) {
       this.updateResourceBars();
     }
   }
-  // Å®ÉñÀá/³ãÌìÊ¹£ºÊÍ·Å¼¼ÄÜµş²ã
+  // å¥³ç¥æ³ª/ç‚½å¤©ä½¿ï¼šé‡Šæ”¾æŠ€èƒ½å å±‚
   this.applyManaCastStack();
 }
 
-// Å®ÉñÀá/³ãÌìÊ¹£ºÊÍ·Å¼¼ÄÜµş²ã£¨ÌáÉı×î´ó·¨Á¦£©£¬²¢°´³ãÌìÊ¹µÄ±»¶¯½øĞĞÖÎÁÆ
+// å¥³ç¥æ³ª/ç‚½å¤©ä½¿ï¼šé‡Šæ”¾æŠ€èƒ½å å±‚ï¼ˆæå‡æœ€å¤§æ³•åŠ›ï¼‰ï¼Œå¹¶æŒ‰ç‚½å¤©ä½¿çš„è¢«åŠ¨è¿›è¡Œæ²»ç–—
 applyManaCastStack() {
   const perCast = this.manaStackPerCast || 0;
   const cap = this.manaStackCap || 0;
@@ -4313,7 +4313,7 @@ applyManaCastStack() {
       if (this.playerStats) this.playerStats.maxMana = prevMax + bonus;
       this.currentMana = Math.min(this.playerStats.maxMana, Math.max(0, Math.round(this.playerStats.maxMana * ratio)));
       this.updateResourceBars();
-      // µş²ãºóË¢ĞÂ×°±¸À¸»Õ±ê£¨Å®ÉñÀá/³ãÌìÊ¹²ãÊıÏÔÊ¾£©
+      // å å±‚ååˆ·æ–°è£…å¤‡æ å¾½æ ‡ï¼ˆå¥³ç¥æ³ª/ç‚½å¤©ä½¿å±‚æ•°æ˜¾ç¤ºï¼‰
       this.refreshEquipmentUI();
     }
   }
@@ -4331,7 +4331,7 @@ updateEnemies() {
     const enemy = enemies[i];
     if (!enemy?.active) continue;
 
-    // µ¼º½×´Ì¬³õÊ¼»¯£¨½ö¶Ô¿ÉÒÆ¶¯Ìå£©
+    // å¯¼èˆªçŠ¶æ€åˆå§‹åŒ–ï¼ˆä»…å¯¹å¯ç§»åŠ¨ä½“ï¼‰
     if (!enemy.nav && enemy.enemyKind !== "turret") {
       this.initializeEnemyNav(enemy, now);
     } else if (enemy.nav) {
@@ -4345,13 +4345,13 @@ updateEnemies() {
       if (typeof enemy.nav.nudgeSpeed !== "number") enemy.nav.nudgeSpeed = 0;
     }
 
-    // Boss ÓÉ×¨ÊôÂß¼­Çı¶¯
+    // Boss ç”±ä¸“å±é€»è¾‘é©±åŠ¨
     if (enemy.isBoss) continue;
 
-    // ±¦Ïä£º²»²ÎÓëÈÎºÎ AI£¨²»ÒÆ¶¯²»¹¥»÷£©
+    // å®ç®±ï¼šä¸å‚ä¸ä»»ä½• AIï¼ˆä¸ç§»åŠ¨ä¸æ”»å‡»ï¼‰
     if (enemy.isChest) { enemy.body.setVelocity(0, 0); continue; }
 
-    // ·ÖÅÉµ½ÈıÀà AI
+    // åˆ†æ´¾åˆ°ä¸‰ç±» AI
     const delta = this.game.loop.delta; // ms
     switch (enemy.enemyKind) {
       case "charger":
@@ -4372,7 +4372,7 @@ updateEnemies() {
 
   updateLoot(_delta) {
     const lootItems = this.loot.getChildren();
-    const attractRadius = 50; // ¹Ì¶¨Ê°È¡°ë¾¶
+    const attractRadius = 50; // å›ºå®šæ‹¾å–åŠå¾„
     for (let i=lootItems.length-1; i>=0; i-=1) {
       const item = lootItems[i];
       if (!item.active) continue;
@@ -4517,10 +4517,10 @@ updateEnemies() {
     this.roundComplete = true;
     this.roundAwaitingDecision = true;
     if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
-    // Çå¿Õµ±Ç°²¨´ÎµÄ¹ÖÎïÓëËùÓĞÀàĞÍµÄ×Óµ¯
+    // æ¸…ç©ºå½“å‰æ³¢æ¬¡çš„æ€ªç‰©ä¸æ‰€æœ‰ç±»å‹çš„å­å¼¹
     this.clearEnemies();
     this.clearAllBullets();
-    // ´ïµ½×Ü¹Ø¿¨ÉÏÏŞ£¨20¹Ø£©ºóÖ±½ÓÍ¨¹Ø
+    // è¾¾åˆ°æ€»å…³å¡ä¸Šé™ï¼ˆ20å…³ï¼‰åç›´æ¥é€šå…³
     const currentLevel = Math.max(1, Math.floor(this.level || 1));
     if (currentLevel >= 20) {
       this.endRunVictory();
@@ -4530,7 +4530,7 @@ updateEnemies() {
   }
   clearEnemies() { this.enemies.getChildren().forEach((e)=> e.destroy()); }
   clearBullets() { this.bullets.getChildren().forEach((b)=> this.destroyBullet(b)); }
-  // Í³Ò»Çå¿Õ£ºÆÕÍ¨×Óµ¯ + Bossµ¯Ä» + ÆäËûÍ¶ÉäÎï
+  // ç»Ÿä¸€æ¸…ç©ºï¼šæ™®é€šå­å¼¹ + Bosså¼¹å¹• + å…¶ä»–æŠ•å°„ç‰©
   clearAllBullets() {
     try {
       if (this.bullets && typeof this.bullets.getChildren === "function") {
@@ -4557,7 +4557,7 @@ updateEnemies() {
           if (o) this.mikoOrbsGroup.remove(o, true, true);
         }
       }
-      // Í¬²½Çå¿ÕÒıÓÃÊı×é£¬ÒÔ±ÜÃâ²ĞÁôÎŞĞ§ÒıÓÃ
+      // åŒæ­¥æ¸…ç©ºå¼•ç”¨æ•°ç»„ï¼Œä»¥é¿å…æ®‹ç•™æ— æ•ˆå¼•ç”¨
       if (Array.isArray(this.mikoOrbs)) this.mikoOrbs.length = 0;
     } catch (_) {}
   }
@@ -4594,19 +4594,19 @@ updateEnemies() {
     this.clearRoundOverlay();
     this.roundAwaitingDecision = false;
     if (shouldContinue) {
-      // ½øÈëÏÂÒ»¹Ø¿¨Ç°£ºÇå¿ÕµØÍ¼ÉÏËùÓĞ¹ÖÎïÓë×Óµ¯
+      // è¿›å…¥ä¸‹ä¸€å…³å¡å‰ï¼šæ¸…ç©ºåœ°å›¾ä¸Šæ‰€æœ‰æ€ªç‰©ä¸å­å¼¹
       this.clearEnemies();
       this.clearAllBullets();
-      // ½ø¶È£º¹Ø¿¨+1£¬ÌáÉırank²¢×¼±¸ÏÂÒ»¹Ø
+      // è¿›åº¦ï¼šå…³å¡+1ï¼Œæå‡rankå¹¶å‡†å¤‡ä¸‹ä¸€å…³
       const prevLevel = Number.isFinite(this.level) ? Math.floor(this.level) : 1;
       this.level = Math.max(1, prevLevel + 1);
-      // Õı³£rankÔö³¤·½Ê½±£³Ö²»±ä£º¹Ø¿¨½áÊø+1
+      // æ­£å¸¸rankå¢é•¿æ–¹å¼ä¿æŒä¸å˜ï¼šå…³å¡ç»“æŸ+1
       this.rank = Number((this.rank + ROUND_CONTINUE_RANK_BONUS).toFixed(2));
-      // µ±Í¨¹ıµÚ10¹ØÊ±£¬rank ·­±¶
+      // å½“é€šè¿‡ç¬¬10å…³æ—¶ï¼Œrank ç¿»å€
       if (prevLevel === 10) {
         this.rank = Number((this.rank * 2).toFixed(2));
       }
-      // Ã¿¹ıÒ»¹Ø£¨ÔÚÍ¨¹ıµÚ10¹ØÖ®ºó£©£¬rank ¶îÍâÔö¼Ó20%
+      // æ¯è¿‡ä¸€å…³ï¼ˆåœ¨é€šè¿‡ç¬¬10å…³ä¹‹åï¼‰ï¼Œrank é¢å¤–å¢åŠ 20%
       if (prevLevel >= 10) {
         this.rank = Number((this.rank * 1.2).toFixed(2));
       }
@@ -4616,19 +4616,19 @@ updateEnemies() {
       this.nextNoDamageRankCheck = now + NO_DAMAGE_RANK_INTERVAL;
       this.roundTimeLeft = ROUND_DURATION;
 
-      // ½øÈëÏÂÒ»¹Ø£º¸´ÓÃĞÔÒ©Ë®²¹³ä¿ÉÓÃ´ÎÊı
+      // è¿›å…¥ä¸‹ä¸€å…³ï¼šå¤ç”¨æ€§è¯æ°´è¡¥å……å¯ç”¨æ¬¡æ•°
       if (this.hasItemEquipped(REFILLABLE_POTION_ID)) {
         this.refillablePotionCharges = this.refillablePotionMaxCharges || 5;
         this.refreshEquipmentUI?.();
       }
 
-      // ÅĞ¶ÏÊÇ·ñBoss¹Ø¿¨£¨Ã¿20¹Ø£©
+      // åˆ¤æ–­æ˜¯å¦Bosså…³å¡ï¼ˆæ¯20å…³ï¼‰
       this.isBossStage = (this.level === 10) || (this.level % 20 === 0);
 
-      // Ë¢ĞÂµØĞÎ£¨Boss¹Ø¿¨½ö±£Áô±ß¿ò£©
+      // åˆ·æ–°åœ°å½¢ï¼ˆBosså…³å¡ä»…ä¿ç•™è¾¹æ¡†ï¼‰
       this.generateRandomSegmentsMap();
 
-      // ÖØÖÃÍæ¼ÒÎ»ÖÃ
+      // é‡ç½®ç©å®¶ä½ç½®
       if (this.player) {
         this.player.setPosition(WORLD_SIZE/2, WORLD_SIZE/2);
         this.player.body.setVelocity(0, 0);
@@ -4636,7 +4636,7 @@ updateEnemies() {
         this.stopPlayerAnimation(this.playerFacing);
       }
 
-      // µØµãË¢ĞÂ£ºÉÌµê/±¦Ïä£¨Boss¹Ø¿¨²»Éú³É£©
+      // åœ°ç‚¹åˆ·æ–°ï¼šå•†åº—/å®ç®±ï¼ˆBosså…³å¡ä¸ç”Ÿæˆï¼‰
       if (!this.places) this.places = this.physics.add.staticGroup();
       if (this.places) this.places.clear(true, true);
       this.shopPlaces = [];
@@ -4645,9 +4645,9 @@ updateEnemies() {
         this.spawnRandomChests(MAP_CHEST_COUNT);
       }
 
-      // ÆÕÍ¨¹Ø¿¨£º»Ö¸´Ë¢¹Ö£»Boss¹Ø¿¨£ºÉú³ÉBossÇÒÔİÍ£Ë¢¹Ö
+      // æ™®é€šå…³å¡ï¼šæ¢å¤åˆ·æ€ªï¼›Bosså…³å¡ï¼šç”ŸæˆBossä¸”æš‚åœåˆ·æ€ª
       if (this.isBossStage) {
-        // µÚ10¹Ø£º×÷Îª Boss ¹Ø£¬Éú³É Rin ²¢Ö±½Ó½øÈëBossÁ÷³Ì
+        // ç¬¬10å…³ï¼šä½œä¸º Boss å…³ï¼Œç”Ÿæˆ Rin å¹¶ç›´æ¥è¿›å…¥Bossæµç¨‹
         if (this.level === 10) {
           if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
           this.spawnBoss(BOSS_RIN_CONFIG);
@@ -4658,14 +4658,14 @@ updateEnemies() {
           if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
           return;
         }
-        // Í£Ö¹³£¹æË¢¹Ö
+        // åœæ­¢å¸¸è§„åˆ·æ€ª
         if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
-        // Éú³ÉBoss Utsuho£¨Ä¬ÈÏ³¡µØÖĞÉÏ·½£©
+        // ç”ŸæˆBoss Utsuhoï¼ˆé»˜è®¤åœºåœ°ä¸­ä¸Šæ–¹ï¼‰
         this.spawnBossById("Utsuho", { x: WORLD_SIZE/2, y: Math.floor(WORLD_SIZE * 0.25) });
-        // BossÑªÁ¿°´¡°Ã¿20¹Ø·­±¶¡±½øĞĞ±¶ÂÊ£º20¹Ø¡Á1£¬40¹Ø¡Á2£¬60¹Ø¡Á4...
+        // Bossè¡€é‡æŒ‰â€œæ¯20å…³ç¿»å€â€è¿›è¡Œå€ç‡ï¼š20å…³Ã—1ï¼Œ40å…³Ã—2ï¼Œ60å…³Ã—4...
         const cycles = Math.max(1, Math.floor(this.level / 20));
         let hpFactor = Math.pow(2, Math.max(0, cycles - 1));
-        // µÚÊ®¹Øºó£ºBoss Ò²³ËÒÔ (1 + rank/10)
+        // ç¬¬åå…³åï¼šBoss ä¹Ÿä¹˜ä»¥ (1 + rank/10)
         if (Math.floor(this.level || 0) > 10) {
           const rf = Math.max(0, Number.isFinite(this.rank) ? this.rank : 0) / 10;
           if (rf > 0) hpFactor *= (1 + rf);
@@ -4679,14 +4679,14 @@ updateEnemies() {
             this.boss.setData("hp", this.boss.hp);
           }
           this.updateBossUI(this.boss);
-          // Í¬²½Boss½Ó´¥ÉËº¦³ËËã (1 + rank/10)
+          // åŒæ­¥Bossæ¥è§¦ä¼¤å®³ä¹˜ç®— (1 + rank/10)
           if (Math.floor(this.level || 0) > 10) {
             const rf = Math.max(0, Number.isFinite(this.rank) ? this.rank : 0) / 10;
             const factor = 1 + rf;
             if (factor > 0) this.boss.contactDamage = Math.max(0, Math.round(this.boss.contactDamage * factor));
           }
         }
-        // ÒôÀÖ£ºÇĞµ½BossÇú
+        // éŸ³ä¹ï¼šåˆ‡åˆ°Bossæ›²
         try {
           if (this.battleBgm?.isPlaying) this.battleBgm.stop();
         } catch (_) {}
@@ -4697,9 +4697,9 @@ updateEnemies() {
         }
         if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
       } else {
-        // ·ÇBoss¹Ø¿¨£º³£¹æË¢¹ÖÓëBGM
+        // éBosså…³å¡ï¼šå¸¸è§„åˆ·æ€ªä¸BGM
         this.scheduleSpawnTimer();
-        // Í£µôBossÇú£¬»Ö¸´Õ½¶·BGM
+        // åœæ‰Bossæ›²ï¼Œæ¢å¤æˆ˜æ–—BGM
         if (this.bossMusic) { this.bossMusic.stop(); this.bossMusic.destroy(); this.bossMusic = null; }
         if (!this.battleBgm) {
           this.battleBgm = this.sound.add("battle_bgm", { loop: true, volume: 0.4 });
@@ -4714,7 +4714,7 @@ updateEnemies() {
     this.updateOverlayScale();
   }
   endRunVictory() {
-    // ÔİÍ£²¢Õ¹Ê¾ HTML Í³¼Æ¸²¸Ç²ã£¨Ê¤Àû£©
+    // æš‚åœå¹¶å±•ç¤º HTML ç»Ÿè®¡è¦†ç›–å±‚ï¼ˆèƒœåˆ©ï¼‰
     this.physics.pause();
     if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
     if (this.attackTimer) { this.attackTimer.remove(); this.attackTimer = null; }
@@ -4722,7 +4722,7 @@ updateEnemies() {
   }
 
   updateHUD() {
-      // BossÄ£Ê½ÏÂ²»ÏÔÊ¾µ¹¼ÆÊ±
+      // Bossæ¨¡å¼ä¸‹ä¸æ˜¾ç¤ºå€’è®¡æ—¶
       if (this.debugBossMode || this.isBossStage) {
           if (this.ui.timerValue) this.ui.timerValue.textContent = "--:--";
       } else {
@@ -4734,7 +4734,7 @@ updateEnemies() {
       }
       
       if (this.ui.killValue) this.ui.killValue.textContent = `${this.killCount}`;
-      // ¹Ø¿¨ÎªÕûÊıÕ¹Ê¾
+      // å…³å¡ä¸ºæ•´æ•°å±•ç¤º
       if (this.ui.rankValue) this.ui.rankValue.textContent = `${Math.max(1, Math.floor(this.level || 1))}`;
       if (this.ui.pointValue) this.ui.pointValue.textContent = `${this.playerPoints}`;
       this.updateSkillCooldownUI();
@@ -4755,13 +4755,13 @@ updateEnemies() {
     titleEl.classList.remove("win", "fail", "pause");
     if (outcome === "win") {
       titleEl.classList.add("win");
-      titleEl.textContent = "Í¨¹Ø³É¹¦";
+      titleEl.textContent = "é€šå…³æˆåŠŸ";
     } else if (outcome === "pause") {
       titleEl.classList.add("pause");
-      titleEl.textContent = "ÓÎÏ·ÔİÍ£";
+      titleEl.textContent = "æ¸¸æˆæš‚åœ";
     } else {
       titleEl.classList.add("fail");
-      titleEl.textContent = "Í¨¹ØÊ§°Ü";
+      titleEl.textContent = "é€šå…³å¤±è´¥";
     }
 
     // Collect values
@@ -4891,10 +4891,10 @@ updateEnemies() {
 
 
 showDamageNumber(x, y, amount, type = "physical", options = {}) {
-  // options ¿ÉÒÔÊÇ²¼¶û£¨±íÊ¾ incoming£©£¬Ò²¿ÉÒÔÊÇ { incoming: true/false, isSpellblade: false }
+  // options å¯ä»¥æ˜¯å¸ƒå°”ï¼ˆè¡¨ç¤º incomingï¼‰ï¼Œä¹Ÿå¯ä»¥æ˜¯ { incoming: true/false, isSpellblade: false }
   const incoming = (typeof options === "boolean") ? options : !!options.incoming;
   const isSpellblade = options.isSpellblade || false;
-  // ¡ª¡ª Accumulate run stats ¡ª¡ª //
+  // â€”â€” Accumulate run stats â€”â€” //
   if (this.runStats && typeof amount === "number" && Number.isFinite(amount) && amount > 0) {
     if (type === "heal" && !incoming) {
       this.runStats.heal += amount;
@@ -4903,7 +4903,7 @@ showDamageNumber(x, y, amount, type = "physical", options = {}) {
     } else if (!incoming) {
       const t = String(type || "");
       if (t === "physical" || t === "crit") this.runStats.dealtPhys += amount;
-      else this.runStats.dealtMagic += amount; // magic, spellcrit, true ¡ú magic bucket
+      else this.runStats.dealtMagic += amount; // magic, spellcrit, true â†’ magic bucket
     }
   }
 
@@ -4912,24 +4912,24 @@ showDamageNumber(x, y, amount, type = "physical", options = {}) {
   const colors = {
     physical: "#ffd966",
     magic: "#66aaff",
-    crit: "#ff0000",   // ´¿ºìÉ«
-    spellcrit: "#cc66ff", // ×ÏÉ«£º·¨Êõ±©»÷
+    crit: "#ff0000",   // çº¯çº¢è‰²
+    spellcrit: "#cc66ff", // ç´«è‰²ï¼šæ³•æœ¯æš´å‡»
     heal: "#66ff66"
   };
 
   let displayValue = (typeof amount === "number") ? Math.round(amount) : amount;
   if (isSpellblade) {
-    displayValue = `S${displayValue}`; // ÎªÒ«¹âÉËº¦Ìí¼Ó"S"Ç°×º
+    displayValue = `S${displayValue}`; // ä¸ºè€€å…‰ä¼¤å®³æ·»åŠ "S"å‰ç¼€
   }
-  if (type === "crit") displayValue = `±¬${displayValue}`
-  if (type === "spellcrit") displayValue = `±¬${displayValue}`
-  // ×ÖºÅÓÅÏÈ¼¶£¨´ÓĞ¡µ½´ó£©£º
-  // £¨ÎïÉË/·¨ÉË£©<£¨ÎïÀí±©»÷/·¨Êõ±©»÷£©< ÕæÊµÉËº¦ < Ò«¹âÉËº¦ < ×ÔÉíÊÜÉË
-  const baseNormal = 14;     // ÎïÉË/·¨ÉË
-  const baseCrit = 20;       // ÎïÀí±©»÷/·¨Êõ±©»÷
-  const baseTrue = 22;       // ÕæÊµÉËº¦
-  const baseSpellblade = 26; // Ò«¹âÉËº¦£¨Í¨¹ı isSpellblade ±ê¼Ç£©
-  const baseIncoming = 32;   // ×ÔÉíÊÜÉË£¨¸ü´ó£¬¸üÃ÷ÏÔ£©
+  if (type === "crit") displayValue = `çˆ†${displayValue}`
+  if (type === "spellcrit") displayValue = `çˆ†${displayValue}`
+  // å­—å·ä¼˜å…ˆçº§ï¼ˆä»å°åˆ°å¤§ï¼‰ï¼š
+  // ï¼ˆç‰©ä¼¤/æ³•ä¼¤ï¼‰<ï¼ˆç‰©ç†æš´å‡»/æ³•æœ¯æš´å‡»ï¼‰< çœŸå®ä¼¤å®³ < è€€å…‰ä¼¤å®³ < è‡ªèº«å—ä¼¤
+  const baseNormal = 14;     // ç‰©ä¼¤/æ³•ä¼¤
+  const baseCrit = 20;       // ç‰©ç†æš´å‡»/æ³•æœ¯æš´å‡»
+  const baseTrue = 22;       // çœŸå®ä¼¤å®³
+  const baseSpellblade = 26; // è€€å…‰ä¼¤å®³ï¼ˆé€šè¿‡ isSpellblade æ ‡è®°ï¼‰
+  const baseIncoming = 32;   // è‡ªèº«å—ä¼¤ï¼ˆæ›´å¤§ï¼Œæ›´æ˜æ˜¾ï¼‰
 
   let size = baseNormal;
   if (incoming) size = baseIncoming;
@@ -4939,41 +4939,41 @@ showDamageNumber(x, y, amount, type = "physical", options = {}) {
 
   const text = this.add.text(x, y, `${displayValue}`, {
     fontFamily: '"Zpix", monospace',
-    fontSize: `${size}px`,              // ¡û Ê¹ÓÃÉÏÃæµÄ size
+    fontSize: `${size}px`,              // â† ä½¿ç”¨ä¸Šé¢çš„ size
     color: colors[type] ?? "#ffffff",
   }).setOrigin(0.5).setDepth(80);
 
-  // Ãè±ß¹æÔò£º
-  // - ±©»÷£º´¿ºìÉ«£¬ÎŞÃè±ß
-  // - ×ÔÉíÊÜÉË£ººìÉ«Ãè±ß
-  // - ÆÕÍ¨ÉËº¦£¨ÎïÀí/·¨Êõ£¬¶ÔµĞÈË£©£ººÚÉ«Ãè±ß
-  // - ÖÎÁÆ£ººÚÉ«Ï¸Ãè±ß
+  // æè¾¹è§„åˆ™ï¼š
+  // - æš´å‡»ï¼šçº¯çº¢è‰²ï¼Œæ— æè¾¹
+  // - è‡ªèº«å—ä¼¤ï¼šçº¢è‰²æè¾¹
+  // - æ™®é€šä¼¤å®³ï¼ˆç‰©ç†/æ³•æœ¯ï¼Œå¯¹æ•Œäººï¼‰ï¼šé»‘è‰²æè¾¹
+  // - æ²»ç–—ï¼šé»‘è‰²ç»†æè¾¹
   if (type === "crit" || type === "spellcrit") {
-    text.setStroke("#000000", 0); // È¥µôÃè±ß
+    text.setStroke("#000000", 0); // å»æ‰æè¾¹
   } else if (incoming) {
-    text.setStroke("#ff0000", 3); // ×ÔÉíÊÜÉË£ººìÃè±ß
+    text.setStroke("#ff0000", 3); // è‡ªèº«å—ä¼¤ï¼šçº¢æè¾¹
   } else if (type === "heal") {
-    text.setStroke("#000000", 2); // ÖÎÁÆ£ººÚÃè±ß
+    text.setStroke("#000000", 2); // æ²»ç–—ï¼šé»‘æè¾¹
   } else {
-    text.setStroke("#000000", 3); // ÆÕÍ¨ÉËº¦£ººÚÃè±ß
+    text.setStroke("#000000", 3); // æ™®é€šä¼¤å®³ï¼šé»‘æè¾¹
   }
 
-  // ÇáÎ¢Æ«ÒÆÓë¸¡¶¯¶¯»­
+  // è½»å¾®åç§»ä¸æµ®åŠ¨åŠ¨ç”»
   text.x += Phaser.Math.FloatBetween(-4, 4);
   text.y += Phaser.Math.FloatBetween(-2, 2);
 
-  // ¶¯»­·½Ïò£ºÉËº¦ÏòÏÂÏûÊ§£»ÖÎÁÆÎ¬³ÖÔ­ÏòÉÏ
+  // åŠ¨ç”»æ–¹å‘ï¼šä¼¤å®³å‘ä¸‹æ¶ˆå¤±ï¼›æ²»ç–—ç»´æŒåŸå‘ä¸Š
   const isHeal = (type === "heal");
   const deltaY = isHeal
     ? ((type === "crit" || type === "spellcrit") ? -15 : -10)
     : (incoming ? 18 : (type === "crit" || type === "spellcrit" ? 15 : 10));
 
-  // ³ÖĞøÊ±¼ä£º×ÔÉíÊÜÉË¸üÂıµ­³ö£¬ÆäËü»ù±¾±£³Ö²»±ä
+  // æŒç»­æ—¶é—´ï¼šè‡ªèº«å—ä¼¤æ›´æ…¢æ·¡å‡ºï¼Œå…¶å®ƒåŸºæœ¬ä¿æŒä¸å˜
   let duration = (type === "crit" || type === "spellcrit") ? 850 : 650;
   if (!isHeal) {
-    if (incoming) duration = 1200;        // ×ÔÉí£º¸üÂı
-    else if (isSpellblade) duration = 900; // Ò«¹â£ºÂÔÂı
-    else if (type === "true") duration = 800; // ÕæÉË£ºÉÔÂı
+    if (incoming) duration = 1200;        // è‡ªèº«ï¼šæ›´æ…¢
+    else if (isSpellblade) duration = 900; // è€€å…‰ï¼šç•¥æ…¢
+    else if (type === "true") duration = 800; // çœŸä¼¤ï¼šç¨æ…¢
   }
 
   this.tweens.add({
@@ -4990,13 +4990,13 @@ showHealNumber(x, y, amount) {
   this.showDamageNumber(x, y, amount, "heal", { incoming: false });
 }
 
-  /* ==== ÉËº¦ÓëÕ½¶· ==== */
-  // DEF½ö¶ÔÎïÀíÉËº¦ÉúĞ§£»ÓÅÏÈ½áËã£¬Æä´Î°´»¤¼×³ËÇø¹«Ê½½áËãÉËº¦
+  /* ==== ä¼¤å®³ä¸æˆ˜æ–— ==== */
+  // DEFä»…å¯¹ç‰©ç†ä¼¤å®³ç”Ÿæ•ˆï¼›ä¼˜å…ˆç»“ç®—ï¼Œå…¶æ¬¡æŒ‰æŠ¤ç”²ä¹˜åŒºå…¬å¼ç»“ç®—ä¼¤å®³
   applyMitigationToTarget(amount, targetStatsOrObj, sourceStatsOrObj, damageType = "physical", minimumOutput = 0) {
     const baseDamage = Number.isFinite(amount) ? amount : 0;
     if (baseDamage <= 0) return 0;
 
-    // È¡Ïû Rin µÚÈı½×¶ÎËøÑªÎŞµĞ£º²»ÔÙÀ¹½ØÉËº¦
+    // å–æ¶ˆ Rin ç¬¬ä¸‰é˜¶æ®µé”è¡€æ— æ•Œï¼šä¸å†æ‹¦æˆªä¼¤å®³
 
     const minOutput = Number.isFinite(minimumOutput) ? Math.max(0, Math.ceil(minimumOutput)) : 0;
 
@@ -5036,7 +5036,7 @@ showHealNumber(x, y, amount) {
     return Math.max(rounded, minOutput);
   }
 
-  // ĞÂÔö£º¶Ô×Ô»úÊ©¼Ó·¨ÊõÉËº¦£¨Bossµ¯Ä»£©
+  // æ–°å¢ï¼šå¯¹è‡ªæœºæ–½åŠ æ³•æœ¯ä¼¤å®³ï¼ˆBosså¼¹å¹•ï¼‰
 applyMagicDamageToPlayer(amount, sourceStats = null) {
   if (this.isPlayerInvulnerable()) return;
 
@@ -5049,7 +5049,7 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
   );
   this.showDamageNumber(this.player.x, this.player.y - 12, actual, "magic", true);
   this.currentHp = Math.max(this.currentHp - actual, 0);
-  // ¹Ø¿¨10£ºµĞ·½ÉËº¦¶îÍâÔì³É 10%µ±Ç°ÉúÃüÖµ + rank µÄÍ¬ÊôĞÔÉËº¦£¨·¨Êõ£©
+  // å…³å¡10ï¼šæ•Œæ–¹ä¼¤å®³é¢å¤–é€ æˆ 10%å½“å‰ç”Ÿå‘½å€¼ + rank çš„åŒå±æ€§ä¼¤å®³ï¼ˆæ³•æœ¯ï¼‰
   if (Math.floor(this.level || 0) > 10) {
     const bonusRaw = Math.max(0, Math.round(hpBefore * 0.10) + Math.round(this.rank || 0));
     if (bonusRaw > 0) {
@@ -5070,7 +5070,7 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
   this.lastDamageTimestamp = now;
   this.nextNoDamageRankCheck = now + NO_DAMAGE_RANK_INTERVAL;
 
-  // ·´¼×£º"ÊÜµ½¹¥»÷Ê±"Ò²¶ÔÊ©·¨Õß·´ÉË£¨Ä§·¨ÉËº¦£©
+  // åç”²ï¼š"å—åˆ°æ”»å‡»æ—¶"ä¹Ÿå¯¹æ–½æ³•è€…åä¼¤ï¼ˆé­”æ³•ä¼¤å®³ï¼‰
   if (sourceStats && typeof sourceStats === "object" && sourceStats.active) {
     const thBase = Math.max(0, this.playerEquipmentStats?.thornsBase || 0);
     const thRatio = Math.max(0, this.playerEquipmentStats?.thornsArmorRatio || 0);
@@ -5092,14 +5092,14 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
     }
   }
 
-  // ÉËº¦ºó³¢ÊÔ×Ô¶¯ºÈÒ©
+  // ä¼¤å®³åå°è¯•è‡ªåŠ¨å–è¯
   this.tryAutoUsePotions?.();
   if (this.currentHp <= 0) this.gameOver();
 else this.playSfx("player_gethit");
 }
 
 
-  // ¡ª¡ª ÏûºÄÆ·£ºÒ©Ë®Âß¼­ ¡ª¡ª //
+  // â€”â€” æ¶ˆè€—å“ï¼šè¯æ°´é€»è¾‘ â€”â€” //
   consumeHealthPotion() {
     if (!this.hasItemEquipped(HEALTH_POTION_ID)) return false;
     if (!Number.isFinite(this.healthPotionCount) || this.healthPotionCount <= 0) return false;
@@ -5113,7 +5113,7 @@ else this.playSfx("player_gethit");
     this.playSfx?.("potion");
     this.lastPotionUsedAt = this.time?.now ?? performance.now();
     this.healthPotionCount = Math.max(0, Math.floor(this.healthPotionCount - 1));
-    // ÓÃ¾¡ÔòÒÆ³ı¸ÃÎïÆ·
+    // ç”¨å°½åˆ™ç§»é™¤è¯¥ç‰©å“
     if (this.healthPotionCount <= 0) {
       const idx = this.healthPotionOwnerSlotIndex;
       if (Number.isInteger(idx) && idx >= 0 && idx < this.playerEquipmentSlots.length) {
@@ -5148,22 +5148,22 @@ else this.playSfx("player_gethit");
     const maxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
     if (!Number.isFinite(maxHp) || maxHp <= 0) return;
     let missing = Math.max(0, maxHp - (this.currentHp || 0));
-    // ÀäÈ´£º0.5s ÄÚÖ»ÔÊĞíºÈÒ»´Î
+    // å†·å´ï¼š0.5s å†…åªå…è®¸å–ä¸€æ¬¡
     const now = this.time?.now ?? performance.now();
     if (now - (this.lastPotionUsedAt || 0) < 500) return;
-    // ÓÅÏÈ£º¸´ÓÃĞÔÒ©Ë®£¨½øÈëÏÂÒ»¹Ø»á²¹Âú£©
+    // ä¼˜å…ˆï¼šå¤ç”¨æ€§è¯æ°´ï¼ˆè¿›å…¥ä¸‹ä¸€å…³ä¼šè¡¥æ»¡ï¼‰
     if (missing >= 50 && this.refillablePotionCharges > 0 && this.hasItemEquipped(REFILLABLE_POTION_ID)) {
       this.consumeRefillablePotion();
       return;
     }
-    // È»ºó£ºÉúÃüÒ©Ë®£¨µş¼Ó¹ºÂò£©
+    // ç„¶åï¼šç”Ÿå‘½è¯æ°´ï¼ˆå åŠ è´­ä¹°ï¼‰
     if (missing >= 100 && this.healthPotionCount > 0 && this.hasItemEquipped(HEALTH_POTION_ID)) {
       this.consumeHealthPotion();
       return;
     }
   }
 
-  // ·ÖÀëÏÔÊ¾£ºÍ¨¹ıÊ±¼äºÍÎ»ÖÃ´í¿ª
+  // åˆ†ç¦»æ˜¾ç¤ºï¼šé€šè¿‡æ—¶é—´å’Œä½ç½®é”™å¼€
   displayDamageWithSeparation(x, y, amount, type, orderIndex) {
     const delay = 90 * orderIndex;
     const stepY = 14 * orderIndex;
@@ -5175,9 +5175,9 @@ else this.playSfx("player_gethit");
 
 castQ() {
   if (!this.canCast("Q")) return;
-  // À¶ºÄÓëCD
+  // è“è€—ä¸CD
   this.spendCostAndStartCd("Q");
-  // ¼¼ÄÜÒôĞ§£ºQ
+  // æŠ€èƒ½éŸ³æ•ˆï¼šQ
   this.playSfx("player_castQ");
 
   const pointer = this.input?.activePointer ?? null;
@@ -5196,24 +5196,24 @@ castQ() {
   }
   this.lastAimAngle = dirRad;
 
-  // ¡ª¡ª ½üÕ½£º¸ÄÎªÌùÍ¼ÎïÀíÅö×²£¨8¸ñ´óĞ¡£©¡ª¡ª //
+  // â€”â€” è¿‘æˆ˜ï¼šæ”¹ä¸ºè´´å›¾ç‰©ç†ç¢°æ’ï¼ˆ8æ ¼å¤§å°ï¼‰â€”â€” //
   const ap = this.playerStats.abilityPower || 0;
-  const meleeDmgBase = Math.round(50 + ap); // 50 + 100%AP ·¨ÉË
+  const meleeDmgBase = Math.round(50 + ap); // 50 + 100%AP æ³•ä¼¤
   const center = { x: this.player.x, y: this.player.y };
-  // ÎïÀíÌå£ºÊ¹ÓÃ Arcade Physics ÖØµşÅĞ¶¨£¬±ÜÃâÊÖ¶¯ÉÈĞÎ¼ÆËã
+  // ç‰©ç†ä½“ï¼šä½¿ç”¨ Arcade Physics é‡å åˆ¤å®šï¼Œé¿å…æ‰‹åŠ¨æ‰‡å½¢è®¡ç®—
   const slash = this.physics.add.image(this.player.x, this.player.y, "skill_Qmelee").setDepth(12);
   slash.body.setAllowGravity(false);
-  // ÌùÍ¼ÏÔÊ¾´óĞ¡£ºÓÉ4¸ñµ÷ÕûÎª2±¶=8¸ñ£»ÅĞ¶¨ÓëÌùÍ¼Ò»ÖÂ£¨8¸ñÖ±¾¶µÄÔ²£©
+  // è´´å›¾æ˜¾ç¤ºå¤§å°ï¼šç”±4æ ¼è°ƒæ•´ä¸º2å€=8æ ¼ï¼›åˆ¤å®šä¸è´´å›¾ä¸€è‡´ï¼ˆ8æ ¼ç›´å¾„çš„åœ†ï¼‰
   this.setDisplaySizeByTiles(slash, 6);
   this.setSpriteCircleHit(slash, 8);
-  // ¼ÇÂ¼»ù´¡ÉËº¦ÓëÒÑÃüÖĞÄ¿±ê£¬È·±£Ã¿¸öµ¥Î»Ö»½áËãÒ»´Î
+  // è®°å½•åŸºç¡€ä¼¤å®³ä¸å·²å‘½ä¸­ç›®æ ‡ï¼Œç¡®ä¿æ¯ä¸ªå•ä½åªç»“ç®—ä¸€æ¬¡
   slash.meleeDamage = meleeDmgBase;
   slash.hitTargets = new Set();
 
-  // ÓëµĞÈË·¢ÉúÖØµş¼´½áËã
+  // ä¸æ•Œäººå‘ç”Ÿé‡å å³ç»“ç®—
   this.physics.add.overlap(slash, this.enemies, this.handleQMeleeSlashOverlap, null, this);
 
-  // ½üÕ½ÌØĞ§¶¯»­±£³Ö£ºÎ§ÈÆÇ°ÏòĞ¡·ù»Ó¶¯
+  // è¿‘æˆ˜ç‰¹æ•ˆåŠ¨ç”»ä¿æŒï¼šå›´ç»•å‰å‘å°å¹…æŒ¥åŠ¨
   slash.setOrigin(0.5, 1);
   const slashBaseRotation = dirRad + Math.PI / 2;
   slash.setRotation(slashBaseRotation - Math.PI / 2);
@@ -5227,7 +5227,7 @@ castQ() {
     onComplete: ()=>slash.destroy(),
   });
 
-  // ¡ª¡ª Ô¶³Ì²¿·Ö£ºÕıÇ°30¡ã ÈıÃ¶´©Í¸ÅĞ¶¨£¨¸ÄÎªÎïÀíÉËº¦£©¡ª¡ª //
+  // â€”â€” è¿œç¨‹éƒ¨åˆ†ï¼šæ­£å‰30Â° ä¸‰æšç©¿é€åˆ¤å®šï¼ˆæ”¹ä¸ºç‰©ç†ä¼¤å®³ï¼‰â€”â€” //
   const projDmg = Math.round((this.playerStats.attackDamage || 0) + 0.5 * ap);
   const offsets = [-15, 0, 15];
   offsets.forEach((deg)=>{
@@ -5235,7 +5235,7 @@ castQ() {
     this.spawnQTalismanProjectile(center.x, center.y, angle, projDmg);
   });
 
-  // Ô¶³ÌÊÓ¾õ²ÉÑù
+  // è¿œç¨‹è§†è§‰é‡‡æ ·
   const fx = this.add.image(this.player.x, this.player.y, "skill_Qspell").setDepth(11);
   fx.setRotation(dirRad);
   fx.setAlpha(0.8);
@@ -5249,7 +5249,7 @@ castQ() {
     onComplete: ()=>fx.destroy(),
   });
 
-  // ´¥·¢Ò«¹âĞ§¹û
+  // è§¦å‘è€€å…‰æ•ˆæœ
   this.onSpellCastComplete();
 }
 
@@ -5260,7 +5260,7 @@ spawnQTalismanProjectile(originX, originY, angle, damage) {
   projectile.setDepth(12);
   projectile.setAlpha(0.95);
   projectile.setScale(0.7);
-  // ¸ÄÎªÎïÀíÉËº¦
+  // æ”¹ä¸ºç‰©ç†ä¼¤å®³
   projectile.physicalDamage = Number.isFinite(damage) ? Math.max(0, Math.round(damage)) : 0;
   projectile.hitTargets = new Set();
   projectile.fireAngle = angle;
@@ -5288,46 +5288,46 @@ destroyQTalisman(projectile) {
 castE() {
   if (!this.canCast("E")) return;
   this.spendCostAndStartCd("E");
-  // ¼¼ÄÜÒôĞ§£ºE£¨ĞÎÌ¬ÇĞ»»£©
+  // æŠ€èƒ½éŸ³æ•ˆï¼šEï¼ˆå½¢æ€åˆ‡æ¢ï¼‰
   this.playSfx("player_castE");
 
   this.playerCombatMode = (this.playerCombatMode === "ranged") ? "melee" : "ranged";
 
-  // Á¢¼´ÖØ½¨¹¥ËÙ¼ÆÊ±Æ÷ÒÔÉúĞ§20%¹¥ËÙ/½üÕ½Í£»ğ
+  // ç«‹å³é‡å»ºæ”»é€Ÿè®¡æ—¶å™¨ä»¥ç”Ÿæ•ˆ20%æ”»é€Ÿ/è¿‘æˆ˜åœç«
   this.rebuildAttackTimer();
-  // ĞÎÌ¬¸Ä±äºó£¬ÖØËã×°±¸Ğ§¹û£¨ÌáÑÇÂíÌØ·¶Î§ËæÔ¶½üÕ½±ä»¯£©
+  // å½¢æ€æ”¹å˜åï¼Œé‡ç®—è£…å¤‡æ•ˆæœï¼ˆæäºšé©¬ç‰¹èŒƒå›´éšè¿œè¿‘æˆ˜å˜åŒ–ï¼‰
   this.recalculateEquipmentEffects();
   
-  // ´¥·¢Ò«¹âĞ§¹û 
+  // è§¦å‘è€€å…‰æ•ˆæœ 
   this.onSpellCastComplete();
 }
 castR() {
   if (!this.canCast("R")) return;
   this.spendCostAndStartCd("R");
-  // ¼¼ÄÜÒôĞ§£ºR
+  // æŠ€èƒ½éŸ³æ•ˆï¼šR
   this.playSfx("player_castR");
 
   const ap = this.playerStats.abilityPower || 0;
-  const heal = Math.max(0, Math.round(5*ap + 500)); // ½âÊÍ£º°´ÎÄÒâ¡°500%AP+500¡±
+  const heal = Math.max(0, Math.round(5*ap + 500)); // è§£é‡Šï¼šæŒ‰æ–‡æ„â€œ500%AP+500â€
   this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
   this.showHealNumber(this.player.x, this.player.y - 24, heal);
   this.updateResourceBars();
 
-  // ×¼±¸ÎïÀí×é
+  // å‡†å¤‡ç‰©ç†ç»„
   if (!this.mikoOrbsGroup) this.mikoOrbsGroup = this.physics.add.group();
-  // Óù±ÒÉú³Éºó£¬È·±£Ò²ÄÜÇåÀí Rin Ê¬Ìå
+  // å¾¡å¸ç”Ÿæˆåï¼Œç¡®ä¿ä¹Ÿèƒ½æ¸…ç† Rin å°¸ä½“
   this.physics.add.overlap(this.mikoOrbsGroup, this.rinCorpses, (_orb, corpse) => {
     if (corpse && corpse.active) this.killRinCorpse(corpse, false);
   }, null, this);
 
-  // Ã¿¿ÅÃÎÏëÃîÖéµÄ»ù´¡ÉËº¦¼Ó³É
+  // æ¯é¢—æ¢¦æƒ³å¦™ç çš„åŸºç¡€ä¼¤å®³åŠ æˆ
   const orbBaseFlat = 200;
 
-  // ´Ó8Ñ¡6²»ÖØ¸´
+  // ä»8é€‰6ä¸é‡å¤
   const pool = ["R1","R2","R3","R4","R5","R6","R7","R8"];
   Phaser.Utils.Array.Shuffle(pool);
 
-  // ´¥·¢Ò«¹âĞ§¹û
+  // è§¦å‘è€€å…‰æ•ˆæœ
   this.onSpellCastComplete();
   const picks = pool.slice(0,6);
 
@@ -5336,7 +5336,7 @@ castR() {
     spr.body.setAllowGravity(false);
     spr.setCircle(8, spr.width/2-8, spr.height/2-8);
     spr._state = "orbit";                 // orbit -> seek -> done
-    spr._angle = (i / 6) * Math.PI*2;     // ¾ùÔÈ·Ö²¼
+    spr._angle = (i / 6) * Math.PI*2;     // å‡åŒ€åˆ†å¸ƒ
     spr._orbitTimeLeft = 2000;            // 2s
     spr._seekTarget = null;
     spr._ap = ap;
@@ -5344,23 +5344,23 @@ castR() {
     return spr;
   });
 
-  // Çåµ¯£ºÓë bossBullets ÖØµş¼´Ïú»Ù
+  // æ¸…å¼¹ï¼šä¸ bossBullets é‡å å³é”€æ¯
   this.physics.add.overlap(this.mikoOrbsGroup, this.bossBullets, (_orb, bullet)=>{
     this.destroyBossBullet(bullet);
   });
-  // Ğı×ª½×¶ÎÓë·¢Éä½×¶ÎÃüÖĞÂß¼­£º
-  // - Ğı×ª(orbit)Ê±£ºÓëµĞÈËÅö×²Ôì³ÉÒ»´ÎÄ§·¨ÉËº¦£¨´ø¶ÌCD·À¶à´Î´¥·¢£©
-  // - ·¢Éä(seek)Ê±£ºÃüÖĞºóÔÚ4¸ñ·¶Î§ÄÚÔì³É·¶Î§ÉËº¦£¨Ò»´Î£©£¬ËæºóÏú»Ù
+  // æ—‹è½¬é˜¶æ®µä¸å‘å°„é˜¶æ®µå‘½ä¸­é€»è¾‘ï¼š
+  // - æ—‹è½¬(orbit)æ—¶ï¼šä¸æ•Œäººç¢°æ’é€ æˆä¸€æ¬¡é­”æ³•ä¼¤å®³ï¼ˆå¸¦çŸ­CDé˜²å¤šæ¬¡è§¦å‘ï¼‰
+  // - å‘å°„(seek)æ—¶ï¼šå‘½ä¸­ååœ¨4æ ¼èŒƒå›´å†…é€ æˆèŒƒå›´ä¼¤å®³ï¼ˆä¸€æ¬¡ï¼‰ï¼Œéšåé”€æ¯
   this.physics.add.overlap(this.mikoOrbsGroup, this.enemies, (orb, enemy)=>{
     if (!enemy.active) return;
     const spellFlat = Math.max(0, Math.round(this.playerEquipmentStats?.spellBonusMagicFlat || 0));
     const baseMagic = Math.round(orb._ap + orbBaseFlat) + spellFlat;
 
-    // Ğı×ª½×¶ÎµÄÅö×²ÉËº¦£¨´ø½ÚÁ÷£©
+    // æ—‹è½¬é˜¶æ®µçš„ç¢°æ’ä¼¤å®³ï¼ˆå¸¦èŠ‚æµï¼‰
     if (orb._state === "orbit") {
       if (!orb._orbitHitSet) orb._orbitHitSet = new Set();
-      if (orb._orbitHitSet.has(enemy)) return; // ¶ÌCDÄÚÍ¬Ò»µĞÈË²»ÖØ¸´½áËã
-      // Infinity Orb Ö´ĞĞÓë·¨Êõ±©»÷´¦Àí
+      if (orb._orbitHitSet.has(enemy)) return; // çŸ­CDå†…åŒä¸€æ•Œäººä¸é‡å¤ç»“ç®—
+      // Infinity Orb æ‰§è¡Œä¸æ³•æœ¯æš´å‡»å¤„ç†
       let raw = baseMagic;
       let dtype = "magic";
       if (this.hasItemEquipped(INFINITY_ORB_ID)) {
@@ -5374,22 +5374,22 @@ castR() {
         enemy.hp = Math.max(0, enemy.hp - dealt);
         this.showDamageNumber(enemy.x, enemy.y, dealt, dtype);
         if (enemy.hp<=0) this.killEnemy(enemy); else this.maybeExecuteTheCollector(enemy);
-        // Omnivamp£¨µ¥´ÎÃüÖĞ£©
+        // Omnivampï¼ˆå•æ¬¡å‘½ä¸­ï¼‰
         const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
         if (omni > 0) {
           const heal = Math.max(0, Math.round(dealt * omni));
           if (heal > 0) { this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp); this.showHealNumber(this.player.x, this.player.y - 18, heal); this.updateResourceBars(); }
         }
-        // Liandry ³ÖĞøÉËº¦
+        // Liandry æŒç»­ä¼¤å®³
         this.applyLiandryBurn(enemy);
       }
-      // Ìí¼Ó¶ÌCD£¨±ÜÃâÍ¬Ò»µĞÈËÖ¡ÄÚÁ¬»÷£©£º200ms
+      // æ·»åŠ çŸ­CDï¼ˆé¿å…åŒä¸€æ•Œäººå¸§å†…è¿å‡»ï¼‰ï¼š200ms
       orb._orbitHitSet.add(enemy);
       this.time.delayedCall(200, () => { if (orb.active && orb._orbitHitSet) orb._orbitHitSet.delete(enemy); });
       return;
     }
 
-    // ·¢Éä½×¶Î£ºÃüÖĞºó´¥·¢·¶Î§ÉËº¦£¨4¸ñ°ë¾¶£©
+    // å‘å°„é˜¶æ®µï¼šå‘½ä¸­åè§¦å‘èŒƒå›´ä¼¤å®³ï¼ˆ4æ ¼åŠå¾„ï¼‰
     if (orb._state === "seek") {
       const AOE_RADIUS = 4 * TILE_SIZE;
       let totalDealt = 0;
@@ -5413,32 +5413,32 @@ castR() {
         this.showDamageNumber(e.x, e.y, dealt, dtype);
         if (e.isBoss && typeof e.setData === "function") { e.setData("hp", e.hp); this.updateBossUI(e); }
         if (e.hp<=0) this.killEnemy(e); else this.maybeExecuteTheCollector(e);
-        // Liandry ³ÖĞøÉËº¦
+        // Liandry æŒç»­ä¼¤å®³
         this.applyLiandryBurn(e);
         totalDealt += dealt;
       }
 
-      // Omnivamp£º°´×ÜÉËº¦½áËãÒ»´Î
+      // Omnivampï¼šæŒ‰æ€»ä¼¤å®³ç»“ç®—ä¸€æ¬¡
       const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
       if (omni > 0 && totalDealt > 0) {
         const heal = Math.max(0, Math.round(totalDealt * omni));
         if (heal > 0) { this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp); this.showHealNumber(this.player.x, this.player.y - 18, heal); this.updateResourceBars(); }
       }
 
-      // ½áÊø¸ÃÖé£º¸ÄÎª½«µ¯Ä»±¾Ìå·Å´óÎª4¸ñ°ë¾¶¡¢50%Í¸Ã÷¶È£¬²¢ÔÚ2ÃëÄÚµ­³öºóÏú»Ù£¨ÊÓ¾õ±¬Õ¨ÌØĞ§£©
+      // ç»“æŸè¯¥ç ï¼šæ”¹ä¸ºå°†å¼¹å¹•æœ¬ä½“æ”¾å¤§ä¸º4æ ¼åŠå¾„ã€50%é€æ˜åº¦ï¼Œå¹¶åœ¨2ç§’å†…æ·¡å‡ºåé”€æ¯ï¼ˆè§†è§‰çˆ†ç‚¸ç‰¹æ•ˆï¼‰
       orb._state = "done";
       if (orb.body) {
-        // ½ûÓÃÎïÀí±ÜÃâÔÙ´Î´¥·¢Åö×²
+        // ç¦ç”¨ç‰©ç†é¿å…å†æ¬¡è§¦å‘ç¢°æ’
         orb.body.enable = false;
         if (typeof orb.body.setVelocity === "function") orb.body.setVelocity(0, 0);
       }
-      // ½«ÌùÍ¼ÏÔÊ¾³ß´çÉèÖÃÎªÖ±¾¶=8¸ñ
+      // å°†è´´å›¾æ˜¾ç¤ºå°ºå¯¸è®¾ç½®ä¸ºç›´å¾„=8æ ¼
       const explosionDiameter = 8 * TILE_SIZE;
       if (typeof orb.setDisplaySize === "function") {
         orb.setDisplaySize(explosionDiameter, explosionDiameter);
       }
       orb.setAlpha(0.5);
-      // 2ÃëÄÚµ­³ö
+      // 2ç§’å†…æ·¡å‡º
       this.tweens.add({
         targets: orb,
         alpha: 0,
@@ -5455,10 +5455,10 @@ castR() {
 
 
   tryFireBullet() {
-    // Ò«¹â¼ì²é
+    // è€€å…‰æ£€æŸ¥
     const canSpellblade = this.canTriggerSpellblade();
 
-    // ·ÇÔ¶³ÌÄ£Ê½²»·¢Éä
+    // éè¿œç¨‹æ¨¡å¼ä¸å‘å°„
     if (this.playerCombatMode !== "ranged") return;
 
     const rangePixels = statUnitsToPixels(this.playerStats.range);
@@ -5538,7 +5538,7 @@ castR() {
       this.physics.velocityFromRotation(angle, BULLET_SPEED, bolt.body.velocity);
       bolt.setRotation(angle + Math.PI / 2);
 
-      // ÈôÃ»ÓĞÄ¿±ê½Ç¶È£¨¼«¶ËÇé¿ö£©£¬Ê¹ÓÃÖ÷Éä½Ç±£Ö¤ÌùÍ¼·½Ïò
+      // è‹¥æ²¡æœ‰ç›®æ ‡è§’åº¦ï¼ˆæç«¯æƒ…å†µï¼‰ï¼Œä½¿ç”¨ä¸»å°„è§’ä¿è¯è´´å›¾æ–¹å‘
       if (!Number.isFinite(angle) && Number.isFinite(initialAngle)) {
         bolt.setRotation(initialAngle + Math.PI / 2);
       }
@@ -5758,7 +5758,7 @@ castR() {
 
     enemy.maxHp = tierConfig.hp ?? 100;
     enemy.hp = enemy.maxHp;
-    // µÚÊ®¹Øºó£ºËùÓĞ¹ÖÎï£¨·ÇBoss£©ÊôĞÔ°´ (1 + rank/10) ³ËËã
+    // ç¬¬åå…³åï¼šæ‰€æœ‰æ€ªç‰©ï¼ˆéBossï¼‰å±æ€§æŒ‰ (1 + rank/10) ä¹˜ç®—
     if (Math.floor(this.level || 0) > 10) {
       const rf = Math.max(0, Number.isFinite(this.rank) ? this.rank : 0) / 10;
       const factor = 1 + rf;
@@ -5766,10 +5766,10 @@ castR() {
         // HP
         enemy.maxHp = Math.max(1, Math.round(enemy.maxHp));
         enemy.hp = enemy.maxHp;
-        // ¹¥»÷Á¦/·¨Ç¿
+        // æ”»å‡»åŠ›/æ³•å¼º
         if (Number.isFinite(enemy.attackDamage)) enemy.attackDamage = Math.round(enemy.attackDamage * factor);
         if (Number.isFinite(enemy.abilityPower)) enemy.abilityPower = Math.round(enemy.abilityPower * factor);
-        // ½Ó´¥ÉËº¦ÑØÓÃ¹¥»÷Á¦
+        // æ¥è§¦ä¼¤å®³æ²¿ç”¨æ”»å‡»åŠ›
         if (Number.isFinite(enemy.contactDamage)) enemy.contactDamage = Math.round(enemy.contactDamage * factor);
       }
     }
@@ -5886,7 +5886,7 @@ handleQTalismanEnemyOverlap(projectile, enemy) {
   if (projectile.hitTargets.has(enemy)) return;
   projectile.hitTargets.add(enemy);
 
-  // ÎïÀíÉËº¦£º²»ÊÜ·¨Êõ¼Ó³ÉÓë·¨Êõ±©»÷Ó°Ïì
+  // ç‰©ç†ä¼¤å®³ï¼šä¸å—æ³•æœ¯åŠ æˆä¸æ³•æœ¯æš´å‡»å½±å“
   let rawDamage = Number.isFinite(projectile.physicalDamage) ? Math.max(0, Math.round(projectile.physicalDamage)) : 0;
   if (rawDamage <= 0) return;
 
@@ -5911,7 +5911,7 @@ handleQTalismanEnemyOverlap(projectile, enemy) {
   this.applyLiandryBurn(enemy);
 }
 
-// Q½üÕ½ÌùÍ¼ÖØµş½áËã£ºÄ§·¨ÉËº¦£¬°´ÌùÍ¼Åö×²ÅĞ¶¨
+// Qè¿‘æˆ˜è´´å›¾é‡å ç»“ç®—ï¼šé­”æ³•ä¼¤å®³ï¼ŒæŒ‰è´´å›¾ç¢°æ’åˆ¤å®š
 handleQMeleeSlashOverlap(slash, enemy) {
   if (!slash || slash.destroyed || !slash.active) return;
   if (!enemy || !enemy.active) return;
@@ -5922,7 +5922,7 @@ handleQMeleeSlashOverlap(slash, enemy) {
   const base = Number.isFinite(slash.meleeDamage) ? Math.max(0, Math.round(slash.meleeDamage)) : 0;
   if (base <= 0) return;
 
-  // ÈÔ°´·¨Êõ´¦Àí£º·¨Êõ¶îÍâÆ½A¼Ó³ÉÓëµÍÑª·¨±©
+  // ä»æŒ‰æ³•æœ¯å¤„ç†ï¼šæ³•æœ¯é¢å¤–å¹³AåŠ æˆä¸ä½è¡€æ³•æš´
   const spellFlat = Math.max(0, Math.round(this.playerEquipmentStats?.spellBonusMagicFlat || 0));
   let amount = base + spellFlat;
   let showType = "magic";
@@ -5959,28 +5959,28 @@ handleQMeleeSlashOverlap(slash, enemy) {
 
   handleBulletEnemyOverlap(bullet, enemy) {
     if (!enemy.active) return;  const now = this.time.now;
-    // ÆÕ¹¥ÃüÖĞÒôĞ§£¨Ô¶³Ì£©
+    // æ™®æ”»å‘½ä¸­éŸ³æ•ˆï¼ˆè¿œç¨‹ï¼‰
     this.playSfx("enemyhit");
     const preHp = enemy.hp;
 
   const entries = [];
 
-  // === »ù´¡ÉËº¦Óë±©»÷ÅĞ¶¨£¨ĞŞ¸´µã1£ºcritChance Í³Ò»Îª[0,1]£©===
+  // === åŸºç¡€ä¼¤å®³ä¸æš´å‡»åˆ¤å®šï¼ˆä¿®å¤ç‚¹1ï¼šcritChance ç»Ÿä¸€ä¸º[0,1]ï¼‰===
   const baseAttackStat = this.playerStats?.attackDamage ?? PLAYER_BASE_STATS.attackDamage ?? 0;
   const minimumBaseDamage = Math.ceil(Math.max(0, baseAttackStat) * 0.1);
 
   const rawBulletDamage = Number.isFinite(bullet?.damage) ? Math.round(bullet.damage) : 0;
   const baseDamage = Math.max(minimumBaseDamage, rawBulletDamage);
 
-  const critChanceRaw = this.playerStats?.critChance ?? 0;          // ¿ÉÄÜÊÇ0¨C1»ò0¨C100
+  const critChanceRaw = this.playerStats?.critChance ?? 0;          // å¯èƒ½æ˜¯0â€“1æˆ–0â€“100
   const critChance01 = critChanceRaw > 1 ? critChanceRaw / 100 : critChanceRaw;
-  const critChance = Math.min(1, Math.max(0, critChance01));       // ¼Ğ×¡±ß½ç
+  const critChance = Math.min(1, Math.max(0, critChance01));       // å¤¹ä½è¾¹ç•Œ
 
-  const critDamagePct = this.playerStats?.critDamage ?? 150;       // 150% = 1.5±¶
+  const critDamagePct = this.playerStats?.critDamage ?? 150;       // 150% = 1.5å€
   const isCrit = Math.random() < critChance;
   const finalDamage = isCrit ? Math.round(baseDamage * (critDamagePct / 100)) : baseDamage;
 
-  // ĞŞ¸´µã2£º²»Òª°Ñ¡°±©»÷¡±µ±³ÉÉËº¦ÀàĞÍ£»Ê¼ÖÕÓÃ physical/magic£¬±©»÷×÷Îª±ê¼Ç/À´Ô´
+  // ä¿®å¤ç‚¹2ï¼šä¸è¦æŠŠâ€œæš´å‡»â€å½“æˆä¼¤å®³ç±»å‹ï¼›å§‹ç»ˆç”¨ physical/magicï¼Œæš´å‡»ä½œä¸ºæ ‡è®°/æ¥æº
   entries.push({
     type: "physical",
     amount: finalDamage,
@@ -5990,7 +5990,7 @@ handleQMeleeSlashOverlap(slash, enemy) {
     isCrit,
   });
 
-// ¡ª¡ª£¨Ìæ»»Ô­¡°´¦ÀíÒ«¹âÉËº¦¡±Õû¶Î£©¡ª¡ª
+// â€”â€”ï¼ˆæ›¿æ¢åŸâ€œå¤„ç†è€€å…‰ä¼¤å®³â€æ•´æ®µï¼‰â€”â€”
 let spellbladeHit = null;
 if (this.nextAttackTriggersSpellblade) {
   spellbladeHit = this.consumeSpellbladeIfReady(enemy); // { amount, type, isSpellblade:true } | null
@@ -6006,7 +6006,7 @@ if (this.nextAttackTriggersSpellblade) {
     entries.push({ type: "magic", amount: flatOnHitMagic, source: "onhit_magic_flat", isOnHit: true });
   }
 
-  // === ×°±¸£ºÆÆ°ÜÍõÕßÖ®ÈĞ£¨Ê¾Àı³£Á¿Ãû±£³ÖÓëÔ­´úÂëÒ»ÖÂ£© ===
+  // === è£…å¤‡ï¼šç ´è´¥ç‹è€…ä¹‹åˆƒï¼ˆç¤ºä¾‹å¸¸é‡åä¿æŒä¸åŸä»£ç ä¸€è‡´ï¼‰ ===
   let tripleProc = false;
   if (this.hasItemEquipped(BROKEN_KINGS_BLADE_ID)) {
     const blade = EQUIPMENT_DATA[BROKEN_KINGS_BLADE_ID];
@@ -6033,7 +6033,7 @@ if (this.nextAttackTriggersSpellblade) {
     }
   }
 
-  // === ×°±¸£ºÖÇ»ÛÄ©ÈĞ ===
+  // === è£…å¤‡ï¼šæ™ºæ…§æœ«åˆƒ ===
   let witsOnHitDamagePerProc = 0;
   if (this.hasItemEquipped(WITS_END_ID)) {
     const eff = EQUIPMENT_DATA[WITS_END_ID].effects;
@@ -6041,7 +6041,7 @@ if (this.nextAttackTriggersSpellblade) {
     entries.push({ type: "magic", amount: witsOnHitDamagePerProc, source: "wits", isOnHit: true });
   }
 
-  // === ×°±¸£ºÄÉÊ²Ö®ÑÀ ===
+  // === è£…å¤‡ï¼šçº³ä»€ä¹‹ç‰™ ===
   if (this.hasItemEquipped(NASHORS_TOOTH_ID)) {
     const eff = EQUIPMENT_DATA[NASHORS_TOOTH_ID].effects;
     const bonusAD = Math.max(0, this.playerStats.attackDamage - PLAYER_BASE_STATS.attackDamage);
@@ -6050,7 +6050,7 @@ if (this.nextAttackTriggersSpellblade) {
     entries.push({ type: "magic", amount: nashorDmg, source: "nashor", isOnHit: true });
   }
 
-  // === ×°±¸£º¹íË÷µÄ¿ñ±©Ö®ÈĞ£¨¶îÍâ´¥·¢±¶Êı£© ===
+  // === è£…å¤‡ï¼šé¬¼ç´¢çš„ç‹‚æš´ä¹‹åˆƒï¼ˆé¢å¤–è§¦å‘å€æ•°ï¼‰ ===
   let extraProcMultiplier = 1;
   if (this.hasItemEquipped(GUINSOOS_RAGEBLADE_ID)) {
     const eff = EQUIPMENT_DATA[GUINSOOS_RAGEBLADE_ID].effects;
@@ -6095,7 +6095,7 @@ if (this.nextAttackTriggersSpellblade) {
     });
   }
 
-  // === ÉËº¦¹é²¢£¬½öÇø·Ö physical / magic Óë basic / onHit ===
+  // === ä¼¤å®³å½’å¹¶ï¼Œä»…åŒºåˆ† physical / magic ä¸ basic / onHit ===
   const damageGroups = {
     basic: { physical: 0, magic: 0 },
     onHit: { physical: 0, magic: 0 }
@@ -6111,7 +6111,7 @@ if (this.nextAttackTriggersSpellblade) {
       const group = e.isOnHit ? damageGroups.onHit : damageGroups.basic;
       group[e.type] += after;
 
-      // ÖÇ»ÛÄ©ÈĞÖÎÁÆ
+      // æ™ºæ…§æœ«åˆƒæ²»ç–—
       if (e.source === "wits") {
         const hpPct = this.currentHp / this.playerStats.maxHp;
         if (hpPct < (EQUIPMENT_DATA[WITS_END_ID].effects.witsHealThresholdHpPct || 0.5)) {
@@ -6123,10 +6123,10 @@ if (this.nextAttackTriggersSpellblade) {
     }
   }
 
-  // === ÏÔÊ¾£º»ù´¡ÎïÀíÉËº¦ÈôÀ´×Ô±©»÷£¬ÓÃ¡°crit¡±ÑùÊ½äÖÈ¾ ===
+  // === æ˜¾ç¤ºï¼šåŸºç¡€ç‰©ç†ä¼¤å®³è‹¥æ¥è‡ªæš´å‡»ï¼Œç”¨â€œcritâ€æ ·å¼æ¸²æŸ“ ===
   let displayOrder = 0;
 
-  // ÅĞ¶Ï±¾´ÎÊÇ·ñ·¢ÉúÁË»ù´¡±©»÷£¨²»ÒÀÀµ»ã×Ü½á¹¹£©
+  // åˆ¤æ–­æœ¬æ¬¡æ˜¯å¦å‘ç”Ÿäº†åŸºç¡€æš´å‡»ï¼ˆä¸ä¾èµ–æ±‡æ€»ç»“æ„ï¼‰
   const basicWasCrit = entries.some(e => !e.isOnHit && e.source === "basic_crit");
 
   // Infinity Orb: magic crit on low-HP targets
@@ -6176,17 +6176,17 @@ if (this.nextAttackTriggersSpellblade) {
       displayOrder++
     );
   }
-// ¡ª¡ª µ¥¶ÀÏÔÊ¾Ò«¹â£¨´ø¡°S¡±Ç°×º£¬ÑÕÉ«°´ type£© ¡ª¡ª
-// ×¢Òâ£ºÒ«¹â²»ÊÇ on-hit£¬²»²ÎÓëÄãµÄ basic/onHit ·Ö×é£»¶ÀÁ¢ÏÔÊ¾²¢¼ÆÈë×ÜÉËº¦¡£
+// â€”â€” å•ç‹¬æ˜¾ç¤ºè€€å…‰ï¼ˆå¸¦â€œSâ€å‰ç¼€ï¼Œé¢œè‰²æŒ‰ typeï¼‰ â€”â€”
+// æ³¨æ„ï¼šè€€å…‰ä¸æ˜¯ on-hitï¼Œä¸å‚ä¸ä½ çš„ basic/onHit åˆ†ç»„ï¼›ç‹¬ç«‹æ˜¾ç¤ºå¹¶è®¡å…¥æ€»ä¼¤å®³ã€‚
 let spellbladeDamage = 0;
 if (spellbladeHit && spellbladeHit.amount > 0) {
   spellbladeDamage = spellbladeHit.amount;
-  // Ê¹ÓÃ¶ÀÁ¢½Ó¿ÚÖ±½ÓÏÔÊ¾£¨´ø isSpellblade ±ê¼Ç£©
+  // ä½¿ç”¨ç‹¬ç«‹æ¥å£ç›´æ¥æ˜¾ç¤ºï¼ˆå¸¦ isSpellblade æ ‡è®°ï¼‰
   const stype = (spellbladeHit.type === "magic" && spellbladeHit.isSpellCrit) ? "spellcrit" : spellbladeHit.type;
   this.showDamageNumber(enemy.x, enemy.y, spellbladeDamage, stype, { isSpellblade: true });
 }
 
-  // === ¿ÛÑªÓëºóĞø´¦Àí ===
+  // === æ‰£è¡€ä¸åç»­å¤„ç† ===
 const totalDamage =
   damageGroups.basic.physical + damageGroups.basic.magic +
   damageGroups.onHit.physical + damageGroups.onHit.magic +
@@ -6207,13 +6207,13 @@ const totalDamage =
   if (enemy.hp <= 0) {
     this.killEnemy(enemy);
   } else {
-    // ÊÕ¼¯Õß´¦¾öÅĞ¶¨
+    // æ”¶é›†è€…å¤„å†³åˆ¤å®š
     this.maybeExecuteTheCollector(enemy);
   }
-  // Ñ¶ÈĞ£ºÆÕ¹¥ÃüÖĞ·µ»¹¼¼ÄÜÀäÈ´
+  // è®¯åˆƒï¼šæ™®æ”»å‘½ä¸­è¿”è¿˜æŠ€èƒ½å†·å´
   this.applyNavoriQuickbladesOnHitRefund();
 
-  // === ÎïÀíÎüÑª ===
+  // === ç‰©ç†å¸è¡€ ===
   const ls = this.playerEquipmentStats.physicalLifeSteal ?? 0;
   if (ls > 0) {
     const physicalTotal = damageGroups.basic.physical + damageGroups.onHit.physical;
@@ -6253,7 +6253,7 @@ const totalDamage =
 
     if (this.hasTiamat && this.tiamatCleaveRadius > 0) {
       const flat = Number.isFinite(this.tiamatCleaveFlat) ? Math.max(0, Math.round(this.tiamatCleaveFlat)) : 0;
-      const cleaveDamage = flat > 0 ? flat : 30; // ¶µµ×¹Ì¶¨ 30
+      const cleaveDamage = flat > 0 ? flat : 30; // å…œåº•å›ºå®š 30
       this.spawnCleaveArea(
         "item_effect_tiamat",
         hitEnemy.x, hitEnemy.y,
@@ -6302,21 +6302,21 @@ const totalDamage =
     return sprite;
   }
 
-  // Ê¹ÓÃÌØĞ§ÌùÍ¼µÄÅö×²·¶Î§½øĞĞ½áËã
+  // ä½¿ç”¨ç‰¹æ•ˆè´´å›¾çš„ç¢°æ’èŒƒå›´è¿›è¡Œç»“ç®—
   spawnCleaveArea(textureKey, x, y, angle, radiusPx, damage, damageType, excludeEnemy) {
     const visual = this.spawnCleaveVisual(textureKey, x, y, angle, radiusPx);
-    // ´´½¨ÎïÀíÅö×²ÌùÍ¼£¬Ê¹ÓÃÔ²ĞÎÅĞ¶¨
+    // åˆ›å»ºç‰©ç†ç¢°æ’è´´å›¾ï¼Œä½¿ç”¨åœ†å½¢åˆ¤å®š
     const effect = this.physics.add.image(x, y, textureKey).setDepth(6);
     effect.setOrigin(0.5, 0.5);
     effect.setRotation(angle + Math.PI / 2);
-    effect.setAlpha(0.001); // ¼¸ºõ²»¿É¼û£¬ÊÓ¾õ½»¸ø visual
+    effect.setAlpha(0.001); // å‡ ä¹ä¸å¯è§ï¼Œè§†è§‰äº¤ç»™ visual
     effect.body.setAllowGravity(false);
     effect.body.setImmovable(true);
-    // °ë¾¶/Ö±¾¶£ºÓëÏÔÊ¾´óĞ¡Ò»ÖÂ
+    // åŠå¾„/ç›´å¾„ï¼šä¸æ˜¾ç¤ºå¤§å°ä¸€è‡´
     const r = Math.max(0, Math.round(radiusPx || 0));
     const d = Math.max(1, r * 2);
     effect.setDisplaySize(d, d);
-    // ÎïÀíÔ²£ºArcade Physics µÄ setCircle Ê¹ÓÃ±¾µØ³ß´ç£¬ĞèÒª¾ÓÖĞÆ«ÒÆ
+    // ç‰©ç†åœ†ï¼šArcade Physics çš„ setCircle ä½¿ç”¨æœ¬åœ°å°ºå¯¸ï¼Œéœ€è¦å±…ä¸­åç§»
     const frameW = effect.width || d;
     const frameH = effect.height || d;
     const offsetX = Math.max(0, (frameW / 2) - r);
@@ -6338,7 +6338,7 @@ const totalDamage =
       else this.maybeExecuteTheCollector(enemy);
       effect.hitSet.add(enemy);
     });
-    // ¶¨Ê±Ïú»ÙÅö×²Ìå
+    // å®šæ—¶é”€æ¯ç¢°æ’ä½“
     this.time.delayedCall(360, () => {
       if (collider && typeof collider.destroy === "function") collider.destroy();
       if (effect && effect.destroy) effect.destroy();
@@ -6346,7 +6346,7 @@ const totalDamage =
     return { visual, effect };
   }
 
-  // ×Óµ¯×²Ç½µÄ±¬Õ¨ÊÓ¾õ£º0.5¸ñ´óĞ¡£¬0.5Ãëµ­³ö
+  // å­å¼¹æ’å¢™çš„çˆ†ç‚¸è§†è§‰ï¼š0.5æ ¼å¤§å°ï¼Œ0.5ç§’æ·¡å‡º
   spawnWallHitExplosion(x, y) {
     try {
       const size = TILE_SIZE * 1.5;
@@ -6462,7 +6462,7 @@ const totalDamage =
     enemy.liandryTimer = this.time.addEvent({ delay: 250, repeat: ticks - 1, callback: doTick });
   }
 
-  // ÊÕ¼¯Õß£ºÈôÄ¿±êÎ´ËÀÇÒÑªÁ¿µÍÓÚ´¦¾öãĞÖµ£¬ÔòÇ¿ÖÆ»÷É±²¢µôÂä¶îÍâ½ğ±Ò¡£
+  // æ”¶é›†è€…ï¼šè‹¥ç›®æ ‡æœªæ­»ä¸”è¡€é‡ä½äºå¤„å†³é˜ˆå€¼ï¼Œåˆ™å¼ºåˆ¶å‡»æ€å¹¶æ‰è½é¢å¤–é‡‘å¸ã€‚
   maybeExecuteTheCollector(enemy) {
     if (!enemy || !enemy.active) return false;
     if (!this.hasItemEquipped(THE_COLLECTOR_ID)) return false;
@@ -6470,11 +6470,11 @@ const totalDamage =
     const threshold = Number.isFinite(eff.executeThresholdPct) ? eff.executeThresholdPct : 0.05;
     const hpPct = (enemy.maxHp || 1) > 0 ? (enemy.hp / (enemy.maxHp || 1)) : 0;
     if (enemy.hp > 0 && hpPct <= threshold) {
-      // °×É«¡°ÕæÉË9999¡±ÏÔÊ¾
-      this.showDamageNumber(enemy.x, enemy.y, "ÕæÉË9999", "true");
-      // ±ê¼ÇÒÔ±ÜÃâÔÚ killEnemy ÔÙ´ÎÏÔÊ¾
+      // ç™½è‰²â€œçœŸä¼¤9999â€æ˜¾ç¤º
+      this.showDamageNumber(enemy.x, enemy.y, "çœŸä¼¤9999", "true");
+      // æ ‡è®°ä»¥é¿å…åœ¨ killEnemy å†æ¬¡æ˜¾ç¤º
       enemy._collectorExecuteDisplayed = true;
-      // µôÂä¶îÍâ½ğ±Ò
+      // æ‰è½é¢å¤–é‡‘å¸
       const bonus = Number.isFinite(eff.executeBonusGold) ? Math.max(0, eff.executeBonusGold) : 0;
       if (bonus > 0) this.dropFixedPoints(enemy.x, enemy.y, bonus);
       this.killEnemy(enemy);
@@ -6483,7 +6483,7 @@ const totalDamage =
     return false;
   }
 
-  // Ñ¶ÈĞ£ºÆÕ¹¥ÃüÖĞÊ±£¬¼õÉÙµ±Ç°¼¼ÄÜÊ£ÓàÀäÈ´
+  // è®¯åˆƒï¼šæ™®æ”»å‘½ä¸­æ—¶ï¼Œå‡å°‘å½“å‰æŠ€èƒ½å‰©ä½™å†·å´
   applyNavoriQuickbladesOnHitRefund() {
     if (!this.hasItemEquipped(NAVORI_QUICKBLADES_ID)) return;
     const eff = EQUIPMENT_DATA[NAVORI_QUICKBLADES_ID]?.effects || {};
@@ -6503,18 +6503,22 @@ const totalDamage =
 
   handlePlayerEnemyContact(_player, enemy) {
     const now = this.time.now;
-    if (enemy && enemy.isChest) return;    // Boss collision damage judge area tweak: Rin/Utsuho -> 1 tile diameter
-    if (enemy?.isBoss && (enemy.bossKind === "Rin" || enemy.bossKind === "Utsuho")) {
-      const dx = (_player?.x ?? 0) - (enemy?.x ?? 0);
-      const dy = (_player?.y ?? 0) - (enemy?.y ?? 0);
-      const distSq = dx*dx + dy*dy;
-      const judgeRadius = TILE_SIZE / 2; // 1 tile diameter
-      if (distSq > judgeRadius * judgeRadius) {
-        return; // outside 1-tile contact zone; ignore contact damage
-      }
-    }
+    if (enemy && enemy.isChest) return;
     if (!enemy.lastDamageTick || now - enemy.lastDamageTick >= 650) {
-      /* ĞŞ¸Ä£ºBoss ½Ó´¥ÉËº¦°´BossÅäÖÃ£¬·ñÔòÓÃÄ¬ÈÏ³£Á¿£¬²»¸Ä±äÔ­ÓĞÂß¼­ */
+      /* ä¿®æ”¹ï¼šBoss æ¥è§¦ä¼¤å®³æŒ‰Bossé…ç½®ï¼Œå¦åˆ™ç”¨é»˜è®¤å¸¸é‡ï¼Œä¸æ”¹å˜åŸæœ‰é€»è¾‘ */
+      // Restrict boss contact damage to a 1-tile judge area for Rin and Utsuho
+      if (enemy?.isBoss) {
+        const kind = enemy.bossKind || enemy.id || "";
+        if (kind === "Rin" || kind === "Utsuho") {
+          const dx = (this.player?.x ?? 0) - (enemy.x ?? 0);
+          const dy = (this.player?.y ?? 0) - (enemy.y ?? 0);
+          const dist = Math.hypot(dx, dy);
+          const contactJudgeRadius = TILE_SIZE / 2; // 1 tile diameter => 8px radius
+          if (!(Number.isFinite(dist) && dist <= contactJudgeRadius)) {
+            return;
+          }
+        }
+      }
       const dmg = (enemy.isBoss && enemy.contactDamage) ? enemy.contactDamage : ENEMY_CONTACT_DAMAGE;
       this.applyDamageToPlayer(dmg, enemy);
       enemy.lastDamageTick = now;
@@ -6522,49 +6526,49 @@ const totalDamage =
   }
 
   canTriggerSpellblade(now = this.time.now) {
-    const SPELLBLADE_COOLDOWN = 1500; // 1.5ÃëÀäÈ´Ê±¼ä
+    const SPELLBLADE_COOLDOWN = 1500; // 1.5ç§’å†·å´æ—¶é—´
     return now - this.lastSpellbladeUsedAt >= SPELLBLADE_COOLDOWN;
   }
 
-  // ´¦ÀíÒ«¹â×°±¸µÄÉËº¦
-// ===¡¾Ìæ»»¡¿Ô­ dealSpellbladeDamage£¬²¢ĞÂÔö consumeSpellbladeIfReady ===
+  // å¤„ç†è€€å…‰è£…å¤‡çš„ä¼¤å®³
+// ===ã€æ›¿æ¢ã€‘åŸ dealSpellbladeDamageï¼Œå¹¶æ–°å¢ consumeSpellbladeIfReady ===
 
-// ¼ÆËãÒ«¹âÉËº¦£¨°´×°±¸effectsÍ¨ÓÃ×Ö¶Î×éºÏ£©
+// è®¡ç®—è€€å…‰ä¼¤å®³ï¼ˆæŒ‰è£…å¤‡effectsé€šç”¨å­—æ®µç»„åˆï¼‰
 computeSpellbladeDamageFor(item, enemy) {
   if (!item?.effects || !enemy) return null;
   const eff = item.effects;
-  const baseAD = PLAYER_BASE_STATS.attackDamage;            // »ù´¡AD£¨base AD£©
-  const ad     = this.playerStats?.attackDamage || 0;       // Ãæ°åAD
-  const ap     = this.playerStats?.abilityPower || 0;       // Ãæ°åAP
+  const baseAD = PLAYER_BASE_STATS.attackDamage;            // åŸºç¡€ADï¼ˆbase ADï¼‰
+  const ad     = this.playerStats?.attackDamage || 0;       // é¢æ¿AD
+  const ap     = this.playerStats?.abilityPower || 0;       // é¢æ¿AP
   const tMaxHp = enemy.maxHp || enemy.maxHealth || 0;
 
   let raw = 0;
-  // Í¨ÓÃÖ§³Ö£º»ù´¡AD/Ãæ°åAD/AP/×î´óÉúÃü/Æ½Ö±ÉËº¦£¨ÄÄ¸öÓĞ¾Í¼ÓÄÄ¸ö£©
+  // é€šç”¨æ”¯æŒï¼šåŸºç¡€AD/é¢æ¿AD/AP/æœ€å¤§ç”Ÿå‘½/å¹³ç›´ä¼¤å®³ï¼ˆå“ªä¸ªæœ‰å°±åŠ å“ªä¸ªï¼‰
   if (Number.isFinite(eff.spellbladeBaseAdPct)) raw += baseAD * eff.spellbladeBaseAdPct;
   if (Number.isFinite(eff.spellbladeAdRatio))   raw += ad     * eff.spellbladeAdRatio;
   if (Number.isFinite(eff.spellbladeApRatio))   raw += ap     * eff.spellbladeApRatio;
   if (Number.isFinite(eff.spellbladeMaxHpPct))  raw += tMaxHp * eff.spellbladeMaxHpPct;
   if (Number.isFinite(eff.spellbladeFlat))      raw += eff.spellbladeFlat;
 
-  // ÉÏÏŞ£¨Çø·Öboss/·Çboss£©
+  // ä¸Šé™ï¼ˆåŒºåˆ†boss/ébossï¼‰
   const cap = enemy.isBoss
     ? eff.spellbladeMaxDamageBoss
     : eff.spellbladeMaxDamageNonBoss;
   if (Number.isFinite(cap)) raw = Math.min(raw, cap);
 
-  // ÉËº¦ÀàĞÍ£¨Ä¬ÈÏÎïÀí£»¸ö±ğÈçÎ×ÑıÖ®»öÎª·¨Êõ£©
+  // ä¼¤å®³ç±»å‹ï¼ˆé»˜è®¤ç‰©ç†ï¼›ä¸ªåˆ«å¦‚å·«å¦–ä¹‹ç¥¸ä¸ºæ³•æœ¯ï¼‰
   const dmgType = eff.spellbladeDamageType === "magic" ? "magic" : "physical";
 
-  // ÊÇ·ñ¿É±©»÷£¨ÀıÈçÎüÀ¶µ¶£©
+  // æ˜¯å¦å¯æš´å‡»ï¼ˆä¾‹å¦‚å¸è“åˆ€ï¼‰
   let isCrit = false;
   if (eff.spellbladeCanCrit) {
     const critChance01 = (this.playerStats?.critChance || 0) > 1
       ? (this.playerStats.critChance / 100)
       : (this.playerStats?.critChance || 0);
     if (Math.random() < Math.min(1, Math.max(0, critChance01))) {
-      const critPct = this.playerStats?.critDamage || 150; // 150% = 1.5±¶
+      const critPct = this.playerStats?.critDamage || 150; // 150% = 1.5å€
       raw = Math.round(raw * (critPct / 100));
-      isCrit = true; // ½öÓÃÓÚÄÚ²¿±ê¼Ç£»ÏÔÊ¾ÈÔÓÃ SÇ°×º¶ø²»ÊÇ±©»÷ºì×Ö
+      isCrit = true; // ä»…ç”¨äºå†…éƒ¨æ ‡è®°ï¼›æ˜¾ç¤ºä»ç”¨ Så‰ç¼€è€Œä¸æ˜¯æš´å‡»çº¢å­—
     }
   }
 
@@ -6585,13 +6589,13 @@ computeSpellbladeDamageFor(item, enemy) {
     }
   }
 
-  // ½áËã¼õÉË£¬µÃ³öÊµ¼ÊÉËº¦
+  // ç»“ç®—å‡ä¼¤ï¼Œå¾—å‡ºå®é™…ä¼¤å®³
   const dealt = this.applyMitigationToTarget(Math.round(raw), enemy, this.playerStats, dmgType, 1);
 
   return { amount: dealt, type: dmgType, isCrit, isSpellCrit };
 }
 
-// ÏûºÄ¡°ÏÂÒ»»÷´¥·¢Ò«¹â¡±±ê¼Ç²¢·µ»Ø½áËãÌõÄ¿£¨¹©ÃüÖĞÁ÷³ÌºÏ²¢£©
+// æ¶ˆè€—â€œä¸‹ä¸€å‡»è§¦å‘è€€å…‰â€æ ‡è®°å¹¶è¿”å›ç»“ç®—æ¡ç›®ï¼ˆä¾›å‘½ä¸­æµç¨‹åˆå¹¶ï¼‰
 consumeSpellbladeIfReady(enemy) {
   if (!this.nextAttackTriggersSpellblade) return null;
 
@@ -6601,26 +6605,26 @@ consumeSpellbladeIfReady(enemy) {
   const item = this.getEquipmentDefinition(itemId);
   if (!item) return null;
 
-  // Éú³ÉÉËº¦
+  // ç”Ÿæˆä¼¤å®³
   const result = this.computeSpellbladeDamageFor(item, enemy);
   if (!result || result.amount <= 0) {
-    // ¼´±ãÃ»ÓĞÉËº¦£¬Ò²ÒªÏûºÄ±ê¼Ç²¢½øÈëCD
+    // å³ä¾¿æ²¡æœ‰ä¼¤å®³ï¼Œä¹Ÿè¦æ¶ˆè€—æ ‡è®°å¹¶è¿›å…¥CD
     this.nextAttackTriggersSpellblade = false;
     this.lastSpellbladeUsedAt = this.time.now;
     return null;
   }
 
-  // ÌØĞ§£º°´²»Í¬Ò«¹â×°±¸Ö´ĞĞ¶îÍâĞ§¹û£¨ËÙ¶È¡¢¼õËÙÈ¦µÈ£©
+  // ç‰¹æ•ˆï¼šæŒ‰ä¸åŒè€€å…‰è£…å¤‡æ‰§è¡Œé¢å¤–æ•ˆæœï¼ˆé€Ÿåº¦ã€å‡é€Ÿåœˆç­‰ï¼‰
   const eff = item.effects || {};
-  // ÈıÏà£ºÒÆËÙ
+  // ä¸‰ç›¸ï¼šç§»é€Ÿ
   if (eff.spellbladeMoveSpeed && eff.spellbladeMoveSpeedDurationMs) {
     this.addPlayerSpeedBuff(eff.spellbladeMoveSpeed, eff.spellbladeMoveSpeedDurationMs);
   }
-  // ±ùÈ­£º¼õËÙÈ¦
+  // å†°æ‹³ï¼šå‡é€Ÿåœˆ
   if (item.id === "frostfireGauntlet" || eff.frostSlowRadiusBase != null || eff.frostSlowRadiusArmorRatio != null) {
     const adDamage = (this.playerStats?.attackDamage || 0) * (eff.spellbladeAdRatio || 0);
     const armorDamage = (this.playerStats?.armor || 0) * (eff.spellbladeArmorRatio || 0);
-    // ¾ÉÊı¾İ¼æÈİ£ºÈç¹ûÉÏÃæÒÑ¾­ÔÚ compute ½×¶ÎËã¹ı£¬¾Í²»ÖØ¸´¼Ó£»ÕâÀïÖ»´¦Àí·¶Î§¼õËÙÓëÊÓ¾õ
+    // æ—§æ•°æ®å…¼å®¹ï¼šå¦‚æœä¸Šé¢å·²ç»åœ¨ compute é˜¶æ®µç®—è¿‡ï¼Œå°±ä¸é‡å¤åŠ ï¼›è¿™é‡Œåªå¤„ç†èŒƒå›´å‡é€Ÿä¸è§†è§‰
     const slowR = (eff.frostSlowRadiusBase || 0) + (this.playerStats?.armor || 0) * (eff.frostSlowRadiusArmorRatio || 0);
     if (slowR > 0) {
       this.createIceEffect(enemy.x, enemy.y, slowR);
@@ -6628,22 +6632,22 @@ consumeSpellbladeIfReady(enemy) {
     }
   }
 
-  // ÏûºÄÓë½øÈëCD
+  // æ¶ˆè€—ä¸è¿›å…¥CD
   this.nextAttackTriggersSpellblade = false;
   this.lastSpellbladeUsedAt = this.time.now;
 
-  // ·µ»ØÒ»¸ö¹©ÃüÖĞÁ÷³ÌºÏ²¢Óë¶ÀÁ¢ÏÔÊ¾µÄ¡°Ò«¹â¡±ÌõÄ¿
+  // è¿”å›ä¸€ä¸ªä¾›å‘½ä¸­æµç¨‹åˆå¹¶ä¸ç‹¬ç«‹æ˜¾ç¤ºçš„â€œè€€å…‰â€æ¡ç›®
   return { amount: result.amount, type: result.type, isSpellblade: true };
 }
 
-  // ´´½¨±ù¶³Ğ§¹ûµÄÊÓ¾õ±íÏÖ
+  // åˆ›å»ºå†°å†»æ•ˆæœçš„è§†è§‰è¡¨ç°
   createIceEffect(x, y, radius) {
     const iceEffect = this.add.sprite(x, y, 'ice_effect');
-    iceEffect.setScale(radius / 50); // ¸ù¾İ·¶Î§µ÷Õû´óĞ¡
+    iceEffect.setScale(radius / 50); // æ ¹æ®èŒƒå›´è°ƒæ•´å¤§å°
     iceEffect.setAlpha(0.5);
     iceEffect.setDepth(7);
     
-    // Ìí¼Óµ­³ö¶¯»­
+    // æ·»åŠ æ·¡å‡ºåŠ¨ç”»
     this.tweens.add({
       targets: iceEffect,
       alpha: 0,
@@ -6655,7 +6659,7 @@ consumeSpellbladeIfReady(enemy) {
     });
   }
 
-  // ¶Ô·¶Î§ÄÚµÄµĞÈËÓ¦ÓÃ¼õËÙĞ§¹û
+  // å¯¹èŒƒå›´å†…çš„æ•Œäººåº”ç”¨å‡é€Ÿæ•ˆæœ
   applySlowInArea(centerX, centerY, radius, slowAmount) {
     const enemies = this.enemies.getChildren();
     const radiusSq = radius * radius;
@@ -6670,14 +6674,14 @@ consumeSpellbladeIfReady(enemy) {
     });
   }
 
-  // ¶Ôµ¥¸öµĞÈËÓ¦ÓÃ¼õËÙĞ§¹û
+  // å¯¹å•ä¸ªæ•Œäººåº”ç”¨å‡é€Ÿæ•ˆæœ
   applySlowEffect(enemy, slowAmount) {
-    // ±£´æÔ­Ê¼ËÙ¶È
+    // ä¿å­˜åŸå§‹é€Ÿåº¦
     if (!enemy.originalSpeed) {
       enemy.originalSpeed = enemy.body.velocity.length();
     }
     
-    // Ó¦ÓÃ¼õËÙ
+    // åº”ç”¨å‡é€Ÿ
     const newSpeed = enemy.originalSpeed * (1 - slowAmount);
     const currentVelocity = enemy.body.velocity;
     const angle = Math.atan2(currentVelocity.y, currentVelocity.x);
@@ -6687,7 +6691,7 @@ consumeSpellbladeIfReady(enemy) {
       Math.sin(angle) * newSpeed
     );
     
-    // 2Ãëºó»Ö¸´ËÙ¶È
+    // 2ç§’åæ¢å¤é€Ÿåº¦
     this.time.delayedCall(2000, () => {
       if (!enemy.active) return;
       
@@ -6700,12 +6704,12 @@ consumeSpellbladeIfReady(enemy) {
     });
   }
 
-  // Ìí¼ÓÍæ¼ÒËÙ¶È¼Ó³É
+  // æ·»åŠ ç©å®¶é€Ÿåº¦åŠ æˆ
   addPlayerSpeedBuff(amount, duration) {
     const currentSpeed = this.playerStats.moveSpeed;
     this.playerStats.moveSpeed += amount;
     
-    // durationºÁÃëºó»Ö¸´ËÙ¶È
+    // durationæ¯«ç§’åæ¢å¤é€Ÿåº¦
     this.time.delayedCall(duration, () => {
       this.playerStats.moveSpeed = currentSpeed;
     });
@@ -6719,7 +6723,7 @@ consumeSpellbladeIfReady(enemy) {
     const actual = this.applyMitigationToTarget(Math.round(amount), this.playerStats, sourceStats, "physical");
     this.showDamageNumber(this.player.x, this.player.y - 12, actual, "physical", true);
     this.currentHp = Math.max(this.currentHp - actual, 0);
-    // ¹Ø¿¨10£ºµĞ·½ÉËº¦¶îÍâÔì³É 10%µ±Ç°ÉúÃüÖµ + rank µÄÍ¬ÊôĞÔÉËº¦
+    // å…³å¡10ï¼šæ•Œæ–¹ä¼¤å®³é¢å¤–é€ æˆ 10%å½“å‰ç”Ÿå‘½å€¼ + rank çš„åŒå±æ€§ä¼¤å®³
     if (Math.floor(this.level || 0) > 10) {
       const bonusRaw = Math.max(0, Math.round(hpBefore * 0.10) + Math.round(this.rank || 0));
       if (bonusRaw > 0) {
@@ -6735,7 +6739,7 @@ consumeSpellbladeIfReady(enemy) {
     this.lastDamageTimestamp = now;
     this.nextNoDamageRankCheck = now + NO_DAMAGE_RANK_INTERVAL;
 
-    // ·´¼×£º·´ÉË¸ø¹¥»÷Õß£¨Ä§·¨ÉËº¦£©
+    // åç”²ï¼šåä¼¤ç»™æ”»å‡»è€…ï¼ˆé­”æ³•ä¼¤å®³ï¼‰
     if (sourceStats && typeof sourceStats === "object" && sourceStats.active) {
       const thBase = Math.max(0, this.playerEquipmentStats?.thornsBase || 0);
       const thRatio = Math.max(0, this.playerEquipmentStats?.thornsArmorRatio || 0);
@@ -6757,7 +6761,7 @@ consumeSpellbladeIfReady(enemy) {
       }
     }
 
-    // ÉËº¦ºó³¢ÊÔ×Ô¶¯ºÈÒ©
+    // ä¼¤å®³åå°è¯•è‡ªåŠ¨å–è¯
     this.tryAutoUsePotions?.();
     if (this.currentHp <= 0) this.gameOver();
     else this.playSfx("player_gethit");
@@ -6766,12 +6770,12 @@ consumeSpellbladeIfReady(enemy) {
 
   killEnemy(enemy) {
     this.playSfx("enemyexploded");
-    // Rin µÚÈı½×¶Î£ºÁ¬ËøÕÙ»½Âß¼­
+    // Rin ç¬¬ä¸‰é˜¶æ®µï¼šè¿é”å¬å”¤é€»è¾‘
     if (this.boss && this.boss.isBoss && this.boss.bossKind === "Rin") {
       const ai = this.boss.ai || {};
       if (ai.mode === 3) {
         try {
-          // Ã¿É±ËÀ5¸öÃ«Óñ -> ÕÙ»½1¸ö basic Ñı¾«
+          // æ¯æ€æ­»5ä¸ªæ¯›ç‰ -> å¬å”¤1ä¸ª basic å¦–ç²¾
           if (enemy.enemyType === "kedama") {
             ai.m3_counts = ai.m3_counts || { kedamaKills: 0 };
             ai.m3_counts.kedamaKills += 1;
@@ -6783,7 +6787,7 @@ consumeSpellbladeIfReady(enemy) {
               }
             }
           }
-          // Ã¿É±ËÀÒ»¸ö basic Ñı¾« -> ÕÙ»½Ò»¸ö basic ÒõÑôÓñ
+          // æ¯æ€æ­»ä¸€ä¸ª basic å¦–ç²¾ -> å¬å”¤ä¸€ä¸ª basic é˜´é˜³ç‰
           if (enemy.enemyType === "yousei" && enemy.enemyTier === ENEMY_RARITIES.BASIC) {
             const typeKey = "orb"; const tierKey = ENEMY_RARITIES.BASIC; const typeConfig = ENEMY_TYPE_CONFIG[typeKey]; const tierConfig = typeConfig?.tiers?.[tierKey];
             if (typeConfig && tierConfig) {
@@ -6791,7 +6795,7 @@ consumeSpellbladeIfReady(enemy) {
               this.spawnEnemyWithEffect({ typeKey, tierKey, typeConfig, tierConfig }, pos);
             }
           }
-          // Ã¿É±ËÀÒ»¸öÈÎÒâµ¥Î» -> ¶îÍâÕÙ»½Ò»¸öÑı¾«Ê¬Ìå£¨²»¼ÆÈëÇåÆÁ£©
+          // æ¯æ€æ­»ä¸€ä¸ªä»»æ„å•ä½ -> é¢å¤–å¬å”¤ä¸€ä¸ªå¦–ç²¾å°¸ä½“ï¼ˆä¸è®¡å…¥æ¸…å±ï¼‰
           if (!enemy.isRinCorpse) {
             const c = this.spawnRinCorpse(enemy.x, enemy.y);
             if (c && c.body) {
@@ -6799,7 +6803,7 @@ consumeSpellbladeIfReady(enemy) {
               this.physics.velocityFromRotation(ang, 150, c.body.velocity);
             }
           }
-          // P3£ºËÀÒ»¸öË¢Ò»¸ö£¨×ÜÁ¿ÉÏÏŞ 250£©
+          // P3ï¼šæ­»ä¸€ä¸ªåˆ·ä¸€ä¸ªï¼ˆæ€»é‡ä¸Šé™ 250ï¼‰
           if (Number.isFinite(ai.m3_totalToSpawn) && Number.isFinite(ai.m3_spawned) && ai.m3_spawned < ai.m3_totalToSpawn) {
             const typeKey = "kedama"; const tierKey = ENEMY_RARITIES.BASIC;
             const typeConfig = ENEMY_TYPE_CONFIG[typeKey]; const tierConfig = typeConfig?.tiers?.[tierKey];
@@ -6813,14 +6817,14 @@ consumeSpellbladeIfReady(enemy) {
         } catch (_) {}
       }
     }
-    // ĞŞ¸Ä£ºUtsuhoËÀÍöÌùÍ¼£»Ğ¡¹Ö±£³ÖÔ­ÌùÍ¼²¢×öµ­³öĞ§¹û
+    // ä¿®æ”¹ï¼šUtsuhoæ­»äº¡è´´å›¾ï¼›å°æ€ªä¿æŒåŸè´´å›¾å¹¶åšæ·¡å‡ºæ•ˆæœ
     if (enemy.isBoss && enemy.bossKind === "Utsuho") {
       enemy.setTexture(BOSS_UTSUHO_CONFIG.textureDeath);
     } else {
-      // Ğ¡¹Ö£ºÊ¹ÓÃÔ­ÌùÍ¼¾²Ö¹ÔÚÔ­µØ£¬ÁÁ¶ÈÓëÍ¸Ã÷¶È½µµ½50%£¬Ëæºó2ÃëÄÚ½µÖÁ0²¢É¾³ı
+      // å°æ€ªï¼šä½¿ç”¨åŸè´´å›¾é™æ­¢åœ¨åŸåœ°ï¼Œäº®åº¦ä¸é€æ˜åº¦é™åˆ°50%ï¼Œéšå2ç§’å†…é™è‡³0å¹¶åˆ é™¤
       if (enemy.anims && enemy.anims.isPlaying) enemy.anims.stop();
       enemy.setAlpha(0.5);
-      enemy.setTint(0x808080); // Ô¼µÈÓÚ50%ÁÁ¶È
+      enemy.setTint(0x808080); // çº¦ç­‰äº50%äº®åº¦
       const deathFx = { factor: 0.5 };
       this.tweens.add({
         targets: deathFx,
@@ -6848,9 +6852,9 @@ consumeSpellbladeIfReady(enemy) {
     this.applyDarkSealKillProgress(enemy);
     this.applyBailouMomentumOnKill();
 
-    // ÊÕ¼¯Õß£ºÖ»Òª×°±¸Õß»÷É±£¬ÏÔÊ¾°×É«¡°ÕæÉË9999¡±
+    // æ”¶é›†è€…ï¼šåªè¦è£…å¤‡è€…å‡»æ€ï¼Œæ˜¾ç¤ºç™½è‰²â€œçœŸä¼¤9999â€
     if (this.hasItemEquipped(THE_COLLECTOR_ID) && !enemy._collectorExecuteDisplayed) {
-      this.showDamageNumber(enemy.x, enemy.y, "ÕæÉË9999", "true");
+      this.showDamageNumber(enemy.x, enemy.y, "çœŸä¼¤9999", "true");
     }
 
     // Soulstealer Codex: refund 25% of current remaining cooldowns
@@ -6869,22 +6873,22 @@ consumeSpellbladeIfReady(enemy) {
       this.updateSkillCooldownUI?.();
     }
 
-    // BossËÀÍöÊÕÎ²
+    // Bossæ­»äº¡æ”¶å°¾
     if (enemy.isBoss) {
       this.clearBossUI();
       if (this.bossMusic) { this.bossMusic.stop(); this.bossMusic.destroy(); this.bossMusic = null; }
       this.boss = null;
       this.bossKind = null;
-      // Çå¿ÕËùÓĞBossµ¯Ä»
+      // æ¸…ç©ºæ‰€æœ‰Bosså¼¹å¹•
       this.clearBossBullets();
-      // Boss¹Ø¿¨£º»÷É±BossÊÓÎª¹Ø¿¨Íê³É -> ´ò¿ªÉÌµê£¨Ìæ´úµ¹¼ÆÊ±Ìõ¼ş£©
+      // Bosså…³å¡ï¼šå‡»æ€Bossè§†ä¸ºå…³å¡å®Œæˆ -> æ‰“å¼€å•†åº—ï¼ˆæ›¿ä»£å€’è®¡æ—¶æ¡ä»¶ï¼‰
       if (this.isBossStage) {
         this.isBossStage = false;
         this.handleRoundComplete();
       }
     }
 
-    // ÇåÀí¸ÃµĞÈËÒÑ·¢³öµÄµ¯Ä»£¨·ÀÖ¹µĞÈËËÀÍöºó×Óµ¯²ĞÁô£©
+    // æ¸…ç†è¯¥æ•Œäººå·²å‘å‡ºçš„å¼¹å¹•ï¼ˆé˜²æ­¢æ•Œäººæ­»äº¡åå­å¼¹æ®‹ç•™ï¼‰
     if (this.bossBullets) {
       const bs = this.bossBullets.getChildren();
       for (let i = bs.length - 1; i >= 0; i -= 1) {
@@ -6893,7 +6897,7 @@ consumeSpellbladeIfReady(enemy) {
       }
     }
 
-    // Ğ¡¹ÖµÄÉ¾³ıÓÉÉÏÃæµÄ2Ãëµ­³öTweenÍê³É£»BossÈÔ°´Ô­Âß¼­ÑÓ³ÙÉ¾³ı
+    // å°æ€ªçš„åˆ é™¤ç”±ä¸Šé¢çš„2ç§’æ·¡å‡ºTweenå®Œæˆï¼›Bossä»æŒ‰åŸé€»è¾‘å»¶è¿Ÿåˆ é™¤
     if (enemy.isChest) {
       this.handleChestDeathRewards(enemy);
     } else {
@@ -6909,7 +6913,7 @@ if (enemy.isBoss) {
 
   }
 
-/* °´µĞÈË tier µÄ dropRange£¨min/max£©Éú³É×ÜµãÊı£¬²¢²ğ³É½Ï¶àµÄÊ°È¡Îï£¨¸ü·ÖÉ¢µÄÏÔÊ¾£© */
+/* æŒ‰æ•Œäºº tier çš„ dropRangeï¼ˆmin/maxï¼‰ç”Ÿæˆæ€»ç‚¹æ•°ï¼Œå¹¶æ‹†æˆè¾ƒå¤šçš„æ‹¾å–ç‰©ï¼ˆæ›´åˆ†æ•£çš„æ˜¾ç¤ºï¼‰ */
 maybeDropPoint(enemyOrX, maybeY) {
   let x, y, range;
   if (typeof enemyOrX === "object") {
@@ -6922,20 +6926,20 @@ maybeDropPoint(enemyOrX, maybeY) {
     range = { min: 5, max: 15 }; 
   }
 
-  // ×ÜµãÊı
+  // æ€»ç‚¹æ•°
   const total = Phaser.Math.Between(range.min, range.max);
   if (total <= 0) return;
 
-  // ÏÔÊ¾¸ü¶àµÄµôÂäµã£º°´×Ü¶î×ÔÊÊÓ¦²ğ·Ö£¬×î¸ß²»³¬¹ı total
+  // æ˜¾ç¤ºæ›´å¤šçš„æ‰è½ç‚¹ï¼šæŒ‰æ€»é¢è‡ªé€‚åº”æ‹†åˆ†ï¼Œæœ€é«˜ä¸è¶…è¿‡ total
   const pieces = Phaser.Math.Clamp(Math.ceil(total / 5), 3, Math.min(12, total));
-  // ±£Ö¤Ã¿·İÖÁÉÙÓĞ1µã
+  // ä¿è¯æ¯ä»½è‡³å°‘æœ‰1ç‚¹
   const base = Math.max(1, Math.floor(total / pieces));
-  // Ê£ÓàµãÊı
+  // å‰©ä½™ç‚¹æ•°
   let remaining = total;
 
   for (let i = 0; i < pieces; i += 1) {
-    // ×îºóÒ»·İÄÃ×ßËùÓĞÊ£ÓàµãÊı
-    const amount = (i === pieces - 1) ? remaining : Math.max(1, Math.min(base, remaining - (pieces - 1 - i))); // ±ÜÃâ×îºóÎª¸º
+    // æœ€åä¸€ä»½æ‹¿èµ°æ‰€æœ‰å‰©ä½™ç‚¹æ•°
+    const amount = (i === pieces - 1) ? remaining : Math.max(1, Math.min(base, remaining - (pieces - 1 - i))); // é¿å…æœ€åä¸ºè´Ÿ
     remaining -= amount;
 
     const ang = Phaser.Math.FloatBetween(0, Math.PI * 2);
@@ -6949,24 +6953,24 @@ maybeDropPoint(enemyOrX, maybeY) {
     point.body.setDrag(600, 600);
     point.magnetActive = false;
     point.amount = amount;
-    // »÷É±»ØÀ¶£º×Ü¼Æ 1 µã·¨Á¦Öµ£¬°´ËéÆ¬µÈ¶î·ÖÅä
+    // å‡»æ€å›è“ï¼šæ€»è®¡ 1 ç‚¹æ³•åŠ›å€¼ï¼ŒæŒ‰ç¢ç‰‡ç­‰é¢åˆ†é…
     point.manaGain = 1 / pieces;
   }
 }
-  // ±¦Ïä£º»÷É±ºó½±Àø
-  // 1) µôÂä200µã£¨µôÂäÎï£©40%
-  // 2) Éú³É20¸öbasicÃ«Óñ 10%
-  // 3) Ëæ»úÒ»¸öbasic×°±¸£¨À¸Âú²»·¢£©20%
-  // 4) Ë¢ĞÂ5¸öËæ»úlegendaryµĞÈË 5%
+  // å®ç®±ï¼šå‡»æ€åå¥–åŠ±
+  // 1) æ‰è½200ç‚¹ï¼ˆæ‰è½ç‰©ï¼‰40%
+  // 2) ç”Ÿæˆ20ä¸ªbasicæ¯›ç‰ 10%
+  // 3) éšæœºä¸€ä¸ªbasicè£…å¤‡ï¼ˆæ æ»¡ä¸å‘ï¼‰20%
+  // 4) åˆ·æ–°5ä¸ªéšæœºlegendaryæ•Œäºº 5%
   handleChestDeathRewards(enemy) {
-    // ¸ÅÂÊ£º40% / 10% / 20% / 5%£¬ÆäÓà²»´¥·¢¶îÍâ½±Àø
-    // Ê¹ÓÃ¼ÓÈ¨Ëæ»úÑ¡ÔñÊÂ¼ş£»ĞÂÔö£º¸øÓèÍæ¼Ò5¸öÉúÃüÒ©Ë®£¨È¨ÖØ20£©
+    // æ¦‚ç‡ï¼š40% / 10% / 20% / 5%ï¼Œå…¶ä½™ä¸è§¦å‘é¢å¤–å¥–åŠ±
+    // ä½¿ç”¨åŠ æƒéšæœºé€‰æ‹©äº‹ä»¶ï¼›æ–°å¢ï¼šç»™äºˆç©å®¶5ä¸ªç”Ÿå‘½è¯æ°´ï¼ˆæƒé‡20ï¼‰
     const events = [
-      { id: 1, weight: 40 },   // µôÂä200µã
-      { id: 2, weight: 10 },   // Éú³É20¸öbasicÃ«Óñ
-      { id: 7, weight: 20 },   // ĞÂÔö£º¸øÓè5¸öÉúÃüÒ©Ë®
-      { id: 4, weight: 20 },   // Ëæ»úÒ»¸öbasic×°±¸
-      { id: 5, weight: 5 },    // Ë¢ĞÂ5¸öËæ»úlegendaryµĞÈË£¨×ÜÈ¨ÖØ5%£©
+      { id: 1, weight: 40 },   // æ‰è½200ç‚¹
+      { id: 2, weight: 10 },   // ç”Ÿæˆ20ä¸ªbasicæ¯›ç‰
+      { id: 7, weight: 20 },   // æ–°å¢ï¼šç»™äºˆ5ä¸ªç”Ÿå‘½è¯æ°´
+      { id: 4, weight: 20 },   // éšæœºä¸€ä¸ªbasicè£…å¤‡
+      { id: 5, weight: 5 },    // åˆ·æ–°5ä¸ªéšæœºlegendaryæ•Œäººï¼ˆæ€»æƒé‡5%ï¼‰
     ];
     const totalW = events.reduce((sum, e) => sum + e.weight, 0);
     let roll = Math.random() * totalW;
@@ -6978,11 +6982,11 @@ maybeDropPoint(enemyOrX, maybeY) {
     }
 
     switch (outcome) {
-      case 1: { // µôÂä200µã£¨µôÂäÎï£©
+      case 1: { // æ‰è½200ç‚¹ï¼ˆæ‰è½ç‰©ï¼‰
         this.dropFixedPoints(enemy.x, enemy.y, 200);
         break;
       }
-      case 2: { // Éú³É20¸öbasicÃ«Óñ
+      case 2: { // ç”Ÿæˆ20ä¸ªbasicæ¯›ç‰
         const def = {
           typeKey: 'kedama',
           typeConfig: ENEMY_TYPE_CONFIG.kedama,
@@ -6995,7 +6999,7 @@ maybeDropPoint(enemyOrX, maybeY) {
         }
         break;
       }
-      case 4: { // Ëæ»úÒ»¸öbasic×°±¸£¨ÂúÁË¾Í²»¸ø£©
+      case 4: { // éšæœºä¸€ä¸ªbasicè£…å¤‡ï¼ˆæ»¡äº†å°±ä¸ç»™ï¼‰
         const empty = this.playerEquipmentSlots.findIndex((id) => id == null);
         if (empty >= 0) {
           const pool = ITEMS_BY_TIER[ITEM_TIERS.BASIC] || [];
@@ -7005,11 +7009,11 @@ maybeDropPoint(enemyOrX, maybeY) {
         }
         break;
       }
-      case 7: { // ĞÂÔö£º¸øÓèÍæ¼Ò5¸öÉúÃüÒ©Ë®
+      case 7: { // æ–°å¢ï¼šç»™äºˆç©å®¶5ä¸ªç”Ÿå‘½è¯æ°´
         this.giveHealthPotions(5);
         break;
       }
-      case 5: { // Ë¢ĞÂ5¸öËæ»úlegendaryµĞÈË
+      case 5: { // åˆ·æ–°5ä¸ªéšæœºlegendaryæ•Œäºº
         const typeKeys = Object.keys(ENEMY_TYPE_CONFIG);
         for (let i = 0; i < 5; i += 1) {
           const typeKey = typeKeys[Phaser.Math.Between(0, typeKeys.length - 1)];
@@ -7027,8 +7031,8 @@ maybeDropPoint(enemyOrX, maybeY) {
         break;
     }
   }
-  // °´¹Ì¶¨×Ü½ğ¶îµôÂäÊ°È¡Îï£¨ÓÃÓÚÊÕ¼¯Õß¶îÍâ½ğ±Ò/±¦Ïä£©
-  // ĞÂÔö£º¸øÓèÉúÃüÒ©Ë®£¨µş¼Óµ½ÏÖÓĞ¶Ñ£¬»òÕ¼ÓÃÒ»¸ö¿Õ¸ñ×Ó£©
+  // æŒ‰å›ºå®šæ€»é‡‘é¢æ‰è½æ‹¾å–ç‰©ï¼ˆç”¨äºæ”¶é›†è€…é¢å¤–é‡‘å¸/å®ç®±ï¼‰
+  // æ–°å¢ï¼šç»™äºˆç”Ÿå‘½è¯æ°´ï¼ˆå åŠ åˆ°ç°æœ‰å †ï¼Œæˆ–å ç”¨ä¸€ä¸ªç©ºæ ¼å­ï¼‰
   giveHealthPotions(count) {
     const n = Math.max(0, Math.floor(count || 0));
     if (n <= 0) return false;
@@ -7040,7 +7044,7 @@ maybeDropPoint(enemyOrX, maybeY) {
       this.refreshEquipmentUI?.();
       return true;
     }
-    // Î´ÓµÓĞ£º³¢ÊÔÕ¼ÓÃÒ»¸ö¿Õ²Û
+    // æœªæ‹¥æœ‰ï¼šå°è¯•å ç”¨ä¸€ä¸ªç©ºæ§½
     const empty = this.playerEquipmentSlots.findIndex((id) => id == null);
     if (empty < 0) return false;
     this.equipItem(empty, HEALTH_POTION_ID);
@@ -7050,16 +7054,16 @@ maybeDropPoint(enemyOrX, maybeY) {
     return true;
   }
 
-  // °´¹Ì¶¨×Ü½ğ¶îµôÂäÊ°È¡Îï£¨ÓÃÓÚÊÕ¼¯Õß¶îÍâ½ğ±Ò/±¦Ïä£©
+  // æŒ‰å›ºå®šæ€»é‡‘é¢æ‰è½æ‹¾å–ç‰©ï¼ˆç”¨äºæ”¶é›†è€…é¢å¤–é‡‘å¸/å®ç®±ï¼‰
   dropFixedPoints(x, y, total) {
     const amountTotal = Math.max(0, Math.floor(total));
     if (amountTotal <= 0) return;
 
-    // ÏÔÊ¾¸ü¶à£º¸üÏ¸µÄ²ğ·Ö£¬µ«²»³¬¹ı total ÊıÁ¿
+    // æ˜¾ç¤ºæ›´å¤šï¼šæ›´ç»†çš„æ‹†åˆ†ï¼Œä½†ä¸è¶…è¿‡ total æ•°é‡
     const pieces = Phaser.Math.Clamp(Math.ceil(amountTotal / 10), 2, Math.min(20, amountTotal));
     let remaining = amountTotal;
     for (let i = 0; i < pieces; i += 1) {
-      const minLeft = (pieces - 1 - i); // È·±£ºóÃæÖÁÉÙ¸÷1
+      const minLeft = (pieces - 1 - i); // ç¡®ä¿åé¢è‡³å°‘å„1
       const avg = Math.floor(remaining / (pieces - i));
       const base = Math.max(1, avg);
       const amount = (i === pieces - 1) ? remaining : Math.max(1, Math.min(base, remaining - minLeft));
@@ -7075,7 +7079,7 @@ maybeDropPoint(enemyOrX, maybeY) {
       point.body.setDrag(600, 600);
       point.magnetActive = false;
       point.amount = amount;
-      // ¹Ì¶¨µôÂä£¨Èç±¦Ïä/ÊÕ¼¯Õß£©²»Ìá¹©»ØÀ¶
+      // å›ºå®šæ‰è½ï¼ˆå¦‚å®ç®±/æ”¶é›†è€…ï¼‰ä¸æä¾›å›è“
       point.manaGain = 0;
     }
   }
@@ -7086,7 +7090,7 @@ maybeDropPoint(enemyOrX, maybeY) {
     this.loot.remove(point, true, true);
     this.playerPoints += point.amount;
     if (this.runStats) this.runStats.gold += Math.max(0, Math.floor(point.amount || 0));
-    const fallback = point.amount * 10; // ¼æÈİ¾ÉÂß¼­
+    const fallback = point.amount * 10; // å…¼å®¹æ—§é€»è¾‘
     const gainRaw = Number.isFinite(point.manaGain) ? point.manaGain : fallback;
     const maxMana = this.playerStats?.maxMana ?? PLAYER_BASE_STATS.maxMana ?? PLAYER_MANA_MAX;
     let carry = this._manaRegenCarry || 0;
@@ -7107,7 +7111,7 @@ maybeDropPoint(enemyOrX, maybeY) {
     this.bullets.remove(bullet, true, true);
   }
 
-  /* ==== ĞÂÔö£ºBoss µ¯Ä»Ïú»ÙÓë¸üĞÂ ==== */
+  /* ==== æ–°å¢ï¼šBoss å¼¹å¹•é”€æ¯ä¸æ›´æ–° ==== */
   destroyBossBullet(b) {
     if (!b || b.destroyed) return;
     if (b.trailTimer) { b.trailTimer.remove(false); b.trailTimer = null; }
@@ -7118,7 +7122,7 @@ maybeDropPoint(enemyOrX, maybeY) {
     if (!this.bossBullets) return;
     this.bossBullets.getChildren().forEach((b) => this.destroyBossBullet(b));
   }
-// ÔÚ updateBossBullets ·½·¨ÖĞÌí¼ÓºËµ¯¹ì¼£Éú³ÉÂß¼­
+// åœ¨ updateBossBullets æ–¹æ³•ä¸­æ·»åŠ æ ¸å¼¹è½¨è¿¹ç”Ÿæˆé€»è¾‘
   updateBossBullets(delta) {
       if (!this.bossBullets) return;
       const dt = delta / 1000;
@@ -7127,10 +7131,10 @@ maybeDropPoint(enemyOrX, maybeY) {
           const b = list[i];
           if (!b.active) continue;
 
-          // Ç°ÏòËÙ¶È + ¼ÓËÙ¶È
+          // å‰å‘é€Ÿåº¦ + åŠ é€Ÿåº¦
           b.forwardSpeed = (b.forwardSpeed || 0) + (b.accel || 0) * dt;
 
-          // ËÙ¶È·Ö½â£º·½ÏòÏòÁ¿£¨ux,uy£©ÓëÆä·¨Ïò£¨-uy,ux£©
+          // é€Ÿåº¦åˆ†è§£ï¼šæ–¹å‘å‘é‡ï¼ˆux,uyï¼‰ä¸å…¶æ³•å‘ï¼ˆ-uy,uxï¼‰
           const ux = b.ux || 1;
           const uy = b.uy || 0;
           const side = b.sideSpeed || 0;
@@ -7140,33 +7144,33 @@ maybeDropPoint(enemyOrX, maybeY) {
           const vy = uy * fs + (ux) * side;
           b.body.setVelocity(vx, vy);
 
-          // ÈÃ Rin µÄ needle ×Óµ¯ÌùÍ¼·½ÏòÓëÔË¶¯·½ÏòÒ»ÖÂ£¨ÌùÍ¼Õı·½ÏòÎªÕıÉÏ£©
+          // è®© Rin çš„ needle å­å¼¹è´´å›¾æ–¹å‘ä¸è¿åŠ¨æ–¹å‘ä¸€è‡´ï¼ˆè´´å›¾æ­£æ–¹å‘ä¸ºæ­£ä¸Šï¼‰
           if (b.texture && b.texture.key === "r_bullet_needle") {
             b.setRotation(Math.atan2(vy, vx) + Math.PI / 2);
           }
 
-          // ĞÂÔö£ººËµ¯¹ì¼£Éú³É
+          // æ–°å¢ï¼šæ ¸å¼¹è½¨è¿¹ç”Ÿæˆ
           if (b.texture.key === "u_bullet_nuclearbomb") {
               if (!b.lastSpawnPos) {
                   b.lastSpawnPos = { x: b.x, y: b.y };
               }
-              const step = this.tilesToPx(4); // Ã¿4¸ñ¼ì²éÒ»´Î
+              const step = this.tilesToPx(4); // æ¯4æ ¼æ£€æŸ¥ä¸€æ¬¡
               const dist = Phaser.Math.Distance.Between(b.x, b.y, b.lastSpawnPos.x, b.lastSpawnPos.y);
               if (dist >= step) {
-                  // Éú³É nuclearspawn
+                  // ç”Ÿæˆ nuclearspawn
                   const s = this.add.image(b.x, b.y, "u_bullet_nuclearspawn").setDepth(b.depth - 1);
                   this.setDisplaySizeByTiles(s, BOSS_UTSUHO_CONFIG.hitboxes.bullets.nuclearspawn.size);
                   s.setRotation(Math.atan2(uy, ux));
                   s.setAlpha(1);
 
-                  // 1Ãëºóµ­³ö²¢Éú³É hazard
+                  // 1ç§’åæ·¡å‡ºå¹¶ç”Ÿæˆ hazard
                   this.time.delayedCall(5000, () => {
                       this.tweens.add({
                           targets: s,
                           alpha: 0,
                           duration: 400,
                           onComplete: () => {
-                              // Éú³É10¸ö nuclearhazard
+                              // ç”Ÿæˆ10ä¸ª nuclearhazard
                               for (let i = 0; i < 1; i++) {
                                   const offR = this.tilesToPx(2);
                                   const rx = Phaser.Math.FloatBetween(-offR, offR);
@@ -7193,7 +7197,7 @@ maybeDropPoint(enemyOrX, maybeY) {
               }
           }
 
-          // Àë¿ª»­²¼ÔòÉ¾³ı£¨ÍêÈ«ÒÆ³ö£©
+          // ç¦»å¼€ç”»å¸ƒåˆ™åˆ é™¤ï¼ˆå®Œå…¨ç§»å‡ºï¼‰
           const r = b.hitRadius || 0;
           if (b.x < -r || b.x > WORLD_SIZE + r || b.y < -r || b.y > WORLD_SIZE + r) {
               this.destroyBossBullet(b);
@@ -7204,9 +7208,9 @@ maybeDropPoint(enemyOrX, maybeY) {
 updateMikoOrbs(delta) {
   if (!this.mikoOrbs || this.mikoOrbs.length===0) return;
   const dt = delta;
-  const speedOrbit = 6.5;             // »·ÈÆ½ÇËÙ¶È
-  const radius = 48;                   // »·ÈÆ°ë¾¶
-  const seekSpeed = 220;               // ×·×ÙËÙ¶È
+  const speedOrbit = 6.5;             // ç¯ç»•è§’é€Ÿåº¦
+  const radius = 48;                   // ç¯ç»•åŠå¾„
+  const seekSpeed = 220;               // è¿½è¸ªé€Ÿåº¦
 
   for (let i=this.mikoOrbs.length-1;i>=0;i--){
     const orb = this.mikoOrbs[i];
@@ -7218,7 +7222,7 @@ updateMikoOrbs(delta) {
       orb.x = this.player.x + Math.cos(orb._angle) * radius;
       orb.y = this.player.y + Math.sin(orb._angle) * radius;
       if (orb._orbitTimeLeft <= 0) {
-        // ÇĞ»»µ½×·×Ù
+        // åˆ‡æ¢åˆ°è¿½è¸ª
         const t = this.findNearestEnemy(this.player.x, this.player.y, Number.MAX_VALUE);
         orb._seekTarget = t || null;
         orb._state = "seek";
@@ -7227,14 +7231,14 @@ updateMikoOrbs(delta) {
       const t = orb._seekTarget && orb._seekTarget.active ? orb._seekTarget 
                : this.findNearestEnemy(orb.x, orb.y, Number.MAX_VALUE);
       if (!t) {
-        // Ã»Ä¿±êÔò½¥ÒşÏûÊ§
+        // æ²¡ç›®æ ‡åˆ™æ¸éšæ¶ˆå¤±
         orb._state="done";
         this.tweens.add({targets:orb, alpha:0, duration:300, onComplete:()=>orb.destroy()});
         continue;
       }
       const ang = Math.atan2(t.y - orb.y, t.x - orb.x);
       this.physics.velocityFromRotation(ang, seekSpeed, orb.body.velocity);
-      // ³¯Ïò
+      // æœå‘
       orb.setRotation(ang + Math.PI/2);
     }
   }
@@ -7242,23 +7246,23 @@ updateMikoOrbs(delta) {
 castDash() {
   if (!this.canCast("DASH")) return;
   this.spendCostAndStartCd("DASH");
-  // ¼¼ÄÜÒôĞ§£ºSPACE ÉÁ±Ü
+  // æŠ€èƒ½éŸ³æ•ˆï¼šSPACE é—ªé¿
   this.playSfx("player_dash");
 
-  // ÎŞµĞ
+  // æ— æ•Œ
   const dur = this.skillConfig.DASH.durationMs;
   this.playerInvulnerableUntil = this.time.now + dur;
 
-  // ÁÙÊ±ºöÂÔÇ½Åö×²£¨±ß½çÈÔÉúĞ§£ºsetCollideWorldBounds(true) ÒÑ´æÔÚ£©
+  // ä¸´æ—¶å¿½ç•¥å¢™ç¢°æ’ï¼ˆè¾¹ç•Œä»ç”Ÿæ•ˆï¼šsetCollideWorldBounds(true) å·²å­˜åœ¨ï¼‰
   if (this.playerWallCollider) this.playerWallCollider.active = false;
 
-  // Î»ÒÆ·½Ïò£ºÍæ¼Ò³¯Ïò
+  // ä½ç§»æ–¹å‘ï¼šç©å®¶æœå‘
   const facing = this.playerFacing || "down";
   const dirRad = {down:Math.PI/2, up:-Math.PI/2, left:Math.PI, right:0}[facing] ?? 0;
   const dx = Math.cos(dirRad) * this.skillConfig.DASH.distance;
   const dy = Math.sin(dirRad) * this.skillConfig.DASH.distance;
 
-  // Tween Î»ÒÆ
+  // Tween ä½ç§»
   const tx = Phaser.Math.Clamp(this.player.x + dx, TILE_SIZE, WORLD_SIZE - TILE_SIZE);
   const ty = Phaser.Math.Clamp(this.player.y + dy, TILE_SIZE, WORLD_SIZE - TILE_SIZE);
   const p = this.add.image(this.player.x, this.player.y, "dash_particle").setDepth(10).setAlpha(0.9);
@@ -7269,10 +7273,10 @@ castDash() {
     x: tx, y: ty,
     duration: dur, ease: "Cubic.Out",
     onComplete: ()=>{
-      // ½áÊø£º»Ö¸´Ç½Åö×²
+      // ç»“æŸï¼šæ¢å¤å¢™ç¢°æ’
       if (this.playerWallCollider) this.playerWallCollider.active = true;
       
-      // ´¥·¢Ò«¹âĞ§¹û
+      // è§¦å‘è€€å…‰æ•ˆæœ
       this.onSpellCastComplete();
     }
   });
@@ -7283,13 +7287,13 @@ castDash() {
     if (this.isGameOver) return;
     this.isGameOver = true;
     this.playSfx("pldead");
-    // ÔİÍ£Ò»ÇĞÎïÀíÓë¼ÆÊ±
+    // æš‚åœä¸€åˆ‡ç‰©ç†ä¸è®¡æ—¶
     this.physics.pause();
     if (this.attackTimer) { this.attackTimer.remove(); this.attackTimer = null; }
     if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
-    // ÒôÀÖ¾²Òô
+    // éŸ³ä¹é™éŸ³
     if (this.battleBgm?.isPlaying) this.battleBgm.pause();
-    // ÏÔÊ¾ HTML Í³¼Æ¸²¸Ç²ã£¨Ê§°Ü£©
+    // æ˜¾ç¤º HTML ç»Ÿè®¡è¦†ç›–å±‚ï¼ˆå¤±è´¥ï¼‰
     this.showHtmlStatsOverlay("fail");
   }
 
@@ -7297,11 +7301,11 @@ castDash() {
     this.clearGameOverOverlay();
     const bg = this.add.rectangle(GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.65)
       .setScrollFactor(0).setDepth(50);
-    const title = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 28, "Õ½¶·Ê§°Ü", {
+    const title = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 28, "æˆ˜æ–—å¤±è´¥", {
       fontFamily: '"Zpix", monospace', fontSize: "20px", color: "#ff3344",
     }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
     ensureBaseFontSize(title);
-    const prompt = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 + 10, "°´ Enter »ò R ÖØ¿ª£¬°´ N ·µ»Ø±êÌâ", {
+    const prompt = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 + 10, "æŒ‰ Enter æˆ– R é‡å¼€ï¼ŒæŒ‰ N è¿”å›æ ‡é¢˜", {
       fontFamily: '"Zpix", monospace', fontSize: "14px", color: "#ffd0d0",
     }).setOrigin(0.5).setScrollFactor(0).setDepth(51);
     ensureBaseFontSize(prompt);
@@ -7326,14 +7330,14 @@ castDash() {
   restartFromGameOver() {
     this.clearGameOverOverlay();
     this.isGameOver = false;
-    // »Ö¸´ÒôÀÖ£¨ĞÂ³¡¾°»á×ÔĞĞ´´½¨/²¥·Å£©
+    // æ¢å¤éŸ³ä¹ï¼ˆæ–°åœºæ™¯ä¼šè‡ªè¡Œåˆ›å»º/æ’­æ”¾ï¼‰
     if (this.battleBgm?.isPaused) this.battleBgm.stop?.();
-    // ĞèÇó£ºËÀÍöºóµÄÖØ¿ªÓ¦ÍêÈ«ÖØĞÂ¼ÓÔØ½çÃæ
-    // Ê¹ÓÃä¯ÀÀÆ÷Ë¢ĞÂÀ´È·±£ËùÓĞ×´Ì¬£¨°üÀ¨È«¾Ö/¾²Ì¬µ¥Àı£©±»ÖØÖÃ
+    // éœ€æ±‚ï¼šæ­»äº¡åçš„é‡å¼€åº”å®Œå…¨é‡æ–°åŠ è½½ç•Œé¢
+    // ä½¿ç”¨æµè§ˆå™¨åˆ·æ–°æ¥ç¡®ä¿æ‰€æœ‰çŠ¶æ€ï¼ˆåŒ…æ‹¬å…¨å±€/é™æ€å•ä¾‹ï¼‰è¢«é‡ç½®
     if (typeof window !== "undefined" && window.location) {
       window.location.reload();
     } else {
-      // ¶µµ×£ºÈôÎŞ·¨·ÃÎÊ window£¬ÔòÍË»Øµ½³¡¾°ÖØÆô
+      // å…œåº•ï¼šè‹¥æ— æ³•è®¿é—® windowï¼Œåˆ™é€€å›åˆ°åœºæ™¯é‡å¯
       this.scene.restart();
     }
   }
@@ -7359,7 +7363,7 @@ castDash() {
       `AR ${this.playerStats.armor}`,
       `AH ${this.playerStats.abilityHaste || 0}`,
       `CDR ${((this.playerStats.cooldownReduction ?? 0) * 100).toFixed(0)}%`,
-      `Éä³Ì ${this.playerStats.range}`,
+      `å°„ç¨‹ ${this.playerStats.range}`,
     ];
     this.ui.statContainer.innerHTML = "";
     stats.forEach((line) => {
@@ -7387,7 +7391,7 @@ castDash() {
     }
   }
 
-  /* ==== ×°±¸À¸£ºDOM ¸¨Öú ==== */
+  /* ==== è£…å¤‡æ ï¼šDOM è¾…åŠ© ==== */
   getSlotIndexFromEvent(event) {
     const el = event?.currentTarget ?? event?.target;
     if (!el) return null;
@@ -7396,7 +7400,7 @@ castDash() {
     return Number.isFinite(idx) ? idx : null;
   }
 
-  /* ==== ×°±¸À¸£ºÍÏ×§ÊµÏÖ ==== */
+  /* ==== è£…å¤‡æ ï¼šæ‹–æ‹½å®ç° ==== */
   handleEquipmentDragStart(event) {
     const sourceIndex = this.getSlotIndexFromEvent(event);
     if (sourceIndex == null) return;
@@ -7479,7 +7483,7 @@ castDash() {
     event.stopPropagation?.();
   }
 
-  /* ==== ×°±¸À¸£ºĞüÍ£ÌáÊ¾ ==== */
+  /* ==== è£…å¤‡æ ï¼šæ‚¬åœæç¤º ==== */
   handleEquipmentSlotEnter(event) {
     const idx = this.getSlotIndexFromEvent(event);
     if (idx == null) return;
@@ -7501,9 +7505,9 @@ castDash() {
     if (!item) return;
     const unitSellPrice = EQUIPMENT_SELL_PRICE_CACHE[itemId] ?? Math.floor((item.cost ?? 0) * 0.7);
 
-    // ÌØÀı£ºÉúÃüÒ©Ë®°´ÊıÁ¿È«²¿ÊÛ³ö
+    // ç‰¹ä¾‹ï¼šç”Ÿå‘½è¯æ°´æŒ‰æ•°é‡å…¨éƒ¨å”®å‡º
     if (itemId === HEALTH_POTION_ID) {
-      // ¼ÆËã×ÜÊıÁ¿£º¶ÑµşÊıÁ¿ + ¶îÍâ²ÛÎ»ÊıÁ¿£¨-1£¬ÒòÒ»¸ö²ÛÎ»ÒÑ¼ÆÈë£©
+      // è®¡ç®—æ€»æ•°é‡ï¼šå †å æ•°é‡ + é¢å¤–æ§½ä½æ•°é‡ï¼ˆ-1ï¼Œå› ä¸€ä¸ªæ§½ä½å·²è®¡å…¥ï¼‰
       const slotIndices = [];
       for (let i = 0; i < this.playerEquipmentSlots.length; i += 1) {
         if (this.playerEquipmentSlots[i] === HEALTH_POTION_ID) slotIndices.push(i);
@@ -7512,9 +7516,9 @@ castDash() {
       const stackCount = Math.max(0, Math.floor(this.healthPotionCount || 0));
       const totalCount = Math.max(1, stackCount + extraFromSlots);
       const totalSell = unitSellPrice * totalCount;
-      const confirmText = `È·ÈÏÒÔ ${totalSell} ½ğ±ÒÂô³ö ${item.name} x${totalCount} Âğ£¿`;
+      const confirmText = `ç¡®è®¤ä»¥ ${totalSell} é‡‘å¸å–å‡º ${item.name} x${totalCount} å—ï¼Ÿ`;
       if (typeof window !== "undefined" && !window.confirm(confirmText)) return;
-      // Çå¿ÕËùÓĞÉúÃüÒ©Ë®²ÛÎ»
+      // æ¸…ç©ºæ‰€æœ‰ç”Ÿå‘½è¯æ°´æ§½ä½
       slotIndices.forEach((si) => { this.playerEquipmentSlots[si] = null; });
       this.healthPotionCount = 0;
       this.healthPotionOwnerSlotIndex = null;
@@ -7529,12 +7533,12 @@ castDash() {
       if (this.isShopOpen()) {
         this.updateShopGoldLabel();
         this.renderShop();
-        this.setShopMessage(`ÒÑÂô³ö ${item.name} x${totalCount}£¬»ñµÃ ${totalSell} ½ğ±Ò¡£`);
+        this.setShopMessage(`å·²å–å‡º ${item.name} x${totalCount}ï¼Œè·å¾— ${totalSell} é‡‘å¸ã€‚`);
       }
       return;
     }
 
-    const confirmText = `È·ÈÏÒÔ ${unitSellPrice} ½ğ±ÒÂô³ö ${item.name} Âğ£¿`;
+    const confirmText = `ç¡®è®¤ä»¥ ${unitSellPrice} é‡‘å¸å–å‡º ${item.name} å—ï¼Ÿ`;
     if (typeof window !== "undefined" && !window.confirm(confirmText)) return;
     this.playerEquipmentSlots[idx] = null;
     this.playerPoints += unitSellPrice;
@@ -7548,11 +7552,11 @@ castDash() {
     if (this.isShopOpen()) {
       this.updateShopGoldLabel();
       this.renderShop();
-      this.setShopMessage(`ÒÑÂô³ö ${item.name}£¬»ñµÃ ${sellPrice} ½ğ±Ò¡£`);
+      this.setShopMessage(`å·²å–å‡º ${item.name}ï¼Œè·å¾— ${sellPrice} é‡‘å¸ã€‚`);
     }
   }
 
-  /* ==== ÉÌµêÏµÍ³ ==== */
+  /* ==== å•†åº—ç³»ç»Ÿ ==== */
   initializeShopSystem() {
     const ui = this.ui;
     if (!ui?.shopOverlay) return;
@@ -7640,11 +7644,11 @@ castDash() {
     this.shopState.reason = reason;
     this.shopState.isOpen = true;
     this.shopState.lastMessage = "";
-    // Ã¿´Î½øÈëÉÌµêÖØÖÃË¢ĞÂ·ÑÓÃÎª³õÊ¼Öµ
+    // æ¯æ¬¡è¿›å…¥å•†åº—é‡ç½®åˆ·æ–°è´¹ç”¨ä¸ºåˆå§‹å€¼
     this.shopState.refreshCost = SHOP_REFRESH_COST;
-    // ¸ù¾İ½øÈëÔ­ÒòÇĞ»»ÉÌµê±êÌâ
+    // æ ¹æ®è¿›å…¥åŸå› åˆ‡æ¢å•†åº—æ ‡é¢˜
     if (this.shopUi?.title) {
-      this.shopUi.title.textContent = (reason === "inRun") ? "ÊôĞÔËéÆ¬ÉÌµê" : "×°±¸ÉÌµê";
+      this.shopUi.title.textContent = (reason === "inRun") ? "å±æ€§ç¢ç‰‡å•†åº—" : "è£…å¤‡å•†åº—";
     }
 
     this.physics.pause();
@@ -7712,9 +7716,9 @@ castDash() {
       this.setShopMessage(SHOP_TEXT.notEnoughGold);
       return;
     }
-    // ¿Û³ıµ±Ç°Ë¢ĞÂ·ÑÓÃ
+    // æ‰£é™¤å½“å‰åˆ·æ–°è´¹ç”¨
     this.playerPoints -= currentCost;
-    // Ë¢ĞÂ·ÑÓÃ°´1.8±¶Ôö³¤²¢ÏòÏÂÈ¡Õû
+    // åˆ·æ–°è´¹ç”¨æŒ‰1.8å€å¢é•¿å¹¶å‘ä¸‹å–æ•´
     this.shopState.refreshCost = Math.max(1, Math.floor(currentCost * 1.8));
     this.updateHUD();
     this.updateShopGoldLabel();
@@ -7728,13 +7732,13 @@ castDash() {
     if (this.shopUi?.goldValue) this.shopUi.goldValue.textContent = `${this.playerPoints}`;
     const cost = Math.max(1, Math.floor(this.shopState?.refreshCost ?? SHOP_REFRESH_COST));
     if (this.shopUi?.refreshBtn) {
-      // ¶¯Ì¬¸üĞÂË¢ĞÂ°´Å¥µÄÎÄ°¸Óë¿ÉÓÃ×´Ì¬
-      this.shopUi.refreshBtn.textContent = `Ë¢ĞÂ (-${cost})`;
+      // åŠ¨æ€æ›´æ–°åˆ·æ–°æŒ‰é’®çš„æ–‡æ¡ˆä¸å¯ç”¨çŠ¶æ€
+      this.shopUi.refreshBtn.textContent = `åˆ·æ–° (-${cost})`;
       this.shopUi.refreshBtn.disabled = this.playerPoints < cost;
     }
   }
 
-  // ¡ª¡ª ËéÆ¬½âËøÌáÊ¾£¨±êÌâÅÔ£©¡ª¡ª //
+  // â€”â€” ç¢ç‰‡è§£é”æç¤ºï¼ˆæ ‡é¢˜æ—ï¼‰â€”â€” //
   ensureShardProgressHeader() {
     if (!this.shopUi?.title) return;
     if (!this.shopUi.shardProgressEl) {
@@ -7759,7 +7763,7 @@ castDash() {
     this.ensureShardProgressHeader();
     const info = this.getShardNextUnlockInfo?.();
     if (!info) { this.hideShardProgressHeader(); return; }
-    this.shopUi.shardProgressEl.textContent = `ÏÂÒ»¼¶½âËø»¹Ğè ${info.remain} ´Î`;
+    this.shopUi.shardProgressEl.textContent = `ä¸‹ä¸€çº§è§£é”è¿˜éœ€ ${info.remain} æ¬¡`;
   }
 
   setShopMessage(text) {
@@ -7772,7 +7776,7 @@ castDash() {
   }
 
   generateShopOffers() {
-    // ½ö¡°µØÍ¼ÖĞ½øÈëÉÌµê¡±£¨inRun£©²ÅÊ¹ÓÃËéÆ¬ÉÌµê£¬ÆäÓà£¨roundEnd/debug£©Ê¹ÓÃÔ­×°±¸ÉÌµê
+    // ä»…â€œåœ°å›¾ä¸­è¿›å…¥å•†åº—â€ï¼ˆinRunï¼‰æ‰ä½¿ç”¨ç¢ç‰‡å•†åº—ï¼Œå…¶ä½™ï¼ˆroundEnd/debugï¼‰ä½¿ç”¨åŸè£…å¤‡å•†åº—
     if (this.shopState?.reason === "inRun") {
       const offers = [];
       const unlocked = this.getUnlockedShardRarities();
@@ -7796,7 +7800,7 @@ castDash() {
     }
   }
 
-  // Ô­×°±¸ÉÌµêÉú³ÉÂß¼­£¨±£Áô£©£º¸ù¾İÒÑÓĞ»ù´¡/½ø½××°±¸Æ«ºÃÉú³É
+  // åŸè£…å¤‡å•†åº—ç”Ÿæˆé€»è¾‘ï¼ˆä¿ç•™ï¼‰ï¼šæ ¹æ®å·²æœ‰åŸºç¡€/è¿›é˜¶è£…å¤‡åå¥½ç”Ÿæˆ
   generateEquipmentShopOffers() {
     const ownedIds = this.getOwnedItemIds();
     const ownedBasics = this.getOwnedItemsByTier(ITEM_TIERS.BASIC);
@@ -7892,21 +7896,21 @@ castDash() {
   getUnlockedShardRarities() {
     const p = this?.shardState?.purchases || { basic: 0, mid: 0, epic: 0, legendary: 0 };
     const unlocked = [SHARD_RARITIES.BASIC];
-    // ĞŞ¸Ä£ºMid ½âËøĞèÒª 6 ´Î Basic£»Epic/Legendary ±£³Ö 3 ´Î²»±ä
+    // ä¿®æ”¹ï¼šMid è§£é”éœ€è¦ 6 æ¬¡ Basicï¼›Epic/Legendary ä¿æŒ 3 æ¬¡ä¸å˜
     if ((p.basic || 0) >= 6) unlocked.push(SHARD_RARITIES.MID);
     if ((p.mid || 0) >= 3) unlocked.push(SHARD_RARITIES.EPIC);
     if ((p.epic || 0) >= 3) unlocked.push(SHARD_RARITIES.LEGENDARY);
     return unlocked;
   }
 
-  // ¡ª¡ª ËéÆ¬½âËø½ø¶È£¨Ö»ÏÔÊ¾ÏÂÒ»¸öÏ¡ÓĞ¶ÈµÄÊ£Óà´ÎÊı£©¡ª¡ª //
+  // â€”â€” ç¢ç‰‡è§£é”è¿›åº¦ï¼ˆåªæ˜¾ç¤ºä¸‹ä¸€ä¸ªç¨€æœ‰åº¦çš„å‰©ä½™æ¬¡æ•°ï¼‰â€”â€” //
   getShardNextUnlockInfo() {
     const p = this?.shardState?.purchases || { basic: 0, mid: 0, epic: 0, legendary: 0 };
-    // Mid Ğè 6 ´Î Basic£»Epic Ğè 3 ´Î Mid£»Legendary Ğè 3 ´Î Epic
+    // Mid éœ€ 6 æ¬¡ Basicï¼›Epic éœ€ 3 æ¬¡ Midï¼›Legendary éœ€ 3 æ¬¡ Epic
     if ((p.basic || 0) < 6) return { remain: 6 - (p.basic || 0), target: "Mid" };
     if ((p.mid || 0) < 3) return { remain: 3 - (p.mid || 0), target: "Epic" };
     if ((p.epic || 0) < 3) return { remain: 3 - (p.epic || 0), target: "Legendary" };
-    return null; // È«²¿ÒÑ½âËø
+    return null; // å…¨éƒ¨å·²è§£é”
   }
 
   createShardProgressElement() {
@@ -7916,7 +7920,7 @@ castDash() {
     el.style.fontSize = "12px";
     el.style.color = "#ffd966";
     el.style.margin = "4px 0 8px 0";
-    el.textContent = `ÏÂÒ»¼¶½âËø»¹Ğè ${info.remain} ´Î`;
+    el.textContent = `ä¸‹ä¸€çº§è§£é”è¿˜éœ€ ${info.remain} æ¬¡`;
     return el;
   }
 
@@ -8114,20 +8118,20 @@ castDash() {
 
     const cost = document.createElement("div");
     cost.className = "shop-item-cost";
-    cost.textContent = `¼Û¸ñ£º${offerData.price} ½ğ±Ò`;
+    cost.textContent = `ä»·æ ¼ï¼š${offerData.price} é‡‘å¸`;
     card.appendChild(cost);
 
     if (!offerData.item.isShard) {
-      // ×°±¸£¨¼æÈİ¾ÉÂß¼­£¬²»ÔÙÊ¹ÓÃ£©
+      // è£…å¤‡ï¼ˆå…¼å®¹æ—§é€»è¾‘ï¼Œä¸å†ä½¿ç”¨ï¼‰
       const itemTier = offerData.item.tier;
       if (itemTier !== ITEM_TIERS.BASIC) {
         const recipe = document.createElement("div");
         recipe.className = "shop-item-recipe";
         if (offerData.item.buildsFrom.length > 0) {
           const parts = offerData.item.buildsFrom.map((id) => EQUIPMENT_NAME_CACHE[id] || id);
-          recipe.textContent = `Åä·½£º${parts.join(" + ")}`;
+          recipe.textContent = `é…æ–¹ï¼š${parts.join(" + ")}`;
         } else {
-          recipe.textContent = "Åä·½£º¡ª";
+          recipe.textContent = "é…æ–¹ï¼šâ€”";
         }
         card.appendChild(recipe);
       }
@@ -8136,7 +8140,7 @@ castDash() {
         const consume = document.createElement("div");
         consume.className = "shop-item-consume";
         const names = offerData.componentsOwned.map(({ id }) => EQUIPMENT_NAME_CACHE[id] || id);
-        consume.textContent = `ÏûºÄ£º${names.join("¡¢")}`;
+        consume.textContent = `æ¶ˆè€—ï¼š${names.join("ã€")}`;
         card.appendChild(consume);
       }
 
@@ -8144,7 +8148,7 @@ castDash() {
         const missing = document.createElement("div");
         missing.className = "shop-item-missing";
         const names = offerData.missingComponents.map((id) => EQUIPMENT_NAME_CACHE[id] || id);
-        missing.textContent = `¶îÍâ¹ºÂò£º${names.join("¡¢")}`;
+        missing.textContent = `é¢å¤–è´­ä¹°ï¼š${names.join("ã€")}`;
         card.appendChild(missing);
       }
 
@@ -8154,7 +8158,7 @@ castDash() {
       if (upgrades.length > 0) {
         const upgradeEl = document.createElement("div");
         upgradeEl.className = "shop-item-upgrades";
-        upgradeEl.textContent = `¿ÉºÏ³É£º${upgrades.join("¡¢")}`;
+        upgradeEl.textContent = `å¯åˆæˆï¼š${upgrades.join("ã€")}`;
         card.appendChild(upgradeEl);
       }
     }
@@ -8174,7 +8178,7 @@ castDash() {
     actionRow.className = "shop-item-actions";
     const buyBtn = document.createElement("button");
     buyBtn.className = "shop-button";
-    buyBtn.textContent = `¹ºÂò (${offerData.price} ½ğ±Ò)`;
+    buyBtn.textContent = `è´­ä¹° (${offerData.price} é‡‘å¸)`;
     buyBtn.disabled = !offerData.ready;
     if (!offerData.canAfford) buyBtn.title = SHOP_TEXT.notEnoughGold;
     else if (!offerData.hasSpace) buyBtn.title = SHOP_TEXT.inventoryFull;
@@ -8192,13 +8196,13 @@ castDash() {
     return card;
   }
   evaluateShopOffer(offer) {
-    // ËéÆ¬ÉÌÆ·£ºÖ±½Ó»ùÓÚËéÆ¬¶¨ÒåÉú³É¿¨Æ¬Êı¾İ
+    // ç¢ç‰‡å•†å“ï¼šç›´æ¥åŸºäºç¢ç‰‡å®šä¹‰ç”Ÿæˆå¡ç‰‡æ•°æ®
     if (offer?.type === "shard") {
       const item = SHARD_BY_ID[offer.id];
       if (!item) return null;
       const price = Math.max(0, item.cost | 0);
       const canAfford = this.playerPoints >= price;
-      const hasSpace = true; // ²»Õ¼×°±¸À¸
+      const hasSpace = true; // ä¸å è£…å¤‡æ 
       const statusMessage = canAfford ? "" : SHOP_TEXT.notEnoughGold;
       return {
         ...offer,
@@ -8215,7 +8219,7 @@ castDash() {
       };
     }
 
-    // ¾É£º×°±¸ÉÌÆ·£¨Ä¿Ç°²»»áÔÙÉú³É£©
+    // æ—§ï¼šè£…å¤‡å•†å“ï¼ˆç›®å‰ä¸ä¼šå†ç”Ÿæˆï¼‰
     const item = this.getEquipmentDefinition(offer?.id);
     if (!item) return null;
     const { matches, missing } = this.matchComponentsForItem(item);
@@ -8236,22 +8240,22 @@ castDash() {
     let hasSpace = freeSlotsAfterConsume > 0;
     let statusMessage = "";
 
-    // ÌØÊâ¹æÔò£ºÏûºÄÆ·
+    // ç‰¹æ®Šè§„åˆ™ï¼šæ¶ˆè€—å“
     if (item.id === HEALTH_POTION_ID) {
-      // ÒÑÓµÓĞÔò²»Õ¼ĞÂ¸ñ×Ó£»´ïµ½ÉÏÏŞÔò²»¿É¹ºÂò
+      // å·²æ‹¥æœ‰åˆ™ä¸å æ–°æ ¼å­ï¼›è¾¾åˆ°ä¸Šé™åˆ™ä¸å¯è´­ä¹°
       if (this.hasItemEquipped(HEALTH_POTION_ID)) {
         hasSpace = true;
       }
       const count = Math.max(0, Math.floor(this.healthPotionCount || 0));
       if (count >= 100) {
-        hasSpace = false; // ½ûÖ¹¹ºÂò£¨´ïµ½ÉÏÏŞ£©
-        statusMessage = "ÉúÃüÒ©Ë®ÒÑ´ïÉÏÏŞ";
+        hasSpace = false; // ç¦æ­¢è´­ä¹°ï¼ˆè¾¾åˆ°ä¸Šé™ï¼‰
+        statusMessage = "ç”Ÿå‘½è¯æ°´å·²è¾¾ä¸Šé™";
       }
     } else if (item.id === REFILLABLE_POTION_ID) {
-      // ¸´ÓÃĞÔÒ©Ë®²»¿Éµş¼Ó¹ºÂò
+      // å¤ç”¨æ€§è¯æ°´ä¸å¯å åŠ è´­ä¹°
       if (this.hasItemEquipped(REFILLABLE_POTION_ID)) {
         hasSpace = false;
-        statusMessage = "ÒÑÓµÓĞ¸ÃÎïÆ·";
+        statusMessage = "å·²æ‹¥æœ‰è¯¥ç‰©å“";
       }
     }
 
@@ -8305,7 +8309,7 @@ castDash() {
   applyShopPurchase(offerData) {
     this.playerPoints = Math.max(0, this.playerPoints - offerData.price);
 
-    // ¡ª¡ª ËéÆ¬¹ºÂò£ºÖ±½ÓÓ¦ÓÃµ½Ãæ°å£¬ÎŞĞèÕ¼ÓÃ×°±¸À¸ ¡ª¡ª //
+    // â€”â€” ç¢ç‰‡è´­ä¹°ï¼šç›´æ¥åº”ç”¨åˆ°é¢æ¿ï¼Œæ— éœ€å ç”¨è£…å¤‡æ  â€”â€” //
     if (offerData?.item?.isShard) {
       this.applyShardPurchase(offerData.item);
       this.recalculateEquipmentEffects();
@@ -8323,17 +8327,17 @@ castDash() {
       }
     });
 
-    // ÏûºÄÆ·ÌØÊâ´¦Àí
+    // æ¶ˆè€—å“ç‰¹æ®Šå¤„ç†
     if (offerData.item.id === HEALTH_POTION_ID) {
       if (this.hasItemEquipped(HEALTH_POTION_ID)) {
-        // µş¼ÓÊıÁ¿£¨×î¶à100£©
+        // å åŠ æ•°é‡ï¼ˆæœ€å¤š100ï¼‰
         const before = Math.max(0, Math.floor(this.healthPotionCount || 0));
         this.healthPotionCount = Math.min(100, before + 1);
         this.refreshEquipmentUI();
         this.updateResourceBars();
         return true;
       }
-      // Î´ÓµÓĞ£ºĞèÒª¿Õ¸ñ×Ó
+      // æœªæ‹¥æœ‰ï¼šéœ€è¦ç©ºæ ¼å­
       let targetSlot = offerData.targetSlot;
       if (targetSlot < 0 || targetSlot >= this.playerEquipmentSlots.length) {
         targetSlot = this.playerEquipmentSlots.findIndex((id) => id == null);
@@ -8354,7 +8358,7 @@ castDash() {
     }
     if (offerData.item.id === REFILLABLE_POTION_ID) {
       if (this.hasItemEquipped(REFILLABLE_POTION_ID)) {
-        // ²»¿ÉÖØ¸´¹ºÂò£¬»ØÍË½ğ±Ò
+        // ä¸å¯é‡å¤è´­ä¹°ï¼Œå›é€€é‡‘å¸
         this.playerPoints += offerData.price;
         return false;
       }
@@ -8377,7 +8381,7 @@ castDash() {
       return true;
     }
 
-    // ³£¹æ×°±¸
+    // å¸¸è§„è£…å¤‡
     let targetSlot = offerData.targetSlot;
     if (targetSlot < 0 || targetSlot >= this.playerEquipmentSlots.length) {
       targetSlot = this.playerEquipmentSlots.findIndex((id) => id == null);
@@ -8396,12 +8400,12 @@ castDash() {
     return true;
   }
 
-  // ¡ª¡ª ËéÆ¬£ºÓ¦ÓÃ¹ºÂòĞ§¹û²¢¼ÇÂ¼½âËø½ø¶È ¡ª¡ª //
+  // â€”â€” ç¢ç‰‡ï¼šåº”ç”¨è´­ä¹°æ•ˆæœå¹¶è®°å½•è§£é”è¿›åº¦ â€”â€” //
   applyShardPurchase(shardItem) {
     if (!shardItem?.effects) return;
     const eff = shardItem.effects;
     const b = (this.shardBonuses ||= {});
-    // Æ½Ö±
+    // å¹³ç›´
     if (eff.attackDamageFlat) b.attackDamageFlat = (b.attackDamageFlat || 0) + eff.attackDamageFlat;
     if (eff.attackSpeedPct) b.attackSpeedPct = (b.attackSpeedPct || 0) + eff.attackSpeedPct;
     if (eff.abilityPowerFlat) b.abilityPowerFlat = (b.abilityPowerFlat || 0) + eff.abilityPowerFlat;
@@ -8416,7 +8420,7 @@ castDash() {
     if (eff.abilityHaste) b.abilityHaste = (b.abilityHaste || 0) + eff.abilityHaste;
     if (eff.armorPenFlat) b.armorPenFlat = (b.armorPenFlat || 0) + eff.armorPenFlat;
     if (eff.hpRegenPerSecond) b.hpRegenPerSecond = (b.hpRegenPerSecond || 0) + eff.hpRegenPerSecond;
-    // ³ËÇø
+    // ä¹˜åŒº
     if (eff.attackDamagePct) b.attackDamagePct = (b.attackDamagePct || 0) + eff.attackDamagePct;
     if (eff.abilityPowerPct) b.abilityPowerPct = (b.abilityPowerPct || 0) + eff.abilityPowerPct;
     if (eff.armorPct) b.armorPct = (b.armorPct || 0) + eff.armorPct;
@@ -8426,7 +8430,7 @@ castDash() {
     if (eff.onHitPhysicalFlat) b.onHitPhysicalFlat = (b.onHitPhysicalFlat || 0) + eff.onHitPhysicalFlat;
     if (eff.onHitAdRatio) b.onHitAdRatio = (b.onHitAdRatio || 0) + eff.onHitAdRatio;
 
-    // ¼ÇÂ¼¹ºÂò´ÎÊıÒÔ½âËø¸ü¸ßÏ¡ÓĞ¶È
+    // è®°å½•è´­ä¹°æ¬¡æ•°ä»¥è§£é”æ›´é«˜ç¨€æœ‰åº¦
     const r = shardItem.rarity || SHARD_RARITIES.BASIC;
     if (!this.shardState) this.shardState = { purchases: { basic: 0, mid: 0, epic: 0, legendary: 0 } };
     if (!this.shardState.purchases) this.shardState.purchases = { basic: 0, mid: 0, epic: 0, legendary: 0 };
@@ -8512,7 +8516,7 @@ castDash() {
     }
   }
 
-  /* ==== Boss Ïà¹Ø£ºÉú³ÉÓëUI ==== */
+  /* ==== Boss ç›¸å…³ï¼šç”Ÿæˆä¸UI ==== */
   spawnBoss(cfg) {
     const boss = this.enemies.create(WORLD_SIZE / 2, WORLD_SIZE / 2, cfg.textureKey);
     boss.setDepth(9);
@@ -8543,13 +8547,13 @@ castDash() {
     if (cfg.id === "Utsuho") this.initUtsuhoAI?.(boss);
   }
 
-  /* ==== ĞÂÔö£ºÍ¨ÓÃ Boss Éú³É£¨Í¨¹ıID£© ==== */
+  /* ==== æ–°å¢ï¼šé€šç”¨ Boss ç”Ÿæˆï¼ˆé€šè¿‡IDï¼‰ ==== */
   spawnBossById(id, positionOpt) {
     const cfg = BOSS_REGISTRY[id];
     if (!cfg) return;
 
     if (id === "Utsuho") {
-      // Î»ÖÃ£ºÄ¬ÈÏÖĞÉÏ·½£¬¿É¸²Ğ´
+      // ä½ç½®ï¼šé»˜è®¤ä¸­ä¸Šæ–¹ï¼Œå¯è¦†å†™
       const px = positionOpt?.x ?? (WORLD_SIZE / 2);
       const py = positionOpt?.y ?? Math.floor(WORLD_SIZE * 0.25);
 
@@ -8558,7 +8562,7 @@ castDash() {
       boss.body.setAllowGravity(false);
       boss.setCollideWorldBounds(true);
 
-      // Ëõ·Åµ½4¸ñ
+      // ç¼©æ”¾åˆ°4æ ¼
       const frame = boss.frame;
       const fw = frame?.width ?? boss.width ?? TILE_SIZE;
       const fh = frame?.height ?? boss.height ?? TILE_SIZE;
@@ -8568,7 +8572,7 @@ castDash() {
       boss.setScale(scale);
       boss.body.setSize(Math.max(8, fw * scale * 0.9), Math.max(8, fh * scale * 0.9), true);
 
-      // ±ê¼Ç
+      // æ ‡è®°
       boss.isBoss = true;
       boss.bossKind = "Utsuho";
       boss.maxHp = BOSS_UTSUHO_CONFIG.maxHp;
@@ -8580,14 +8584,14 @@ castDash() {
       boss.setDataEnabled();
       boss.setData("hp", boss.hp);
       boss.setData("maxHp", boss.maxHp);
-      // Utsuho AI ³õÊ¼»¯
+      // Utsuho AI åˆå§‹åŒ–
       this.initUtsuhoAI(boss);
 
       this.boss = boss;
       this.bossKind = "Utsuho";
       this.createBossUI(BOSS_UTSUHO_CONFIG.name, BOSS_UTSUHO_CONFIG.title);
 
-      // °´µ±Ç°¹Ø¿¨Óërank½øĞĞBossÊôĞÔ±¶ÂÊ£¨·ÇBoss¹ØÉú³ÉÊ±²ÅÔÚ´Ë´¦´¦Àí£©
+      // æŒ‰å½“å‰å…³å¡ä¸rankè¿›è¡ŒBosså±æ€§å€ç‡ï¼ˆéBosså…³ç”Ÿæˆæ—¶æ‰åœ¨æ­¤å¤„å¤„ç†ï¼‰
       if (!this.isBossStage) {
         const cycles = Math.max(1, Math.floor((this.level || 1) / 20));
         let hpFactor = Math.pow(2, Math.max(0, cycles - 1));
@@ -8602,20 +8606,20 @@ castDash() {
           boss.setData("hp", boss.hp);
           boss.setData("maxHp", boss.maxHp);
         }
-        // µÚÊ®¹Øºó£ºBoss½Ó´¥ÉËº¦Ò²³ËÒÔ (1 + rank/10)
+        // ç¬¬åå…³åï¼šBossæ¥è§¦ä¼¤å®³ä¹Ÿä¹˜ä»¥ (1 + rank/10)
         if (Math.floor(this.level || 0) > 10) {
           const rf = Math.max(0, Number.isFinite(this.rank) ? this.rank : 0) / 10;
           const factor = 1 + rf;
           boss.contactDamage = Math.max(0, Math.round(boss.contactDamage * factor));
         }
       }
-      // ĞÂÔö£ºÏÔÊ¾¹Ì¶¨±êÌâ
+      // æ–°å¢ï¼šæ˜¾ç¤ºå›ºå®šæ ‡é¢˜
       this.showBossHeader(BOSS_UTSUHO_CONFIG.name, BOSS_UTSUHO_CONFIG.title);
 
       return;
     }
 
-    // ÆäËûBoss£¨ÈçDummy£©ÈÔ¿Éµ÷ÓÃ
+    // å…¶ä»–Bossï¼ˆå¦‚Dummyï¼‰ä»å¯è°ƒç”¨
     this.spawnBoss(cfg);
     this.createBossUI(cfg.name, cfg.title);
   }
@@ -8623,14 +8627,14 @@ castDash() {
 createBossUI(name, title) {
   this.clearBossUI();
 
-  const barW = 80;   // Ìõ¿í
-  const barH = 8;    // Ìõ¸ß
+  const barW = 80;   // æ¡å®½
+  const barH = 8;    // æ¡é«˜
   const depth = (this.boss?.depth || 9) + 1;
 
-  // ÓÃ Graphics ¶ø²»ÊÇ Rectangle/Container
+  // ç”¨ Graphics è€Œä¸æ˜¯ Rectangle/Container
   const gfx = this.add.graphics().setDepth(depth);
 
-  // Ãû×ÖÎÄ±¾£¨·ÅÔÚÑªÌõÉÏ·½£©"
+  // åå­—æ–‡æœ¬ï¼ˆæ”¾åœ¨è¡€æ¡ä¸Šæ–¹ï¼‰"
   const nameText = this.add.text(0, 0, name || "", {
     fontFamily: '"Zpix", monospace',
     fontSize: "10px",
@@ -8645,7 +8649,7 @@ createBossUI(name, title) {
     barH,
   };
 
-  // Ê×´Î»æÖÆ
+  // é¦–æ¬¡ç»˜åˆ¶
   this.updateBossUI(this.boss);
 }
 
@@ -8675,25 +8679,25 @@ updateBossUI(target) {
   const { gfx, barW, barH, nameText } = this.bossUi;
   const ratio = Phaser.Math.Clamp(target.hp / Math.max(1, target.maxHp), 0, 1);
 
-  // ¼ÆËãÊÀ½ç×ø±êÏÂµÄÏÔÊ¾Î»ÖÃ£¨Boss Í·¶¥£©
+  // è®¡ç®—ä¸–ç•Œåæ ‡ä¸‹çš„æ˜¾ç¤ºä½ç½®ï¼ˆBoss å¤´é¡¶ï¼‰
   const offsetY = (target.displayHeight || 32) * 0.6 + 12;
   const x = target.x - barW / 2;
   const y = target.y - offsetY - barH / 2;
 
-  // ÖØ»­
+  // é‡ç”»
   gfx.clear();
-  // ±³°å
+  // èƒŒæ¿
   gfx.fillStyle(0x000000, 0.6);
   gfx.fillRect(x, y, barW, barH);
-  // ±ß¿ò£¨Ï¸Ïß£¬-0.5 ÈÃÏñËØ¶ÔÆë¸üÈñÀû£©
+  // è¾¹æ¡†ï¼ˆç»†çº¿ï¼Œ-0.5 è®©åƒç´ å¯¹é½æ›´é”åˆ©ï¼‰
   gfx.lineStyle(1, 0x000000, 1);
   gfx.strokeRect(x - 0.5, y - 0.5, barW + 1, barH + 1);
-  // ÑªÁ¿Ìî³ä
+  // è¡€é‡å¡«å……
   const innerW = Math.max(0, Math.floor((barW - 2) * ratio));
   gfx.fillStyle(0xff3333, 1);
   gfx.fillRect(x + 1, y + 1, innerW, barH - 2);
 
-  // Ãû×Ö
+  // åå­—
   if (nameText) {
     nameText.setPosition(target.x, y - 10);
   }
@@ -8714,7 +8718,7 @@ updateBossUI(target) {
     this.clearBossHeader();
     }
 
-  /* ==== Utsuho ×¨Êô£º¹¤¾ßº¯Êı ==== */
+  /* ==== Utsuho ä¸“å±ï¼šå·¥å…·å‡½æ•° ==== */
   tilesToPx(tiles) { return tiles * TILE_SIZE; }
   setSpriteCircleHit(sprite, judgeTiles) {
     if (!sprite || !sprite.body) return;
@@ -8737,7 +8741,7 @@ updateBossUI(target) {
     sprite.setDisplaySize(px, px);
   }
 
-  // µÈ±ÈÀıËõ·Å£ºÒÔ¿í¶È£¨tilesWide£©Îª»ù×¼£¬²»Ñ¹Ëõ×İºá±È
+  // ç­‰æ¯”ä¾‹ç¼©æ”¾ï¼šä»¥å®½åº¦ï¼ˆtilesWideï¼‰ä¸ºåŸºå‡†ï¼Œä¸å‹ç¼©çºµæ¨ªæ¯”
   setDisplayWidthByTilesKeepAspect(sprite, tilesWide) {
     if (!sprite) return;
     const targetW = this.tilesToPx(tilesWide || 1);
@@ -8752,16 +8756,16 @@ updateBossUI(target) {
     return { ux: dx/len, uy: dy/len, angle: Math.atan2(dy, dx) };
   }
 
-  /* ==== Utsuho£º³õÊ¼»¯AIÓë×´Ì¬»ú ==== */
+  /* ==== Utsuhoï¼šåˆå§‹åŒ–AIä¸çŠ¶æ€æœº ==== */
   initUtsuhoAI(boss) {
     boss.ai = {
       elapsed: 0,
       mode: 1,
       modeEndsAt: BOSS_UTSUHO_CONFIG.modeDurations.m1,
       state: "seek", // seek | charge | dash1 | dash2 | m2_charge | m2_fire | m3_charge | m3_fire | m4_charge | m4_dash
-      // Í¨ÓÃ
+      // é€šç”¨
       nextThink: 0,
-      // Mode1 / Mode4 ³å´Ì
+      // Mode1 / Mode4 å†²åˆº
       chargeEndsAt: 0,
       dashTarget: null,
       dashSpeed: 0,
@@ -8771,7 +8775,7 @@ updateBossUI(target) {
       m2_loopUntil: 0,
       m2_nextRingAt: 0,
       m2_phaseDegFixed: Phaser.Math.Between(0, 359),
-      m2_ringEndsAt: 0, // ±¾´ÎÎåÃë´°¿Ú½áÊø
+      m2_ringEndsAt: 0, // æœ¬æ¬¡äº”ç§’çª—å£ç»“æŸ
       // Mode3
       m3_loopUntil: 0,
       m3_nextNukeAt: 0,
@@ -8782,7 +8786,7 @@ updateBossUI(target) {
     boss.body.setVelocity(0, 0);
   }
 
-  /* ==== Utsuho£ºAI ¸üĞÂ ==== */
+  /* ==== Utsuhoï¼šAI æ›´æ–° ==== */
   updateUtsuhoAI(delta) {
     const boss = this.boss;
     if (!boss || !boss.active) return;
@@ -8790,13 +8794,13 @@ updateBossUI(target) {
     ai.elapsed = (ai.elapsed ?? 0) + delta;
     const now = ai.elapsed;
 
-    // Ä£Ê½ÇĞ»»
+    // æ¨¡å¼åˆ‡æ¢
     if (now >= ai.modeEndsAt) {
       this.advanceUtsuhoMode();
       return;
     }
 
-    // ¸ù¾İÄ£Ê½·ÖÅÉ
+    // æ ¹æ®æ¨¡å¼åˆ†æ´¾
     switch (ai.mode) {
       case 1: this.updateUtsuhoMode1(delta); break;
       case 2: this.updateUtsuhoMode2(delta); break;
@@ -8812,7 +8816,7 @@ updateBossUI(target) {
     const ai = boss.ai;
     const now = this.getBossElapsed();
 
-    // Çå³ıËùÓĞBossµ¯Ä»
+    // æ¸…é™¤æ‰€æœ‰Bosså¼¹å¹•
     this.clearBossBullets();
     boss.body.setVelocity(0, 0);
 
@@ -8823,7 +8827,7 @@ updateBossUI(target) {
       ai.m2_loopUntil = ai.modeEndsAt;
       ai.m2_phaseDegFixed = Phaser.Math.Between(0, 359);
       ai.m2_ringEndsAt = 0;
-      this.startWarningCharge(3 * 1000); // 3ÃëĞîÁ¦
+      this.startWarningCharge(3 * 1000); // 3ç§’è“„åŠ›
       return;
     }
     if (ai.mode === 2) {
@@ -8840,7 +8844,7 @@ updateBossUI(target) {
       ai.mode = 4;
       ai.modeEndsAt = now + BOSS_UTSUHO_CONFIG.modeDurations.m4;
       ai.state = "m4_charge";
-      this.startCharge(1 * 1000); // Mode4 ¿ª³¡1sĞîÁ¦
+      this.startCharge(1 * 1000); // Mode4 å¼€åœº1sè“„åŠ›
       return;
     }
     if (ai.mode === 4) {
@@ -8851,7 +8855,7 @@ updateBossUI(target) {
     }
   }
 
-  /* ==== Utsuho£ºÍ¨ÓÃÌùÍ¼³¯Ïò ==== */
+  /* ==== Utsuhoï¼šé€šç”¨è´´å›¾æœå‘ ==== */
   setUtsuhoMoveTextureByVel() {
     const boss = this.boss;
     if (!boss) return;
@@ -8863,7 +8867,7 @@ updateBossUI(target) {
       boss.setFlipX(false);
       return;
     }
-    // ¼òµ¥¹æÔò£º×İÏòÎªÖ÷ -> movedown£»·ñÔò moveright/flipX
+    // ç®€å•è§„åˆ™ï¼šçºµå‘ä¸ºä¸» -> movedownï¼›å¦åˆ™ moveright/flipX
     if (Math.abs(vy) >= Math.abs(vx)) {
       boss.setTexture(BOSS_UTSUHO_CONFIG.textureMoveDown);
       boss.setFlipX(false);
@@ -8873,14 +8877,14 @@ updateBossUI(target) {
     }
   }
 
-  /* ==== Utsuho£ºĞîÁ¦ÌáÊ¾£¨Mode2/3ÓÃµÄºË¾¯Ê¾¿ò£© ==== */
+  /* ==== Utsuhoï¼šè“„åŠ›æç¤ºï¼ˆMode2/3ç”¨çš„æ ¸è­¦ç¤ºæ¡†ï¼‰ ==== */
   startWarningCharge(ms) {
     const boss = this.boss;
     const ai = boss.ai;
     const now = this.getBossElapsed();
     ai.stateChargeUntil = now + ms;
     ai.state = ai.mode === 2 ? "m2_charge" : "m3_charge";
-    // ÌáÊ¾¿ò£¨ÔÚBossÏÂ·½£¬²»ÕÚµ²Boss£©
+    // æç¤ºæ¡†ï¼ˆåœ¨Bossä¸‹æ–¹ï¼Œä¸é®æŒ¡Bossï¼‰
     if (boss.warningSprite) { boss.warningSprite.destroy(); boss.warningSprite = null; }
     const warn = this.add.image(boss.x, boss.y, "utsuho_warning").setDepth(boss.depth - 1);
     this.setDisplaySizeByTiles(warn, BOSS_UTSUHO_CONFIG.hitboxes.warningSize);
@@ -8894,7 +8898,7 @@ updateBossUI(target) {
     ai.stateChargeUntil = now + ms;
   }
 
-  /* ==== Utsuho£ºMode1£¨40Ãë£©==== */
+  /* ==== Utsuhoï¼šMode1ï¼ˆ40ç§’ï¼‰==== */
   updateUtsuhoMode1(delta) {
     const boss = this.boss;
     const ai = boss.ai;
@@ -8903,17 +8907,17 @@ updateBossUI(target) {
     const dist = Phaser.Math.Distance.Between(boss.x, boss.y, this.player.x, this.player.y);
 
     if (ai.state === "seek") {
-      // °ë¾¶100Íâ£ºÏò×Ô»úÒÆ¶¯
+      // åŠå¾„100å¤–ï¼šå‘è‡ªæœºç§»åŠ¨
       if (dist > 100) {
         this.physics.moveToObject(boss, this.player, BOSS_UTSUHO_CONFIG.moveSpeed);
         this.setUtsuhoMoveTextureByVel();
         return;
       }
-      // °ë¾¶300ÄÚ£º¿ªÊ¼ĞîÁ¦ -> ³å´Ì1
+      // åŠå¾„300å†…ï¼šå¼€å§‹è“„åŠ› -> å†²åˆº1
       this.startCharge(3000);
       boss.body.setVelocity(0, 0);
       ai.chargeEndsAt = now + 1000;
-      ai.dashTarget = { x: this.player.x, y: this.player.y }; // ¼ÇÂ¼µ±Ç°×Ô»ú×ø±ê
+      ai.dashTarget = { x: this.player.x, y: this.player.y }; // è®°å½•å½“å‰è‡ªæœºåæ ‡
       ai.state = "charge";
       return;
     }
@@ -8921,7 +8925,7 @@ updateBossUI(target) {
     if (ai.state === "charge") {
       boss.body.setVelocity(0, 0);
       if (now >= ai.chargeEndsAt) {
-        // ³å´Ìµ½Ç½»ò±ß½ç
+        // å†²åˆºåˆ°å¢™æˆ–è¾¹ç•Œ
         const dir = this.aimUnit(boss.x, boss.y, ai.dashTarget.x, ai.dashTarget.y);
         ai.dashDir = { ux: dir.ux, uy: dir.uy };
         ai.dashSpeed = BOSS_UTSUHO_CONFIG.dashInitSpeed;
@@ -8932,20 +8936,20 @@ updateBossUI(target) {
     }
 
     if (ai.state === "dash1" || ai.state === "dash2") {
-      // ³å´ÌËÙ¶ÈÀÛÔö
+      // å†²åˆºé€Ÿåº¦ç´¯å¢
       ai.dashSpeed += BOSS_UTSUHO_CONFIG.dashAccel * (delta/1000);
       boss.body.setVelocity(ai.dashDir.ux * ai.dashSpeed, ai.dashDir.uy * ai.dashSpeed);
       this.setUtsuhoMoveTextureByVel();
-      // ²ĞÓ°£º»ÒÉ«£¬½ÏµÍÍ¸Ã÷¶È£¬0.8s
+      // æ®‹å½±ï¼šç°è‰²ï¼Œè¾ƒä½é€æ˜åº¦ï¼Œ0.8s
       this.maybeEmitAfterimage(boss, 45, { alphaStart: 0.6, duration: 800, tint: 0x999999, depthOffset: -2 });
-      // Ã¿4¸ñÍ¶·Å nuclearspawn
+      // æ¯4æ ¼æŠ•æ”¾ nuclearspawn
       this.tryPlaceNuclearSpawnAlongDash(ai);
-      // Åöµ½±ßÔµ»òÇ½Ìå£¿
+      // ç¢°åˆ°è¾¹ç¼˜æˆ–å¢™ä½“ï¼Ÿ
       const blocked = boss.body.blocked;
       const hitEdge = blocked.left || blocked.right || blocked.up || blocked.down;
       if (ai.state === "dash1" && hitEdge) {
         boss.body.setVelocity(0, 0);
-        // ¼ÇÂ¼µ±Ç°×Ô»ú×ø±ê£¬³å´Ìµ½¸Ãµã
+        // è®°å½•å½“å‰è‡ªæœºåæ ‡ï¼Œå†²åˆºåˆ°è¯¥ç‚¹
         const t = { x: this.player.x, y: this.player.y };
         const dir2 = this.aimUnit(boss.x, boss.y, t.x, t.y);
         ai.dashDir = { ux: dir2.ux, uy: dir2.uy };
@@ -8957,10 +8961,10 @@ updateBossUI(target) {
       }
       if (ai.state === "dash2") {
           const d2 = Phaser.Math.Distance.Between(boss.x, boss.y, ai.dashTarget.x, ai.dashTarget.y);
-          // ĞÂÔö£º¼ì²âÊÇ·ñÅöµ½±ß½ç
+          // æ–°å¢ï¼šæ£€æµ‹æ˜¯å¦ç¢°åˆ°è¾¹ç•Œ
           const blocked = boss.body.blocked;
           const hitEdge = blocked.left || blocked.right || blocked.up || blocked.down;
-          // µ½´ïÄ¿±êµã »ò ×²Ç½ ¶¼½áÊø³å´Ì
+          // åˆ°è¾¾ç›®æ ‡ç‚¹ æˆ– æ’å¢™ éƒ½ç»“æŸå†²åˆº
           if (d2 <= 10 || hitEdge) {
               boss.body.setVelocity(0, 0);
               ai.state = "seek";
@@ -8973,29 +8977,29 @@ updateBossUI(target) {
   tryPlaceNuclearSpawnAlongDash(ai) {
       const boss = this.boss;
       const last = ai.dashLastMarkPos || { x: boss.x, y: boss.y };
-      const step = this.tilesToPx(4); // Ã¿4¸ñ
+      const step = this.tilesToPx(4); // æ¯4æ ¼
       const dist = Phaser.Math.Distance.Between(boss.x, boss.y, last.x, last.y);
       if (dist < step) return;
 
-      // Éú³É nuclearspawn ÌùÍ¼£¨·½ÏòÓë³å´Ì·½ÏòÒ»ÖÂ£©
+      // ç”Ÿæˆ nuclearspawn è´´å›¾ï¼ˆæ–¹å‘ä¸å†²åˆºæ–¹å‘ä¸€è‡´ï¼‰
       const s = this.add.image(boss.x, boss.y, "u_bullet_nuclearspawn").setDepth(boss.depth - 1);
       this.setDisplaySizeByTiles(s, BOSS_UTSUHO_CONFIG.hitboxes.bullets.nuclearspawn.size);
       s.setRotation(Math.atan2(ai.dashDir.uy, ai.dashDir.ux));
       s.setAlpha(1);
 
-      // 1Ãëºóµ­³ö£¬²¢ÔÚµ±Ç°Î»ÖÃÉú³É20¸öºËÎ£º¦Á£×Ó
+      // 1ç§’åæ·¡å‡ºï¼Œå¹¶åœ¨å½“å‰ä½ç½®ç”Ÿæˆ20ä¸ªæ ¸å±å®³ç²’å­
       this.time.delayedCall(1000, () => {
           this.tweens.add({
               targets: s, 
               alpha: 0, 
               duration: 400, 
               onComplete: () => {
-                  // Éú³É20¸ö nuclearhazard£ºËÙ¶È10£¬·½ÏòËæ»ú£¬´øÁ£×ÓÌØĞ§
+                  // ç”Ÿæˆ20ä¸ª nuclearhazardï¼šé€Ÿåº¦10ï¼Œæ–¹å‘éšæœºï¼Œå¸¦ç²’å­ç‰¹æ•ˆ
                   const count = 20;
-                  const spawnX = s.x;  // Ê¹ÓÃÏûÊ§Ê±µÄÎ»ÖÃ
+                  const spawnX = s.x;  // ä½¿ç”¨æ¶ˆå¤±æ—¶çš„ä½ç½®
                   const spawnY = s.y;
                   for (let i = 0; i < count; i += 1) {
-                      const offR = this.tilesToPx(2); // ËÄ¸ñÄÚ£º¡À2¸ñËæ»ú
+                      const offR = this.tilesToPx(2); // å››æ ¼å†…ï¼šÂ±2æ ¼éšæœº
                       const rx = Phaser.Math.FloatBetween(-offR, offR);
                       const ry = Phaser.Math.FloatBetween(-offR, offR);
                       const bx = spawnX + rx;
@@ -9017,7 +9021,7 @@ updateBossUI(target) {
       });
 
       ai.dashLastMarkPos = { x: boss.x, y: boss.y };
-      // ³å´ÌÁ£×Ó
+      // å†²åˆºç²’å­
       this.emitDashParticles(boss.x, boss.y);
   }
 
@@ -9026,19 +9030,19 @@ updateBossUI(target) {
     this.tweens.add({ targets: p, alpha: 0, scale: 0.2, duration: 240, onComplete: () => p.destroy() });
   }
 
-  // ===== ²ĞÓ°Ğ§¹û£¨ÓÃÓÚ³å´Ì/¼±ËÙÒÆ¶¯£©=====
-  // Á¢¼´ÔÚ¸ø¶¨ÊµÌåÎ»ÖÃÉú³ÉÒ»Ö¡¡°²ĞÓ°¡±£¨»á»ºÂıµ­³ö£©
+  // ===== æ®‹å½±æ•ˆæœï¼ˆç”¨äºå†²åˆº/æ€¥é€Ÿç§»åŠ¨ï¼‰=====
+  // ç«‹å³åœ¨ç»™å®šå®ä½“ä½ç½®ç”Ÿæˆä¸€å¸§â€œæ®‹å½±â€ï¼ˆä¼šç¼“æ…¢æ·¡å‡ºï¼‰
   emitAfterimage(sprite, opts = {}) {
     if (!sprite || !sprite.texture) return;
     const {
       alphaStart = 0.6,
       duration = 800,
-      tint = 0x999999,        // ¸ÄÎª»ÒÉ«£¬¸üµÍÍ¸Ã÷¶È
+      tint = 0x999999,        // æ”¹ä¸ºç°è‰²ï¼Œæ›´ä½é€æ˜åº¦
       depthOffset = -1,
       additive = true,
     } = opts;
     const ghost = this.add.image(sprite.x, sprite.y, sprite.texture.key);
-    // Ö¡/³ß´ç/³¯ÏòÓë±¾ÌåÒ»ÖÂ
+    // å¸§/å°ºå¯¸/æœå‘ä¸æœ¬ä½“ä¸€è‡´
     if (sprite.frame && sprite.frame.name != null && ghost.setFrame) ghost.setFrame(sprite.frame.name);
     if (sprite.displayWidth && sprite.displayHeight && ghost.setDisplaySize) ghost.setDisplaySize(sprite.displayWidth, sprite.displayHeight);
     if (ghost.setScale && (sprite.scaleX != null || sprite.scaleY != null)) ghost.setScale(sprite.scaleX ?? 1, sprite.scaleY ?? 1);
@@ -9048,12 +9052,12 @@ updateBossUI(target) {
     ghost.setAlpha(alphaStart);
     if (ghost.setTint && tint != null) ghost.setTint(tint);
     if (additive && ghost.setBlendMode) ghost.setBlendMode(Phaser.BlendModes.ADD);
-    // »ºÂıµ­³öºóÏú»Ù
+    // ç¼“æ…¢æ·¡å‡ºåé”€æ¯
     this.tweens.add({ targets: ghost, alpha: 0, duration, onComplete: () => ghost.destroy() });
     return ghost;
   }
 
-  // ÔÚ¸ßËÙ¶ÈÒÆ¶¯ÆÚ¼äÒÔ¹Ì¶¨¼ä¸ôÉú³É²ĞÓ°
+  // åœ¨é«˜é€Ÿåº¦ç§»åŠ¨æœŸé—´ä»¥å›ºå®šé—´éš”ç”Ÿæˆæ®‹å½±
   maybeEmitAfterimage(sprite, intervalMs = 50, opts = {}) {
     if (!sprite || !sprite.active) return;
     const now = this.time.now;
@@ -9064,17 +9068,17 @@ updateBossUI(target) {
     }
   }
 
-  /* ==== Utsuho£ºMode2£¨35Ãë£©==== */
+  /* ==== Utsuhoï¼šMode2ï¼ˆ35ç§’ï¼‰==== */
   updateUtsuhoMode2(_delta) {
     const boss = this.boss;
     const ai = boss.ai;
     const now = this.getBossElapsed();
-    // ÒÆ¶¯ÖÁµØÍ¼ÖĞĞÄ
+    // ç§»åŠ¨è‡³åœ°å›¾ä¸­å¿ƒ
     if (ai.state === "m2_charge") {
       if (boss.warningSprite) {
         boss.warningSprite.setPosition(boss.x, boss.y);
       }
-      // ±£Ö¤ÏÈ¾ÓÖĞ
+      // ä¿è¯å…ˆå±…ä¸­
       const centerX = WORLD_SIZE/2, centerY = WORLD_SIZE/2;
       const d = Phaser.Math.Distance.Between(boss.x, boss.y, centerX, centerY);
       if (d > 6) {
@@ -9083,27 +9087,27 @@ updateBossUI(target) {
       } else {
         boss.body.setVelocity(0,0);
       }
-      // µÈ´ı3ÃëĞîÁ¦½áÊø
+      // ç­‰å¾…3ç§’è“„åŠ›ç»“æŸ
       if (now >= ai.stateChargeUntil) {
-        // ¿ª»ğ5Ãë£ºyellow »·×´µ¯Ä»
+        // å¼€ç«5ç§’ï¼šyellow ç¯çŠ¶å¼¹å¹•
         if (boss.warningSprite) { boss.warningSprite.destroy(); boss.warningSprite = null; }
         ai.state = "m2_fire";
-        ai.m2_phaseDegFixed = Phaser.Math.Between(0, 359); // ±¾ÂÖ¹Ì¶¨ÏàÎ»
-        ai.m2_ringEndsAt = now + 5000; // ³ÖĞø5Ãë
-        ai.m2_nextRingAt = now; // Á¢¿Ì¿ªµÚÒ»ÂÖ
+        ai.m2_phaseDegFixed = Phaser.Math.Between(0, 359); // æœ¬è½®å›ºå®šç›¸ä½
+        ai.m2_ringEndsAt = now + 5000; // æŒç»­5ç§’
+        ai.m2_nextRingAt = now; // ç«‹åˆ»å¼€ç¬¬ä¸€è½®
       }
       return;
     }
 
     if (ai.state === "m2_fire") {
       boss.body.setVelocity(0, 0);
-      // ·¢Éä´°ÄÚ£ºÃ¿0.01s ·ÅÒ»È¦ 60 ·¢
+      // å‘å°„çª—å†…ï¼šæ¯0.01s æ”¾ä¸€åœˆ 60 å‘
       if (now <= ai.m2_ringEndsAt) {
         if (now >= ai.m2_nextRingAt) {
           this.fireRing({
             key: "u_bullet_yellow",
             sizeTiles: BOSS_UTSUHO_CONFIG.hitboxes.bullets.yellow.size,
-            // ÅĞ¶¨·¶Î§ËõĞ¡Ò»°ë£¨½ö Mode2 µÄ yellow£©
+            // åˆ¤å®šèŒƒå›´ç¼©å°ä¸€åŠï¼ˆä»… Mode2 çš„ yellowï¼‰
             judgeTiles: BOSS_UTSUHO_CONFIG.hitboxes.bullets.yellow.judge / 2,
             count: 60,
             phaseDeg: ai.m2_phaseDegFixed,
@@ -9114,12 +9118,12 @@ updateBossUI(target) {
           ai.m2_nextRingAt = now + 200; 
         }
       } else {
-        // ÖØ»Ø3ÃëĞîÁ¦£¬Ö±µ½Ä£Ê½Ê±¼äµ½
+        // é‡å›3ç§’è“„åŠ›ï¼Œç›´åˆ°æ¨¡å¼æ—¶é—´åˆ°
         if (now + 3000 <= ai.m2_loopUntil) {
           ai.state = "m2_charge";
           this.startWarningCharge(3000);
         } else {
-          // Ä£Ê½¼´½«½áÊø£ºµÈ´ıadvanceUtsuhoModeÇĞ»»
+          // æ¨¡å¼å³å°†ç»“æŸï¼šç­‰å¾…advanceUtsuhoModeåˆ‡æ¢
           boss.body.setVelocity(0, 0);
         }
       }
@@ -9127,14 +9131,14 @@ updateBossUI(target) {
     }
   }
 
-  /* ==== Utsuho£ºMode3£¨70Ãë£©==== */
+  /* ==== Utsuhoï¼šMode3ï¼ˆ70ç§’ï¼‰==== */
   updateUtsuhoMode3(_delta) {
     const boss = this.boss;
     const ai = boss.ai;
     const now = this.getBossElapsed();
     if (ai.state === "m3_charge") {
       if (boss.warningSprite) boss.warningSprite.setPosition(boss.x, boss.y);
-      // ¾ÓÖĞ
+      // å±…ä¸­
       const centerX = WORLD_SIZE/2, centerY = WORLD_SIZE/2;
       const d = Phaser.Math.Distance.Between(boss.x, boss.y, centerX, centerY);
       if (d > 6) {
@@ -9144,19 +9148,19 @@ updateBossUI(target) {
       if (now >= ai.stateChargeUntil) {
         if (boss.warningSprite) { boss.warningSprite.destroy(); boss.warningSprite = null; }
         ai.state = "m3_fire";
-        ai.m3_nextNukeAt = now;     // 3Ãë¼ä¸ôºËµ¯£¬Á¢¼´µÚÒ»ÂÖ
-        ai.m3_nextBlueAt = now;     // 0.2Ãë¼ä¸ôÀ¶µ¯
+        ai.m3_nextNukeAt = now;     // 3ç§’é—´éš”æ ¸å¼¹ï¼Œç«‹å³ç¬¬ä¸€è½®
+        ai.m3_nextBlueAt = now;     // 0.2ç§’é—´éš”è“å¼¹
         ai.m3_phaseNuke = 0;
-        // ai.m3_phaseBlue ±£³Ö²¢ÔÚÃ¿´ÎÉú³ÉÄÚËæ»úÔöÁ¿
+        // ai.m3_phaseBlue ä¿æŒå¹¶åœ¨æ¯æ¬¡ç”Ÿæˆå†…éšæœºå¢é‡
       }
       return;
     }
 
-  // ÔÚ updateUtsuhoMode3 º¯ÊıÖĞĞŞ¸Ä:
+  // åœ¨ updateUtsuhoMode3 å‡½æ•°ä¸­ä¿®æ”¹:
   if (ai.state === "m3_fire") {
       boss.body.setVelocity(0, 0);
       if (now >= ai.m3_nextNukeAt) {
-          // ĞŞ¸Ä£º±£Ö¤8¸öºËµ¯¾ùÔÈ·Ö²¼ÔÚ360¶ÈÉÏ
+          // ä¿®æ”¹ï¼šä¿è¯8ä¸ªæ ¸å¼¹å‡åŒ€åˆ†å¸ƒåœ¨360åº¦ä¸Š
           this.fireRing({
               key: "u_bullet_nuclearbomb",
               sizeTiles: BOSS_UTSUHO_CONFIG.hitboxes.bullets.nuclearbomb.size,
@@ -9165,19 +9169,19 @@ updateBossUI(target) {
               phaseDeg: ai.m3_phaseNuke,
               forwardSpeed: 20,
               accel: 10,
-              // Ã¿¸öºËµ¯µÄ²àÏòËÙ¶ÈÈÔÈ»±£³Ö½»Ìæ
+              // æ¯ä¸ªæ ¸å¼¹çš„ä¾§å‘é€Ÿåº¦ä»ç„¶ä¿æŒäº¤æ›¿
               sideSpeed:0,
-              // ÃüÖĞ×Ô»ú¶îÍâÔì³ÉÆäÉúÃüÉÏÏŞ50%µÄÉËº¦
+              // å‘½ä¸­è‡ªæœºé¢å¤–é€ æˆå…¶ç”Ÿå‘½ä¸Šé™50%çš„ä¼¤å®³
               percentMaxHpDamage: 0.5,
           }, BOSS_UTSUHO_CONFIG.bulletMagicDamage);
           
-          // Ã¿´ÎĞı×ª45¶È(360/8)£¬±£Ö¤ÏÂÒ»ÂÖµÄºËµ¯ÓëÕâÒ»ÂÖ´í¿ª
+          // æ¯æ¬¡æ—‹è½¬45åº¦(360/8)ï¼Œä¿è¯ä¸‹ä¸€è½®çš„æ ¸å¼¹ä¸è¿™ä¸€è½®é”™å¼€
           ai.m3_phaseNuke = (ai.m3_phaseNuke + 22.5) % 360;
           ai.m3_nextNukeAt = now + 6000;
       }
-      // 0.2ÃëÒ»´Î£ºÀ¶µ¯»·£¨3¸ö£©£¬³õÊ¼ÏàÎ»Ã¿´Î += Ëæ»ú(-10,+30)
+      // 0.2ç§’ä¸€æ¬¡ï¼šè“å¼¹ç¯ï¼ˆ3ä¸ªï¼‰ï¼Œåˆå§‹ç›¸ä½æ¯æ¬¡ += éšæœº(-10,+30)
       if (now >= ai.m3_nextBlueAt) {
-        // ±¾´ÎÔöÁ¿
+        // æœ¬æ¬¡å¢é‡
         ai.m3_phaseBlue = (ai.m3_phaseBlue + Phaser.Math.Between(-0.5, 5)) % 360;
         this.fireRing({
           key: "u_bullet_blue",
@@ -9195,7 +9199,7 @@ updateBossUI(target) {
     }
   }
 
-  /* ==== Utsuho£ºMode4£¨35Ãë£©==== */
+  /* ==== Utsuhoï¼šMode4ï¼ˆ35ç§’ï¼‰==== */
   updateUtsuhoMode4(delta) {
     const boss = this.boss;
     const ai = boss.ai;
@@ -9205,7 +9209,7 @@ updateBossUI(target) {
       boss.body.setVelocity(0, 0);
       if (now >= ai.stateChargeUntil) {
         this.startCharge(3000); 
-        // ³å´Ìµ½Ç½ -> ³å´Ìµ½¼ÇÂ¼µã£»ÓëMode1ÏàÍ¬£¬µ«spawnµ­³öºó¶îÍâ·Å bigyellow »·£¨³ÖĞø1ÃëÄÚ£¬Ã¿0.2Ãë·¢2·¢£¬·½Ïò³¯Ïò×Ô»ú£©
+        // å†²åˆºåˆ°å¢™ -> å†²åˆºåˆ°è®°å½•ç‚¹ï¼›ä¸Mode1ç›¸åŒï¼Œä½†spawnæ·¡å‡ºåé¢å¤–æ”¾ bigyellow ç¯ï¼ˆæŒç»­1ç§’å†…ï¼Œæ¯0.2ç§’å‘2å‘ï¼Œæ–¹å‘æœå‘è‡ªæœºï¼‰
         ai.dashTarget = { x: this.player.x, y: this.player.y };
         const dir = this.aimUnit(boss.x, boss.y, ai.dashTarget.x, ai.dashTarget.y);
         ai.dashDir = { ux: dir.ux, uy: dir.uy };
@@ -9221,11 +9225,11 @@ updateBossUI(target) {
       ai.dashSpeed += BOSS_UTSUHO_CONFIG.dashAccel * (delta/1000);
       boss.body.setVelocity(ai.dashDir.ux * ai.dashSpeed, ai.dashDir.uy * ai.dashSpeed);
       this.setUtsuhoMoveTextureByVel();
-      // ²ĞÓ°£º»ÒÉ«£¬½ÏµÍÍ¸Ã÷¶È£¬0.8s
+      // æ®‹å½±ï¼šç°è‰²ï¼Œè¾ƒä½é€æ˜åº¦ï¼Œ0.8s
       this.maybeEmitAfterimage(boss, 45, { alphaStart: 0.6, duration: 800, tint: 0x999999, depthOffset: -2 });
-      // ·ÅÖÃ spawn£¬²¢ÔÚÆäµ­³öÊ±´¥·¢ bigyellow ¶ÌÊ±»·£¨1Ãë£¬0.2s¼ä¸ô£©
+      // æ”¾ç½® spawnï¼Œå¹¶åœ¨å…¶æ·¡å‡ºæ—¶è§¦å‘ bigyellow çŸ­æ—¶ç¯ï¼ˆ1ç§’ï¼Œ0.2sé—´éš”ï¼‰
       this.tryPlaceNuclearSpawnAlongDash_Mode4(ai);
-      // Åö±ß»ò´ïµã
+      // ç¢°è¾¹æˆ–è¾¾ç‚¹
       const blocked = boss.body.blocked;
       const hitEdge = blocked.left || blocked.right || blocked.up || blocked.down;
       if (ai.state === "m4_dash1" && hitEdge) {
@@ -9245,7 +9249,7 @@ updateBossUI(target) {
             const hitEdge = blocked.left || blocked.right || blocked.up || blocked.down;
             if (d2 <= 10 || hitEdge) {
                 boss.body.setVelocity(0, 0);
-                // ¹Ø¼üĞŞ¸Ä£ºÖ±½Ó¿ªÊ¼ĞÂµÄ³äÄÜ
+                // å…³é”®ä¿®æ”¹ï¼šç›´æ¥å¼€å§‹æ–°çš„å……èƒ½
                 this.startCharge(1000);
                 ai.state = "m4_charge";
             }
@@ -9253,14 +9257,14 @@ updateBossUI(target) {
       return;
     }
 
-    // seek Óë Mode1 ÏàÍ¬
+    // seek ä¸ Mode1 ç›¸åŒ
     this.updateUtsuhoMode1(delta);
   }
 
   tryPlaceNuclearSpawnAlongDash_Mode4(ai) {
     const boss = this.boss;
     const last = ai.dashLastMarkPos || { x: boss.x, y: boss.y };
-    const step = this.tilesToPx(4); // Ã¿4¸ñ
+    const step = this.tilesToPx(4); // æ¯4æ ¼
     const dist = Phaser.Math.Distance.Between(boss.x, boss.y, last.x, last.y);
     if (dist < step) return;
 
@@ -9269,7 +9273,7 @@ updateBossUI(target) {
     s.setRotation(Math.atan2(ai.dashDir.uy, ai.dashDir.ux));
     s.setAlpha(1);
 
-    // 1Ãëºóµ­³ö + Éú³É bigyellow »·£¨³ÖĞø1Ãë£»Ã¿0.2Ãë·¢Ò»È¦£»ÏàÎ»=³¯Ïò×Ô»ú½Ç¶È£»Ò»È¦2·¢£©
+    // 1ç§’åæ·¡å‡º + ç”Ÿæˆ bigyellow ç¯ï¼ˆæŒç»­1ç§’ï¼›æ¯0.2ç§’å‘ä¸€åœˆï¼›ç›¸ä½=æœå‘è‡ªæœºè§’åº¦ï¼›ä¸€åœˆ2å‘ï¼‰
     this.time.delayedCall(1000, () => {
       this.tweens.add({
         targets: s, alpha: 0, duration: 400, onComplete: () => s.destroy(),
@@ -9293,7 +9297,7 @@ updateBossUI(target) {
         this.time.delayedCall(200, doRing);
       };
       doRing();
-      // Ë³±ãÉú³É hazard Î¢Á££¨5¸ö£¬ËÙ¶È100£©
+      // é¡ºä¾¿ç”Ÿæˆ hazard å¾®ç²’ï¼ˆ5ä¸ªï¼Œé€Ÿåº¦100ï¼‰
       const count = 2;
       for (let i = 0; i < count; i += 1) {
         const offR = this.tilesToPx(2);
@@ -9318,13 +9322,13 @@ updateBossUI(target) {
     this.emitDashParticles(boss.x, boss.y);
   }
 
-  /* ==== Utsuho£º·¢µ¯¹¤¾ß ==== */
-  // ÔÚBossµ±Ç°Î»ÖÃ·¢»·
+  /* ==== Utsuhoï¼šå‘å¼¹å·¥å…· ==== */
+  // åœ¨Bosså½“å‰ä½ç½®å‘ç¯
   fireRing(params, magicDamage) {
     const boss = this.boss;
     this.fireRingAt(boss.x, boss.y, params, magicDamage);
   }
-  // ÔÚÖ¸¶¨×ø±ê·¢»·£»sideSpeed ¿ÉÎª³£Êı»òº¯Êı(angleDeg)->Öµ
+  // åœ¨æŒ‡å®šåæ ‡å‘ç¯ï¼›sideSpeed å¯ä¸ºå¸¸æ•°æˆ–å‡½æ•°(angleDeg)->å€¼
   fireRingAt(cx, cy, params, magicDamage) {
     const { key, sizeTiles, judgeTiles, count, phaseDeg, forwardSpeed, accel, sideSpeed, owner, percentMaxHpDamage } = params;
     for (let i = 0; i < count; i += 1) {
@@ -9361,7 +9365,7 @@ updateBossUI(target) {
     if (Number.isFinite(percentMaxHpDamage) && percentMaxHpDamage > 0) {
       b.percentMaxHpDamage = percentMaxHpDamage;
     }
-    // µÚÊ®¹Øºó£ºÈç¹û×Óµ¯À´Ô´Îª Boss£¬Ôò³ËÒÔ (1 + rank/10)
+    // ç¬¬åå…³åï¼šå¦‚æœå­å¼¹æ¥æºä¸º Bossï¼Œåˆ™ä¹˜ä»¥ (1 + rank/10)
     if (opts?.owner?.isBoss && Math.floor(this.level || 0) > 10) {
       const rf = Math.max(0, Number.isFinite(this.rank) ? this.rank : 0) / 10;
       const factor = 1 + rf;
@@ -9370,7 +9374,7 @@ updateBossUI(target) {
     if (owner) b.owner = owner;
     this.bossBullets.add(b);
     if (withTrail) {
-      // ¸´ÓÃÍæ¼Ò×Óµ¯¹ì¼£×÷ÎªÌØĞ§
+      // å¤ç”¨ç©å®¶å­å¼¹è½¨è¿¹ä½œä¸ºç‰¹æ•ˆ
       b.trailTimer = this.time.addEvent({ delay: 60, loop: true, callback: () => {
         if (!b.active) return;
         const t = this.add.image(b.x, b.y, "bullet_trail").setDepth(7).setBlendMode(Phaser.BlendModes.ADD);
@@ -9381,14 +9385,14 @@ updateBossUI(target) {
     return b;
   }
 
-  /* ==== Rin AI ÊµÏÖ ==== */
+  /* ==== Rin AI å®ç° ==== */
   initRinAI(boss) {
     boss.ai = {
       elapsed: 0,
       mode: 1,
       modeEndsAt: BOSS_RIN_CONFIG.modeDurations.m1,
       // Mode1 dash
-      m1_nextDashAt: 1200, // Ê×´Î³å´ÌÇ°µÈ´ı0.6s
+      m1_nextDashAt: 1200, // é¦–æ¬¡å†²åˆºå‰ç­‰å¾…0.6s
       m1_dashEndAt: 0,
       m1_dashIndex: 0,
       m1_dashDurationMs: 600,
@@ -9413,7 +9417,7 @@ updateBossUI(target) {
     ai.elapsed = (ai.elapsed || 0) + delta;
     const now = ai.elapsed;
 
-    // Ä£Ê½ÇĞ»»£ºMode1 -> Mode2 -> Mode3 -> Mode1
+    // æ¨¡å¼åˆ‡æ¢ï¼šMode1 -> Mode2 -> Mode3 -> Mode1
     if ((ai.mode === 1 && now >= ai.modeEndsAt) || (ai.mode === 2 && now >= ai.modeEndsAt)) {
       this.advanceRinMode();
       return;
@@ -9438,22 +9442,22 @@ updateBossUI(target) {
     if (ai.mode === 1) {
       ai.mode = 2;
       ai.modeEndsAt = now + BOSS_RIN_CONFIG.modeDurations.m2;
-      ai.m2_nextEmitAt = now; // Á¢¿Ì¿ªÊ¼·¢ÉäÒ»È¦
+      ai.m2_nextEmitAt = now; // ç«‹åˆ»å¼€å§‹å‘å°„ä¸€åœˆ
       return;
     }
     if (ai.mode === 2) {
       ai.mode = 3;
-      // µÚÈı½×¶Î£ºÖ±µ½³¡ÉÏĞ¡¹ÖÇå¿Õ
+      // ç¬¬ä¸‰é˜¶æ®µï¼šç›´åˆ°åœºä¸Šå°æ€ªæ¸…ç©º
       ai.m3_initialized = false;
-      // È¡ÏûËøÑªÎŞµĞ
+      // å–æ¶ˆé”è¡€æ— æ•Œ
       return;
     }
     if (ai.mode === 3) {
-      // ·µ»ØµÚÒ»½×¶Î
+      // è¿”å›ç¬¬ä¸€é˜¶æ®µ
       ai.mode = 1;
       ai.elapsed = 0;
       ai.modeEndsAt = BOSS_RIN_CONFIG.modeDurations.m1;
-      ai.m1_nextDashAt = 600; // »Øµ½P1Ò²ÏÈµÈ´ı0.6s
+      ai.m1_nextDashAt = 600; // å›åˆ°P1ä¹Ÿå…ˆç­‰å¾…0.6s
       ai.m1_dashEndAt = 0;
       ai.m1_dashIndex = 0;
       boss.invulnerable = false;
@@ -9462,16 +9466,16 @@ updateBossUI(target) {
 
   updateRinMode1(delta) {
     const boss = this.boss; const ai = boss.ai; const now = ai.elapsed;
-    // ³å´Ì½øĞĞÖĞ
+    // å†²åˆºè¿›è¡Œä¸­
     if (now < ai.m1_dashEndAt) {
-      return; // ËÙ¶ÈÒÑÔÚ¿ªÊ¼Ê±ÉèÖÃ
+      return; // é€Ÿåº¦å·²åœ¨å¼€å§‹æ—¶è®¾ç½®
     }
-    // ÀäÈ´ÖĞ
+    // å†·å´ä¸­
     if (now < ai.m1_nextDashAt) {
       boss.body.setVelocity(0, 0);
       return;
     }
-    // ³å´Ì½áÊø -> ÔÚÖÕµãÊÍ·ÅÒ»È¦µ¯Ä»
+    // å†²åˆºç»“æŸ -> åœ¨ç»ˆç‚¹é‡Šæ”¾ä¸€åœˆå¼¹å¹•
     if (ai.m1_dashEndAt > 0 && now >= ai.m1_dashEndAt) {
       this.fireRing({
         key: "r_bullet_needle",
@@ -9483,10 +9487,10 @@ updateBossUI(target) {
         owner: boss,
       }, BOSS_RIN_CONFIG.bulletMagicDamage);
       ai.m1_nextDashAt = now + ai.m1_cooldownMs;
-      ai.m1_dashEndAt = 0; // ±ê¼Ç³å´ÌÒÑ½áÊø
+      ai.m1_dashEndAt = 0; // æ ‡è®°å†²åˆºå·²ç»“æŸ
       return;
     }
-    // ¿ªÊ¼Ò»´ÎĞÂµÄ³å´Ì£ºÕıÇ°¡¢ÓÒ¡¢×ó¡¢ºó£¬»ùÓÚµ±Ç°³¯ÏòÍæ¼Ò
+    // å¼€å§‹ä¸€æ¬¡æ–°çš„å†²åˆºï¼šæ­£å‰ã€å³ã€å·¦ã€åï¼ŒåŸºäºå½“å‰æœå‘ç©å®¶
     const baseAng = Phaser.Math.Angle.Between(boss.x, boss.y, this.player.x, this.player.y);
     const deg = Phaser.Math.RadToDeg(baseAng);
     let dashDeg = deg;
@@ -9503,7 +9507,7 @@ updateBossUI(target) {
 
   updateRinMode2(_delta) {
     const boss = this.boss; const ai = boss.ai; const now = ai.elapsed;
-    // Ñ¸ËÙÒÆ¶¯µ½°æÖĞ
+    // è¿…é€Ÿç§»åŠ¨åˆ°ç‰ˆä¸­
     const centerX = WORLD_SIZE / 2; const centerY = WORLD_SIZE / 2;
     const dist = Phaser.Math.Distance.Between(boss.x, boss.y, centerX, centerY);
     if (dist > 4) {
@@ -9511,7 +9515,7 @@ updateBossUI(target) {
     } else {
       boss.body.setVelocity(0, 0);
     }
-    // »·×´·½Ê½·¢ÉäÑı¾«Ê¬Ìå
+    // ç¯çŠ¶æ–¹å¼å‘å°„å¦–ç²¾å°¸ä½“
     if (now >= ai.m2_nextEmitAt) {
       const count = 15; const phase = (ai.m2_phaseDeg || 0) % 360;
       for (let i = 0; i < count; i += 1) {
@@ -9530,8 +9534,8 @@ updateBossUI(target) {
     const boss = this.boss; const ai = boss.ai;
     if (!ai.m3_initialized) {
       ai.m3_initialized = true;
-      // È¡ÏûËøÑªÎŞµĞ
-      // P3 Ë¢¹Ö¹æÔò£º×ÜÁ¿250£¬ÏÈË¢50£¬Ö®ºó¡°ËÀÒ»¸öË¢Ò»¸ö¡±Ö±ÖÁ×ÜÁ¿´ï³É
+      // å–æ¶ˆé”è¡€æ— æ•Œ
+      // P3 åˆ·æ€ªè§„åˆ™ï¼šæ€»é‡250ï¼Œå…ˆåˆ·50ï¼Œä¹‹åâ€œæ­»ä¸€ä¸ªåˆ·ä¸€ä¸ªâ€ç›´è‡³æ€»é‡è¾¾æˆ
       const typeKey = "kedama";
       const tierKey = ENEMY_RARITIES.BASIC;
       const typeConfig = ENEMY_TYPE_CONFIG[typeKey];
@@ -9548,13 +9552,13 @@ updateBossUI(target) {
           ai.m3_spawned += 1;
         }
       }
-      // ³õÊ¼»¯¼ÆÊı
+      // åˆå§‹åŒ–è®¡æ•°
       ai.m3_counts = { kedamaKills: 0 };
     }
-    // ¼ì²éĞ¡¹ÖÊÇ·ñÈ«²¿»÷É±£¨²»¼ÆÈëÑı¾«Ê¬Ìå£©
+    // æ£€æŸ¥å°æ€ªæ˜¯å¦å…¨éƒ¨å‡»æ€ï¼ˆä¸è®¡å…¥å¦–ç²¾å°¸ä½“ï¼‰
     const enemies = (this.enemies?.getChildren?.() || []).filter(e => e && e.active && !e.isBoss && !e.isRinCorpse);
     if (enemies.length === 0) {
-      // ½áÊøµÚÈı½×¶Î£¬»Øµ½µÚÒ»½×¶Î
+      // ç»“æŸç¬¬ä¸‰é˜¶æ®µï¼Œå›åˆ°ç¬¬ä¸€é˜¶æ®µ
       this.advanceRinMode();
     }
   }
@@ -9565,10 +9569,10 @@ updateBossUI(target) {
     s.setDepth(6);
     s.body.setAllowGravity(false);
     this.rinCorpses.add(s);
-    // ±ê¼Ç£º¿É±»»÷É±×Óµ¯£¨²»ÊÇ¹Ö£©
+    // æ ‡è®°ï¼šå¯è¢«å‡»æ€å­å¼¹ï¼ˆä¸æ˜¯æ€ªï¼‰
     s.isRinCorpse = true;
     s.maxHp = 1; s.hp = 1;
-    // ÃüÖĞÅĞ¶¨£ºÔ¼ 1 tile
+    // å‘½ä¸­åˆ¤å®šï¼šçº¦ 1 tile
     const radius = TILE_SIZE / 2;
     if (s.body?.setCircle) {
       const frameW = s.width || TILE_SIZE; const frameH = s.height || TILE_SIZE;
@@ -9582,7 +9586,7 @@ updateBossUI(target) {
 
   killRinCorpse(corpse, spawnRoundBullet) {
     if (!corpse || !corpse.active) return;
-    // ²¥·Å»÷É±ÒôĞ§
+    // æ’­æ”¾å‡»æ€éŸ³æ•ˆ
     this.playSfx?.("enemyexploded");
     if (spawnRoundBullet) {
       const ang = Phaser.Math.Angle.Between(corpse.x, corpse.y, this.player.x, this.player.y);
@@ -9605,7 +9609,7 @@ updateBossUI(target) {
 
 }
 
-/* ==== Phaser ÅäÖÃ ==== */
+/* ==== Phaser é…ç½® ==== */
 const config = {
   type: Phaser.AUTO,
   width: GAME_WIDTH,
