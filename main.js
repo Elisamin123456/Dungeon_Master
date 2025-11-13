@@ -793,8 +793,8 @@ class PreloadScene extends Phaser.Scene {
     // Legacy floor/wall for ?arcade mode
     this.load.image("floor", "assets/ground/defultground.png");
     this.load.image("wall", "assets/ground/defultwall.png");
-    // New dungeon 3x3 tileset as a single image; slice dynamically to avoid wrong frame size
-    this.load.image("dungeon_sheet", "assets/ground/dungeon_defult.png");
+    // New dungeon 3x3 tileset (frames: RU, UP, LU, RIGHT, CENTER, LEFT, RD, DOWN, LD)
+    this.load.spritesheet("dungeon", "assets/ground/dungeon_defult.png", { frameWidth: TILE_SIZE, frameHeight: TILE_SIZE });
     [
       "reimu_11","reimu_12","reimu_13","reimu_14",
       "reimu_21","reimu_22","reimu_23","reimu_24",
@@ -2833,12 +2833,11 @@ updateSpellbladeOverlays() {
     if (this.useLegacyArcadeMap) {
       this.floor = this.add.tileSprite(WORLD_SIZE/2, WORLD_SIZE/2, WORLD_SIZE, WORLD_SIZE, "floor").setOrigin(0.5);
     } else {
-      this.ensureDungeonFrames();
-      this.floor = null; // 新地图不使用全屏地板，避免在区块空隙处填充
+      // Use center floor (frame 4) from the 3x3 dungeon tileset
+      this.floor = this.add.tileSprite(WORLD_SIZE/2, WORLD_SIZE/2, WORLD_SIZE, WORLD_SIZE, "dungeon", 4).setOrigin(0.5);
     }
     this.wallGroup = this.physics.add.staticGroup();
     this.wallTiles = [];
-    this.floorTiles = [];
     if (this.useLegacyArcadeMap) {
       this.generateRandomSegmentsMap();
     } else {
@@ -3009,12 +3008,12 @@ updateSpellbladeOverlays() {
     }
   }
 
-  // Place a dungeon tile (from sliced frames) at a specific tile coordinate
-  addDungeonTileAt(tileX, tileY, frameKey) {
+  // Place a dungeon tile (from spritesheet) at a specific tile coordinate
+  addDungeonTileAt(tileX, tileY, frameIndex) {
     const half = TILE_SIZE / 2;
     const wx = tileX * TILE_SIZE + half;
     const wy = tileY * TILE_SIZE + half;
-    const spr = this.add.image(wx, wy, "dungeon_sheet", frameKey);
+    const spr = this.add.image(wx, wy, "dungeon", frameIndex);
     spr.setOrigin(0.5);
     spr.setDepth(1);
     this.wallTiles.push(spr);
@@ -3029,41 +3028,16 @@ updateSpellbladeOverlays() {
     const fW = inB(x-1, y) && isFloor[y][x-1];
     const fE = inB(x+1, y) && isFloor[y][x+1];
     // Corners first (priority when two orthogonal floor neighbors exist)
-    if (fE && fS) return "dungeon_rd"; // 右下角
-    if (fW && fS) return "dungeon_ld"; // 左下角
-    if (fE && fN) return "dungeon_ru"; // 右上角
-    if (fW && fN) return "dungeon_lu"; // 左上角
+    if (fE && fS) return 6; // 右下角
+    if (fW && fS) return 8; // 左下角
+    if (fE && fN) return 0; // 右上角
+    if (fW && fN) return 2; // 左上角
     // Edges next
-    if (fE) return "dungeon_left"; // 左侧（墙在左，右侧是地板）
-    if (fW) return "dungeon_right"; // 右侧（墙在右，左侧是地板）
-    if (fN) return "dungeon_down"; // 下侧（墙下方是地板）
-    if (fS) return "dungeon_up"; // 上方（墙上方是地板）
-    return "dungeon_up"; // Fallback
-  }
-
-  // Ensure the 3x3 frames exist by slicing the loaded image according to the confirmed order:
-  // Row1: 右上, 上, 左上; Row2: 右, 中央地板, 左; Row3: 右下, 下, 左下
-  ensureDungeonFrames() {
-    const tex = this.textures.get("dungeon_sheet");
-    if (!tex || !tex.getSourceImage) return;
-    // If already added, skip
-    if (tex.has("dungeon_center")) return;
-    const img = tex.getSourceImage(0);
-    const w = img.width;
-    const h = img.height;
-    const fw = Math.floor(w / 3);
-    const fh = Math.floor(h / 3);
-    const add = (name, col, row) => tex.add(name, 0, col * fw, row * fh, fw, fh);
-    // columns left->right, rows top->bottom
-    add("dungeon_ru", 0, 0);
-    add("dungeon_up", 1, 0);
-    add("dungeon_lu", 2, 0);
-    add("dungeon_right", 0, 1);
-    add("dungeon_center", 1, 1);
-    add("dungeon_left", 2, 1);
-    add("dungeon_rd", 0, 2);
-    add("dungeon_down", 1, 2);
-    add("dungeon_ld", 2, 2);
+    if (fE) return 5; // 左侧（墙在左，右侧是地板）
+    if (fW) return 3; // 右侧（墙在右，左侧是地板）
+    if (fN) return 7; // 下侧（墙下方是地板）
+    if (fS) return 1; // 上方（墙上方是地板）
+    return 1; // Fallback to 上方 to avoid empty
   }
 
   // New large dungeon map generator: 5x5 blocks, choose 9 blocks with rooms and 6-tile corridors
@@ -3072,15 +3046,12 @@ updateSpellbladeOverlays() {
     if (!this.wallTiles) this.wallTiles = [];
     this.wallTiles.forEach((tile) => tile?.destroy?.());
     this.wallTiles.length = 0;
-    if (!this.floorTiles) this.floorTiles = [];
-    this.floorTiles.forEach((t) => t?.destroy?.());
-    this.floorTiles.length = 0;
 
     const width = MAP_TILES;
     const height = MAP_TILES;
     const inBounds = (x, y) => x >= 0 && y >= 0 && x < width && y < height;
 
-    // Floor grid (true = floor, false = void/wall for collision)
+    // Floor grid (true = floor, false = wall initially)
     const isFloor = Array.from({ length: height }, () => Array(width).fill(false));
 
     // Block settings
@@ -3136,11 +3107,10 @@ updateSpellbladeOverlays() {
       roomByBlock.set(key, { left: rlx, top: rly, right: rrx, bottom: rry, cx, cy });
     });
 
-    // Collect corridors and carve 6-tile wide corridors between connected blocks
+    // Carve 6-tile wide corridors between connected blocks
     const corWidth = 6;
     const coreFloorWidth = Math.max(2, corWidth - 2); // leave 1-tile wall on each side where possible
     const halfCore = Math.floor(coreFloorWidth / 2);
-    const corridorRects = []; // {x,y,w,h} in tiles
     const carveHorizontal = (y, x0, x1) => {
       const xStart = Math.min(x0, x1);
       const xEnd = Math.max(x0, x1);
@@ -3151,9 +3121,6 @@ updateSpellbladeOverlays() {
           if (inBounds(x, ty)) isFloor[ty][x] = true;
         }
       }
-      const top = y - halfCore;
-      const hTiles = coreFloorWidth + (coreFloorWidth % 2 === 0 ? 1 : 0);
-      corridorRects.push({ x: xStart, y: top, w: (xEnd - xStart + 1), h: hTiles });
     };
     const carveVertical = (x, y0, y1) => {
       const yStart = Math.min(y0, y1);
@@ -3164,9 +3131,6 @@ updateSpellbladeOverlays() {
           if (inBounds(tx, y)) isFloor[y][tx] = true;
         }
       }
-      const left = x - halfCore;
-      const wTiles = coreFloorWidth + (coreFloorWidth % 2 === 0 ? 1 : 0);
-      corridorRects.push({ x: left, y: yStart, w: wTiles, h: (yEnd - yStart + 1) });
     };
 
     edges.forEach(([ka, kb]) => {
@@ -3198,53 +3162,29 @@ updateSpellbladeOverlays() {
       }
     });
 
-    // Draw floors: rooms as rectangles; corridors as rectangles; leave void empty
-    const placeFloorRect = (x, y, w, h) => {
-      const px = x * TILE_SIZE;
-      const py = y * TILE_SIZE;
-      const pw = w * TILE_SIZE;
-      const ph = h * TILE_SIZE;
-      const ts = this.add.tileSprite(px, py, pw, ph, "dungeon_sheet", "dungeon_center");
-      ts.setOrigin(0, 0);
-      ts.setDepth(0);
-      this.floorTiles.push(ts);
-      return ts;
-    };
-    // Rooms
-    roomByBlock.forEach((r) => {
-      const w = r.right - r.left + 1;
-      const h = r.bottom - r.top + 1;
-      placeFloorRect(r.left, r.top, w, h);
-    });
-    // Corridors
-    corridorRects.forEach((rect) => {
-      // Clamp in-bounds
-      const x = Phaser.Math.Clamp(rect.x, 0, width - 1);
-      const y = Phaser.Math.Clamp(rect.y, 0, height - 1);
-      const w = Math.max(1, Math.min(rect.w, width - x));
-      const h = Math.max(1, Math.min(rect.h, height - y));
-      placeFloorRect(x, y, w, h);
-    });
-
-    // Build wall grid for collisions: true where NOT floor (void) — we do not draw sprites for void
+    // Build wall grid and sprites along boundaries
     const isWall = Array.from({ length: height }, (_, ty) => Array.from({ length: width }, (_, tx) => !isFloor[ty][tx]));
     this.wallGrid = isWall.map((row) => row.slice());
 
-    // Visual walls strictly on boundaries (adjacent to floor only)
+    // Outer border keeps enclosed
+    for (let x = 0; x < width; x += 1) { this.wallGrid[0][x] = true; this.wallGrid[height-1][x] = true; }
+    for (let y = 0; y < height; y += 1) { this.wallGrid[y][0] = true; this.wallGrid[y][width-1] = true; }
+
+    // Place visual tiles for boundary walls only
     for (let ty = 0; ty < height; ty += 1) {
       for (let tx = 0; tx < width; tx += 1) {
-        if (!isWall[ty][tx]) continue;
+        if (!this.wallGrid[ty][tx]) continue;
         const fN = ty > 0 && isFloor[ty-1][tx];
         const fS = ty+1 < height && isFloor[ty+1][tx];
         const fW = tx > 0 && isFloor[ty][tx-1];
         const fE = tx+1 < width && isFloor[ty][tx+1];
-        if (!(fN || fS || fW || fE)) continue; // only boundary
+        if (!(fN || fS || fW || fE)) continue; // skip interior walls
         const frame = this.pickDungeonFrameForWall(isFloor, tx, ty, width, height);
         this.addDungeonTileAt(tx, ty, frame);
       }
     }
 
-    // Build colliders from full wall grid (void + boundaries lock movement to rooms/corridors)
+    // Build colliders from full wall grid
     this.buildWallCollidersFromGrid(this.wallGrid, width, height);
   }
 
