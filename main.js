@@ -3,12 +3,14 @@ import { EQUIPMENT_DATA, EQUIPMENT_IDS, ITEM_TIERS } from "./equipmentData.js";
 
 const GAME_WIDTH = 640;
 const GAME_HEIGHT = 480;
-const MAP_TILES = 64;
+// World tiles: switch to 5x5 blocks of 64x64 = 320x320 tiles for the new generator
+const MAP_TILES = 64 * 5;
 const TILE_SIZE = 16;
 const WALL_COLLISION_MARGIN = 1;
 const ENEMY_NAV_RECALC_INTERVAL_MS = 450;
 const ENEMY_PATH_NODE_REACHED_THRESHOLD = TILE_SIZE * 0.35;
-const ENEMY_PATH_MAX_EXPANSION = MAP_TILES * MAP_TILES;
+// Cap path expansion to avoid heavy BFS on the larger map
+const ENEMY_PATH_MAX_EXPANSION = Math.min(MAP_TILES * MAP_TILES, 20000);
 const ENEMY_STUCK_MOVE_EPSILON = 1;
 const ENEMY_STUCK_TIMEOUT_MS = 60;
 const ENEMY_STUCK_IGNORE_RADIUS = TILE_SIZE;
@@ -788,8 +790,11 @@ class PreloadScene extends Phaser.Scene {
     // 加载冰拳效果
     this.load.image("ice_effect", "assets/item/effect/ice.png");
     
+    // Legacy floor/wall for ?arcade mode
     this.load.image("floor", "assets/ground/defultground.png");
     this.load.image("wall", "assets/ground/defultwall.png");
+    // New dungeon 3x3 tileset (frames: RU, UP, LU, RIGHT, CENTER, LEFT, RD, DOWN, LD)
+    this.load.spritesheet("dungeon", "assets/ground/dungeon_defult.png", { frameWidth: TILE_SIZE, frameHeight: TILE_SIZE });
     [
       "reimu_11","reimu_12","reimu_13","reimu_14",
       "reimu_21","reimu_22","reimu_23","reimu_24",
@@ -939,6 +944,12 @@ class GameScene extends Phaser.Scene {
     this.debugMode = DEBUG_SCENARIO;
     this.debugBossMode = DEBUG_BOSS;
     this.debugShopMode = DEBUG_SHOP;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const hash = (window.location.hash || "").toLowerCase();
+      // Legacy map toggle: add ?arcade to URL to use the old generator
+      this.useLegacyArcadeMap = params.has("arcade") || hash.includes("arcade");
+    } catch (_) { this.useLegacyArcadeMap = false; }
     // 关卡：从1开始，Boss关卡每20关
     this.isBossStage = false;
     // 默认从第1关开始；当使用 ?debug 时，从第11关开始便于测试中后期
@@ -2819,10 +2830,19 @@ updateSpellbladeOverlays() {
   /* ==== 地图 ==== */
   createMap() {
     this.physics.world.setBounds(0, 0, WORLD_SIZE, WORLD_SIZE);
-    this.floor = this.add.tileSprite(WORLD_SIZE/2, WORLD_SIZE/2, WORLD_SIZE, WORLD_SIZE, "floor").setOrigin(0.5);
+    if (this.useLegacyArcadeMap) {
+      this.floor = this.add.tileSprite(WORLD_SIZE/2, WORLD_SIZE/2, WORLD_SIZE, WORLD_SIZE, "floor").setOrigin(0.5);
+    } else {
+      // Use center floor (frame 4) from the 3x3 dungeon tileset
+      this.floor = this.add.tileSprite(WORLD_SIZE/2, WORLD_SIZE/2, WORLD_SIZE, WORLD_SIZE, "dungeon", 4).setOrigin(0.5);
+    }
     this.wallGroup = this.physics.add.staticGroup();
     this.wallTiles = [];
-    this.generateRandomSegmentsMap();
+    if (this.useLegacyArcadeMap) {
+      this.generateRandomSegmentsMap();
+    } else {
+      this.generateDungeonBigMap();
+    }
   }
 
   generateRandomSegmentsMap() {
@@ -2986,6 +3006,186 @@ updateSpellbladeOverlays() {
         this.addWallCollider(centerX, centerY, rectWidth, rectHeight);
       }
     }
+  }
+
+  // Place a dungeon tile (from spritesheet) at a specific tile coordinate
+  addDungeonTileAt(tileX, tileY, frameIndex) {
+    const half = TILE_SIZE / 2;
+    const wx = tileX * TILE_SIZE + half;
+    const wy = tileY * TILE_SIZE + half;
+    const spr = this.add.image(wx, wy, "dungeon", frameIndex);
+    spr.setOrigin(0.5);
+    spr.setDepth(1);
+    this.wallTiles.push(spr);
+    return spr;
+  }
+
+  // Decide which of the 3x3 frames to use for a boundary wall tile based on floor adjacency
+  pickDungeonFrameForWall(isFloor, x, y, width, height) {
+    const inB = (cx, cy) => cx >= 0 && cy >= 0 && cx < width && cy < height;
+    const fN = inB(x, y-1) && isFloor[y-1][x];
+    const fS = inB(x, y+1) && isFloor[y+1][x];
+    const fW = inB(x-1, y) && isFloor[y][x-1];
+    const fE = inB(x+1, y) && isFloor[y][x+1];
+    // Corners first (priority when two orthogonal floor neighbors exist)
+    if (fE && fS) return 6; // 右下角
+    if (fW && fS) return 8; // 左下角
+    if (fE && fN) return 0; // 右上角
+    if (fW && fN) return 2; // 左上角
+    // Edges next
+    if (fE) return 5; // 左侧（墙在左，右侧是地板）
+    if (fW) return 3; // 右侧（墙在右，左侧是地板）
+    if (fN) return 7; // 下侧（墙下方是地板）
+    if (fS) return 1; // 上方（墙上方是地板）
+    return 1; // Fallback to 上方 to avoid empty
+  }
+
+  // New large dungeon map generator: 5x5 blocks, choose 9 blocks with rooms and 6-tile corridors
+  generateDungeonBigMap() {
+    if (this.wallGroup) this.wallGroup.clear(true, true);
+    if (!this.wallTiles) this.wallTiles = [];
+    this.wallTiles.forEach((tile) => tile?.destroy?.());
+    this.wallTiles.length = 0;
+
+    const width = MAP_TILES;
+    const height = MAP_TILES;
+    const inBounds = (x, y) => x >= 0 && y >= 0 && x < width && y < height;
+
+    // Floor grid (true = floor, false = wall initially)
+    const isFloor = Array.from({ length: height }, () => Array(width).fill(false));
+
+    // Block settings
+    const BLOCKS_W = 5;
+    const BLOCKS_H = 5;
+    const BLOCK_SIZE = 64; // tiles per block
+
+    // Select 9 connected blocks using a randomized growth
+    const pickKey = (bx, by) => `${bx},${by}`;
+    const selected = new Set();
+    const edges = []; // connections between blocks, as pairs of keys
+    let curBx = Phaser.Math.Between(0, BLOCKS_W - 1);
+    let curBy = Phaser.Math.Between(0, BLOCKS_H - 1);
+    selected.add(pickKey(curBx, curBy));
+    while (selected.size < 9) {
+      // pick an existing block as source
+      const pool = Array.from(selected).map((k) => k.split(",").map(Number));
+      const src = pool[Phaser.Math.Between(0, pool.length - 1)];
+      const [sbx, sby] = src;
+      const neigh = [ [sbx+1, sby], [sbx-1, sby], [sbx, sby+1], [sbx, sby-1] ].filter(([x,y]) => x>=0 && y>=0 && x<BLOCKS_W && y<BLOCKS_H);
+      // prefer unseen neighbors
+      const unseen = neigh.filter(([x,y]) => !selected.has(pickKey(x,y)));
+      if (unseen.length === 0) continue; // try again
+      const [nbx, nby] = unseen[Phaser.Math.Between(0, unseen.length - 1)];
+      const nk = pickKey(nbx, nby);
+      selected.add(nk);
+      edges.push([pickKey(sbx,sby), nk]);
+    }
+
+    // For each selected block, carve a rectangular room 32..64 in both dimensions
+    const roomByBlock = new Map();
+    selected.forEach((key) => {
+      const [bx, by] = key.split(",").map(Number);
+      const bw = BLOCK_SIZE;
+      const bh = BLOCK_SIZE;
+      const rx = Phaser.Math.Between(32, 64);
+      const ry = Phaser.Math.Between(32, 64);
+      const ox = bx * bw;
+      const oy = by * bh;
+      const maxX = bw - rx;
+      const maxY = bh - ry;
+      const rlx = ox + (maxX > 0 ? Phaser.Math.Between(0, maxX) : 0);
+      const rly = oy + (maxY > 0 ? Phaser.Math.Between(0, maxY) : 0);
+      const rrx = rlx + rx - 1;
+      const rry = rly + ry - 1;
+      for (let ty = rly; ty <= rry; ty += 1) {
+        for (let tx = rlx; tx <= rrx; tx += 1) {
+          if (inBounds(tx, ty)) isFloor[ty][tx] = true;
+        }
+      }
+      const cx = Math.floor((rlx + rrx) / 2);
+      const cy = Math.floor((rly + rry) / 2);
+      roomByBlock.set(key, { left: rlx, top: rly, right: rrx, bottom: rry, cx, cy });
+    });
+
+    // Carve 6-tile wide corridors between connected blocks
+    const corWidth = 6;
+    const coreFloorWidth = Math.max(2, corWidth - 2); // leave 1-tile wall on each side where possible
+    const halfCore = Math.floor(coreFloorWidth / 2);
+    const carveHorizontal = (y, x0, x1) => {
+      const xStart = Math.min(x0, x1);
+      const xEnd = Math.max(x0, x1);
+      for (let x = xStart; x <= xEnd; x += 1) {
+        // Carve floor strip centered at y
+        for (let dy = -halfCore; dy <= halfCore + (coreFloorWidth % 2 === 0 ? 1 : 0); dy += 1) {
+          const ty = y + dy;
+          if (inBounds(x, ty)) isFloor[ty][x] = true;
+        }
+      }
+    };
+    const carveVertical = (x, y0, y1) => {
+      const yStart = Math.min(y0, y1);
+      const yEnd = Math.max(y0, y1);
+      for (let y = yStart; y <= yEnd; y += 1) {
+        for (let dx = -halfCore; dx <= halfCore + (coreFloorWidth % 2 === 0 ? 1 : 0); dx += 1) {
+          const tx = x + dx;
+          if (inBounds(tx, y)) isFloor[y][tx] = true;
+        }
+      }
+    };
+
+    edges.forEach(([ka, kb]) => {
+      const ra = roomByBlock.get(ka);
+      const rb = roomByBlock.get(kb);
+      if (!ra || !rb) return;
+      // Connect centers; neighbors share either x or y block coordinate
+      if (ra.cy === rb.cy) {
+        // same row -> horizontal corridor at median y
+        const y = Math.floor((ra.cy + rb.cy) / 2);
+        carveHorizontal(y, ra.cx, rb.cx);
+      } else if (ra.cx === rb.cx) {
+        // same column -> vertical corridor at median x
+        const x = Math.floor((ra.cx + rb.cx) / 2);
+        carveVertical(x, ra.cy, rb.cy);
+      } else {
+        // Diagonal due to random carve positions inside blocks: do an L-shape with random turn order
+        if (Phaser.Math.Between(0, 1) === 0) {
+          const yMid = ra.cy;
+          carveHorizontal(yMid, ra.cx, rb.cx);
+          const xMid = rb.cx;
+          carveVertical(xMid, Math.min(ra.cy, rb.cy), Math.max(ra.cy, rb.cy));
+        } else {
+          const xMid = ra.cx;
+          carveVertical(xMid, ra.cy, rb.cy);
+          const yMid = rb.cy;
+          carveHorizontal(yMid, ra.cx, rb.cx);
+        }
+      }
+    });
+
+    // Build wall grid and sprites along boundaries
+    const isWall = Array.from({ length: height }, (_, ty) => Array.from({ length: width }, (_, tx) => !isFloor[ty][tx]));
+    this.wallGrid = isWall.map((row) => row.slice());
+
+    // Outer border keeps enclosed
+    for (let x = 0; x < width; x += 1) { this.wallGrid[0][x] = true; this.wallGrid[height-1][x] = true; }
+    for (let y = 0; y < height; y += 1) { this.wallGrid[y][0] = true; this.wallGrid[y][width-1] = true; }
+
+    // Place visual tiles for boundary walls only
+    for (let ty = 0; ty < height; ty += 1) {
+      for (let tx = 0; tx < width; tx += 1) {
+        if (!this.wallGrid[ty][tx]) continue;
+        const fN = ty > 0 && isFloor[ty-1][tx];
+        const fS = ty+1 < height && isFloor[ty+1][tx];
+        const fW = tx > 0 && isFloor[ty][tx-1];
+        const fE = tx+1 < width && isFloor[ty][tx+1];
+        if (!(fN || fS || fW || fE)) continue; // skip interior walls
+        const frame = this.pickDungeonFrameForWall(isFloor, tx, ty, width, height);
+        this.addDungeonTileAt(tx, ty, frame);
+      }
+    }
+
+    // Build colliders from full wall grid
+    this.buildWallCollidersFromGrid(this.wallGrid, width, height);
   }
 
   addWallCollider(centerX, centerY, tileWidth, tileHeight) {
