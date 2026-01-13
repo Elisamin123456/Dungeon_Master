@@ -43,6 +43,7 @@ const TEAR_OF_THE_GODDESS_ID = "tearOfTheGoddess";
 const SERAPHS_EMBRACE_ID = "seraphsEmbrace";
 const BAILOU_SWORD_ID = "bailouSword";
 const RUNAANS_HURRICANE_ID = "runaansHurricane";
+const BLOODTHIRSTER_ID = "bloodthirster";
 const TIAMAT_ID = "tiamat";
 const TITANIC_HYDRA_ID = "titanicHydra";
 const BAMIS_CINDER_ID = "bamisCinder";
@@ -62,7 +63,7 @@ const SOULSTEALER_CODEX_ID = "soulstealerCodex";
 const HEALTH_POTION_ID = "healthPotion";
 const REFILLABLE_POTION_ID = "refillablePotion";
 const EQUIPMENT_TOOLTIP_DEFAULT = "查看鼠标移动到的位置";
-const DEBUG_INITIAL_RANK = 10;
+const DEBUG_INITIAL_RANK = 100;
 const LOCATION_CONTEXT = (() => {
   if (typeof window === "undefined" || typeof window.location === "undefined") {
     return null;
@@ -232,6 +233,8 @@ const decodeUnicodeString = (value) => {
 
 Object.values(EQUIPMENT_DATA).forEach((item) => {
   if (item?.name) item.name = decodeUnicodeString(item.name);
+  if (item?.intro) item.intro = decodeUnicodeString(item.intro);
+  if (Array.isArray(item?.tags)) item.tags = item.tags.map((tag) => decodeUnicodeString(tag));
   if (Array.isArray(item?.description)) {
     item.description = item.description.map((line) => decodeUnicodeString(line));
   }
@@ -489,6 +492,10 @@ const FOCUS_ORBIT_SPEED_MULTIPLIER = 2;    // 按住Shift时：转速×2
 // E技能形态加成：远程+20%攻速；近战将这20%转化为阴阳玉的转速
 const E_RANGED_ATTACK_SPEED_MULTIPLIER = 1.2;
 const BULLET_SPEED = 170;
+const EFFECT_BULLET_SPEED = 340;
+const EFFECT_BULLET_SCALE =0.5;
+const EFFECT_BULLET_INTERVAL_MS = 70;
+const RUNAAN_BOLT_ANGLES_DEG = [0, -15, 15];
 const BULLET_LIFETIME = 4500; // ms
 
 const ENEMY_MAX_COUNT = 100;
@@ -511,8 +518,8 @@ const ENEMY_RARITY_SEQUENCE = Object.freeze([
 const ENEMY_RARITY_WEIGHTS = Object.freeze({
   [ENEMY_RARITIES.BASIC]: 0.80,
   [ENEMY_RARITIES.MID]: 0.10,
-  [ENEMY_RARITIES.EPIC]: 0.07,
-  [ENEMY_RARITIES.LEGENDARY]: 0.03,
+  [ENEMY_RARITIES.EPIC]: 0.08,
+  [ENEMY_RARITIES.LEGENDARY]: 0.02,
 });
 
 const ENEMY_SPAWN_RADIUS_MAX = 300;
@@ -528,12 +535,12 @@ const MAP_CHEST_COUNT = 10;
 const ENEMY_TYPE_CONFIG = Object.freeze({
   kedama: {
     kind: "charger",
-    weight: 0.9,
+    weight: 0.45,
     tiers: {
       [ENEMY_RARITIES.BASIC]: {
         unlockRank: 0,
         hp: 100,
-        attackDamage: 50,
+        attackDamage: 10,
         abilityPower: 0,
         armor: 0,
         defense: 0,
@@ -544,14 +551,14 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         idleRotationSpeed: 30,
         textureKey: "enemy_kedama_basic",
         spawnEffectKey: "enemy_spawn_basic",
-        scale: 0.9,
+        scale: 0.7,
         hitRadius: 12,
-        dropRange: { min: 1, max: 5 },
+        dropRange: { min: 1, max: 1 },
       },
       [ENEMY_RARITIES.MID]: {
         unlockRank: 11,
         hp: 400,
-        attackDamage: 100,
+        attackDamage: 50,
         abilityPower: 0,
         armor: 0,
         defense: 0,
@@ -562,14 +569,14 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         idleRotationSpeed: 30,
         textureKey: "enemy_kedama_mid",
         spawnEffectKey: "enemy_spawn_mid",
-        scale: 1.0,
+        scale: 0.8,
         hitRadius: 13,
-        dropRange: { min: 10, max: 20 },
+        dropRange: { min: 10, max: 10 },
       },
       [ENEMY_RARITIES.EPIC]: {
         unlockRank: 14,
         hp: 1000,
-        attackDamage: 150,
+        attackDamage: 100,
         abilityPower: 0,
         armor: 0,
         defense: 0,
@@ -582,7 +589,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_epic",
         scale: 1.15,
         hitRadius: 15,
-        dropRange: { min: 50, max: 80 },
+        dropRange: { min: 50, max: 50 },
       },
       [ENEMY_RARITIES.LEGENDARY]: {
         unlockRank: 17,
@@ -600,6 +607,189 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_legendary",
         scale: 1.5,
         hitRadius: 16,
+        dropRange: { min: 200, max: 200 },
+      },
+    },
+  },
+  robotcharger: {
+    kind: "charger",
+    weight: 0.45,
+    tiers: {
+      [ENEMY_RARITIES.BASIC]: {
+        unlockRank: 0,
+        hp: 200,
+        attackDamage: 10,
+        abilityPower: 0,
+        armor: 0,
+        defense: 0,
+        moveSpeed: 50,
+        chargeSpeed: 300,
+        detectionRadius: 50,
+        windupMs: 1000,
+        idleRotationSpeed: 0,
+        textureKey: "enemy_robotcharger_basic",
+        spawnEffectKey: "enemy_spawn_basic",
+        scale: 1,
+        hitRadius: 12,
+        dropRange: { min: 1, max: 1 },
+      },
+      [ENEMY_RARITIES.MID]: {
+        unlockRank: 11,
+        hp: 400,
+        attackDamage: 50,
+        abilityPower: 0,
+        armor: 0,
+        defense: 0,
+        moveSpeed: 50,
+        chargeSpeed: 500,
+        detectionRadius: 200,
+        windupMs: 1000,
+        idleRotationSpeed: 0,
+        textureKey: "enemy_robotcharger_mid",
+        spawnEffectKey: "enemy_spawn_mid",
+        scale: 1.2,
+        hitRadius: 12,
+        dropRange: { min: 10, max: 10 },
+      },
+      [ENEMY_RARITIES.EPIC]: {
+        unlockRank: 14,
+        hp: 1600,
+        attackDamage: 100,
+        abilityPower: 0,
+        armor: 0,
+        defense: 0,
+        moveSpeed: 50,
+        chargeSpeed: 200,
+        detectionRadius: 200,
+        windupMs: 1000,
+        idleRotationSpeed: 0,
+        textureKey: "enemy_robotcharger_epic",
+        spawnEffectKey: "enemy_spawn_epic",
+        scale: 1.5,
+        hitRadius: 12,
+        dropRange: { min: 50, max: 50 },
+      },
+      [ENEMY_RARITIES.LEGENDARY]: {
+        unlockRank: 17,
+        hp: 6400,
+        attackDamage: 150,
+        abilityPower: 0,
+        armor: 0,
+        defense: 0,
+        moveSpeed: 50,
+        chargeSpeed: 1500,
+        detectionRadius: 200,
+        windupMs: 1000,
+        idleRotationSpeed: 0,
+        textureKey: "enemy_robotcharger_legendary",
+        spawnEffectKey: "enemy_spawn_legendary",
+        scale: 2,
+        hitRadius: 12,
+        dropRange: { min: 200, max: 200 },
+      },
+    },
+  },
+  robotcaster: {
+    kind: "robotcaster",
+    weight: 0.25,
+    tiers: {
+      [ENEMY_RARITIES.BASIC]: {
+        unlockRank: 12,
+        hp: 100,
+        attackDamage: 10,
+        abilityPower: 10,
+        armor: 0,
+        defense: 0,
+        moveSpeed: 50,
+        detectionRadius: 300,
+        shotIntervalMs: 200,
+        bulletSpeed: 100,
+        bulletTextureKey: "enemy_bullet_basic",
+        nodeCount: 2,
+        nodeRadius: 50,
+        nodeRotationSpeed: 0.002,
+        textureKey: "enemy_robotcaster_basic",
+        spawnEffectKey: "enemy_spawn_basic",
+        scale: 1,
+        hitRadius: 12,
+        dropRange: { min: 10, max: 20 },
+      },
+      [ENEMY_RARITIES.MID]: {
+        unlockRank: 13,
+        hp: 200,
+        attackDamage: 10,
+        abilityPower: 50,
+        armor: 0,
+        defense: 0,
+        moveSpeed: 50,
+        detectionRadius: 300,
+        shotIntervalMs: 200,
+        bulletSpeed: 100,
+        bulletTextureKey: "enemy_bullet_mid",
+        nodeCount: 4,
+        nodeRadius: 20,
+        nodeRotationSpeed: 0.0015,
+        extraGun: {
+          textureKey: "enemy_bullet_gun",
+          speed: 200,
+          offsetsDeg: [0],
+        },
+        textureKey: "enemy_robotcaster_mid",
+        spawnEffectKey: "enemy_spawn_mid",
+        scale: 1.1,
+        hitRadius: 12,
+        dropRange: { min: 50, max: 80 },
+      },
+      [ENEMY_RARITIES.EPIC]: {
+        unlockRank: 14,
+        hp: 400,
+        attackDamage: 10,
+        abilityPower: 50,
+        armor: 0,
+        defense: 0,
+        moveSpeed: 50,
+        detectionRadius: 300,
+        shotIntervalMs: 200,
+        bulletSpeed: 100,
+        bulletTextureKey: "enemy_bullet_epic",
+        nodeCount: 8,
+        nodeRadius: 30,
+        nodeRotationSpeed: 0.003,
+        extraGun: {
+          textureKey: "enemy_bullet_gun",
+          speed: 220,
+          offsetsDeg: [0],
+        },
+        textureKey: "enemy_robotcaster_epic",
+        spawnEffectKey: "enemy_spawn_epic",
+        scale: 1.2,
+        hitRadius: 12,
+        dropRange: { min: 80, max: 120 },
+      },
+      [ENEMY_RARITIES.LEGENDARY]: {
+        unlockRank: 21,
+        hp: 400,
+        attackDamage: 10,
+        abilityPower: 50,
+        armor: 0,
+        defense: 0,
+        moveSpeed: 50,
+        detectionRadius: 300,
+        shotIntervalMs: 200,
+        bulletSpeed: 300,
+        bulletTextureKey: "enemy_bullet_legendary",
+        nodeCount: 10,
+        nodeRadius: 100,
+        nodeRotationSpeed: 0.004,
+        extraGun: {
+          textureKey: "enemy_bullet_gun",
+          speed: 260,
+          offsetsDeg: [0, -15, 15],
+        },
+        textureKey: "enemy_robotcaster_legendary",
+        spawnEffectKey: "enemy_spawn_legendary",
+        scale: 1.3,
+        hitRadius: 12,
         dropRange: { min: 200, max: 300 },
       },
     },
@@ -630,7 +820,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 10, max: 20 },
       },
       [ENEMY_RARITIES.MID]: {
-        unlockRank: 15,
+        unlockRank: 13,
         hp: 100,
         attackDamage: 10,
         abilityPower: 30,
@@ -651,7 +841,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 50, max: 80 },
       },
       [ENEMY_RARITIES.EPIC]: {
-        unlockRank: 18,
+        unlockRank: 14,
         hp: 100,
         attackDamage: 10,
         abilityPower: 50,
@@ -699,7 +889,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
     weight: 0.02,
     tiers: {
       [ENEMY_RARITIES.BASIC]: {
-        unlockRank: 13,
+        unlockRank: 11,
         hp: 50,
         attackDamage: 0,
         abilityPower: 50,
@@ -720,7 +910,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 5, max: 15 },
       },
       [ENEMY_RARITIES.MID]: {
-        unlockRank: 16,
+        unlockRank: 13,
         hp: 200,
         attackDamage: 0,
         abilityPower: 50,
@@ -741,7 +931,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 15, max: 25 },
       },
       [ENEMY_RARITIES.EPIC]: {
-        unlockRank: 19,
+        unlockRank: 15,
         hp: 250,
         attackDamage: 0,
         abilityPower: 50,
@@ -840,10 +1030,18 @@ class PreloadScene extends Phaser.Scene {
     this.load.image("enemy_kedama_mid", "assets/enemy/Charger/kedama_mid.png");
     this.load.image("enemy_kedama_epic", "assets/enemy/Charger/kedama_epic.png");
     this.load.image("enemy_kedama_legendary", "assets/enemy/Charger/kedama_legendary.png");
+    this.load.image("enemy_robotcharger_basic", "assets/enemy/Charger/robotcharger_basic.png");
+    this.load.image("enemy_robotcharger_mid", "assets/enemy/Charger/robotcharger_mid.png");
+    this.load.image("enemy_robotcharger_epic", "assets/enemy/Charger/robotcharger_epic.png");
+    this.load.image("enemy_robotcharger_legendary", "assets/enemy/Charger/robotcharger_legendary.png");
     this.load.image("enemy_yousei_basic", "assets/enemy/Caster/yousei_basic.png");
     this.load.image("enemy_yousei_mid", "assets/enemy/Caster/yousei_mid.png");
     this.load.image("enemy_yousei_epic", "assets/enemy/Caster/yousei_epic.png");
     this.load.image("enemy_yousei_legendary", "assets/enemy/Caster/yousei_legendary.png");
+    this.load.image("enemy_robotcaster_basic", "assets/enemy/Caster/robotcaster_basic.png");
+    this.load.image("enemy_robotcaster_mid", "assets/enemy/Caster/robotcaster_mid.png");
+    this.load.image("enemy_robotcaster_epic", "assets/enemy/Caster/robotcaster_epic.png");
+    this.load.image("enemy_robotcaster_legendary", "assets/enemy/Caster/robotcaster_legendary.png");
     this.load.image("enemy_orb_basic", "assets/enemy/Turret/orb_basic.png");
     this.load.image("enemy_orb_mid", "assets/enemy/Turret/orb_mid.png");
     this.load.image("enemy_orb_epic", "assets/enemy/Turret/orb_epic.png");
@@ -871,6 +1069,10 @@ class PreloadScene extends Phaser.Scene {
     this.load.image("itemNashorsTooth", "assets/item/legendary/纳什之牙.png");
     this.load.image("itemGuinsoosRageblade", "assets/item/legendary/鬼索的狂暴之刃.png");
     this.load.image("item_effect_arrow", "assets/item/effect/arrow.png");
+    this.load.image("item_effect_nashor", "assets/item/effect/nashor.png");
+    this.load.image("item_effect_sword", "assets/item/effect/sword.png");
+    this.load.image("item_effect_wit", "assets/item/effect/wit.png");
+    this.load.image("item_effect_guinsoo", "assets/item/effect/guinsoo.png");
     this.load.image("item_effect_sunfire", "assets/item/effect/sunfire.png");
     this.load.image("item_effect_tiamat", "assets/item/effect/tiamat.png");
     this.load.image("item_effect_titanic", "assets/item/effect/Titanichydra.png");
@@ -981,10 +1183,8 @@ class GameScene extends Phaser.Scene {
     this.debugShopMode = DEBUG_SHOP;
     // 关卡：从1开始，Boss关卡每20关
     this.isBossStage = false;
-    // 默认从第1关开始；当使用 ?debug 时，从第11关开始便于测试中后期
-    this.level = (this.debugMode ? 11 : 1); // 关卡必须是整数
-
-    this.level = (this.debugMode ? 10 : 1);
+    // 默认从第1关开始；debug 模式也从第1关
+    this.level = 1; // 关卡必须是整数
     this.playerStats = { ...PLAYER_BASE_STATS };
     this.currentHp = this.playerStats.maxHp;
     this.currentMana = this.playerStats.maxMana;
@@ -1118,14 +1318,14 @@ class GameScene extends Phaser.Scene {
       enemyexploded: { volume: 0.325 },
       itempick: { volume: 0.1 },
       pause: { volume: 0.25 },
-      playershoot: { volume: 1 },
+      playershoot: { volume: 0.5 },
       pldead: { volume: 0.25 },
       // 新增音效默认音量
-      player_castQ: { volume: 2.5 },
-      player_castE: { volume: 2.5 },
-      player_castR: { volume: 2.5 },
+      player_castQ: { volume: 1 },
+      player_castE: { volume: 1 },
+      player_castR: { volume: 1 },
       player_dash: { volume: 0.8 },
-      player_gethit: { volume: 2.5 },
+      player_gethit: { volume: 1 },
       enemyhit: { volume: 1 },
       orbhit: { volume: 0.8 },
       potion: { volume: 1.2 },
@@ -1163,10 +1363,10 @@ this.skillTooltipTarget = null; // 复用：优先技能面板，其次 equipmen
 this.playerInvulnerableUntil = 0;
 this.playerWallCollider = null; // 保存玩家-墙体碰撞体
 
-    // 鬼索叠层相关
-    this.guinsooStacks = 0;
-    this.guinsooStacksExpireAt = 0;
-    this.guinsooFullProcCounter = 0;
+    // 鬼索击杀加速与普攻计数
+    this.guinsooKillStacks = 0;
+    this.guinsooKillExpiresAt = 0;
+    this.attackSequence = 0;
     this.hasGuinsoo = false;
 
     this.hasRunaan = false;
@@ -1249,8 +1449,11 @@ this.playerWallCollider = null; // 保存玩家-墙体碰撞体
       this.physics.add.collider(
         this.bossBullets,
         this.wallGroup,
-        (bullet, _wall) => {
-          if (bullet && bullet.active) this.spawnWallHitExplosion(bullet.x, bullet.y);
+        (bullet, wall) => {
+          if (bullet && bullet.active) {
+            if (typeof bullet.onWallHit === "function") bullet.onWallHit(bullet, wall);
+            this.spawnWallHitExplosion(bullet.x, bullet.y);
+          }
           this.destroyBossBullet(bullet);
         },
         // processCallback：为核弹返回 false，跳过碰撞处理与分离
@@ -1283,7 +1486,10 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
   if (!enemy.lastOrbHitAt || now - enemy.lastOrbHitAt >= 300) {
     // 将 E 的近战命中视为“普攻”：可触发攻击特效与法术暴击
 
-    const preHp = enemy.hp;
+    const attackSeq = this.nextAttackSequence();
+    const originX = this.weaponSprite ? this.weaponSprite.x : this.player.x;
+    const originY = this.weaponSprite ? this.weaponSprite.y : this.player.y;
+
     const baseAD = PLAYER_BASE_STATS.attackDamage; // 基础AD
     const ap = this.playerStats.abilityPower || 0;
     const baseMagic = Math.max(0, Math.round(baseAD + ap)); // 100%基础AD + 100%AP（魔法）
@@ -1314,55 +1520,6 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
     const flatOnHitMagic = Math.max(0, Math.round(this.playerEquipmentStats?.onHitMagicFlat || 0));
     if (flatOnHitMagic > 0) entries.push({ type: "magic", amount: flatOnHitMagic, source: "onhit_magic_flat", isOnHit: true });
 
-    // 破败王者之刃：百分比生命（按 on-hit 处理）
-    if (this.hasItemEquipped(BROKEN_KINGS_BLADE_ID)) {
-      const blade = EQUIPMENT_DATA[BROKEN_KINGS_BLADE_ID];
-      const eff = blade.effects;
-      const rawPercent = preHp * eff.percentCurrentHp;
-      let percentDmg = Math.max(eff.percentMinDamage, rawPercent);
-      if (enemy.isBoss) percentDmg = Math.min(percentDmg, eff.percentMaxDamageBoss);
-      else percentDmg = Math.min(percentDmg, eff.percentMaxDamageNonBoss);
-      entries.push({ type: "physical", amount: Math.round(percentDmg), source: "bork_percent", isOnHit: true });
-      if (enemy.hitComboCount >= eff.tripleHitThreshold) {
-        entries.push({ type: "magic", amount: Math.round(eff.tripleHitMagicDamage), source: "bork_triple", isOnHit: false });
-        enemy.slowPct = Math.max(enemy.slowPct || 0, eff.tripleHitSlowPct);
-        enemy.slowUntil = now + eff.tripleHitSlowMs;
-        this.playerSpeedBuffMultiplier = Math.max(this.playerSpeedBuffMultiplier || 1, 1 + eff.selfHastePct);
-        this.playerSpeedBuffExpiresAt = now + eff.selfHasteMs;
-        enemy.hitComboCount = 0;
-        enemy.hitComboExpireAt = 0;
-      }
-    }
-
-    // 智慧末刃、纳什、鬼索、巨九（与远程普攻相同）
-    let witsOnHitDamagePerProc = 0;
-    if (this.hasItemEquipped(WITS_END_ID)) {
-      const eff = EQUIPMENT_DATA[WITS_END_ID].effects;
-      witsOnHitDamagePerProc = Math.round(eff.witsMagicOnHit);
-      entries.push({ type: "magic", amount: witsOnHitDamagePerProc, source: "wits", isOnHit: true });
-    }
-    if (this.hasItemEquipped(NASHORS_TOOTH_ID)) {
-      const eff = EQUIPMENT_DATA[NASHORS_TOOTH_ID].effects;
-      const bonusAD = Math.max(0, this.playerStats.attackDamage - PLAYER_BASE_STATS.attackDamage);
-      const nashorDmg = Math.round(eff.nashorBase + eff.nashorBonusAdRatio * bonusAD + eff.nashorApRatio * ap);
-      entries.push({ type: "magic", amount: nashorDmg, source: "nashor", isOnHit: true });
-    }
-    let extraProcMultiplier = 1;
-    if (this.hasItemEquipped(GUINSOOS_RAGEBLADE_ID)) {
-      const eff = EQUIPMENT_DATA[GUINSOOS_RAGEBLADE_ID].effects;
-      entries.push({ type: "magic", amount: Math.round(eff.ragebladeMagicOnHit), source: "guinsoo", isOnHit: true });
-      this.guinsooStacks = Math.min((this.guinsooStacks || 0) + 1, eff.ragebladeMaxStacks || 4);
-      this.guinsooStacksExpireAt = now + (eff.ragebladeStackDurationMs || 5000);
-      if (this.guinsooStacks >= (eff.ragebladeMaxStacks || 4)) {
-        this.guinsooFullProcCounter = (this.guinsooFullProcCounter || 0) + 1;
-        if (this.guinsooFullProcCounter % (eff.ragebladeExtraProcEvery || 3) === 0) {
-          extraProcMultiplier = 1 + (eff.ragebladeExtraProcsAtFull || 2);
-        }
-      } else {
-        this.guinsooFullProcCounter = 0;
-      }
-      this.rebuildAttackTimer();
-    }
     if (this.hasTitanicHydra && this.titanicCleaveBonus > 0) {
       const maxHpStat = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
       const bonusDamage = Math.round(maxHpStat * this.titanicCleaveBonus);
@@ -1372,22 +1529,10 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
     // 归并并套减伤
     const damageGroups = { basic: { physical: 0, magic: 0 }, onHit: { physical: 0, magic: 0 } };
     for (const e of entries) {
-      const times = e.isOnHit ? extraProcMultiplier : 1;
-      for (let k = 0; k < times; k += 1) {
-        const dealt = this.applyMitigationToTarget(e.amount, enemy, this.playerStats, e.type, 1);
-        if (dealt <= 0) continue;
-        const group = e.isOnHit ? damageGroups.onHit : damageGroups.basic;
-        group[e.type] += dealt;
-        // 智慧末刃：阈值治疗
-        if (e.source === "wits") {
-          const hpPct = this.currentHp / this.playerStats.maxHp;
-          if (hpPct < (EQUIPMENT_DATA[WITS_END_ID].effects.witsHealThresholdHpPct || 0.5)) {
-            this.currentHp = Math.min(this.currentHp + dealt, this.playerStats.maxHp);
-            this.showHealNumber(this.player.x, this.player.y - 28, dealt);
-            this.updateResourceBars();
-          }
-        }
-      }
+      const dealt = this.applyMitigationToTarget(e.amount, enemy, this.playerStats, e.type, 1);
+      if (dealt <= 0) continue;
+      const group = e.isOnHit ? damageGroups.onHit : damageGroups.basic;
+      group[e.type] += dealt;
     }
 
     // 低血法暴（无穷法球）
@@ -1437,6 +1582,13 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
     enemy.hp = Math.max(0, (enemy.hp ?? 0) - totalDamage);
     if (enemy.isBoss && typeof enemy.setData === "function") enemy.setData("hp", enemy.hp);
     if (enemy.isBoss) this.updateBossUI(enemy);
+    this.queueOnHitEffectBullets({
+      originX,
+      originY,
+      preferredTarget: enemy,
+      onHitScale: 1,
+      attackSeq,
+    });
 
     // 劈砍与后续：定义为普攻
     const meleeAngle = Phaser.Math.Angle.Between(this.player.x, this.player.y, enemy.x, enemy.y);
@@ -1747,12 +1899,13 @@ enemyFireAimedSpread(enemy, baseSpeed, textureKey, spreadDeg, fixedOffsetDeg = n
 // 敌人环状弹（法术伤害=自身 AP）
 // phaseDeg 为空则随机相位；center 可指定坐标，不给则用敌人当前位置
 enemyFireRing(enemy, {
-  count, speed, textureKey, phaseDeg = null, center = null,
+  count, speed, textureKey, phaseDeg = null, center = null, damage = null,
 }) {
   if (!enemy?.active) return;
   const cx = center?.x ?? enemy.x;
   const cy = center?.y ?? enemy.y;
   const phase = (phaseDeg == null) ? Phaser.Math.Between(0, 359) : phaseDeg;
+  const ringDamage = (Number.isFinite(damage) ? Math.round(damage) : null) ?? (enemy.abilityPower ?? 0);
   this.fireRingAt(cx, cy, {
     key: textureKey,
     sizeTiles: 1,
@@ -1763,7 +1916,7 @@ enemyFireRing(enemy, {
     accel: 0,
     sideSpeed: 0,
     owner: enemy,
-  }, enemy.abilityPower ?? 0);
+  }, ringDamage);
 }
 
 /* ==== Charger（kedama）AI ==== */
@@ -1839,12 +1992,59 @@ updateChargerAI(enemy, now, delta) {
         enemy.aiState = "idle";
         enemy.attackCooldownUntil = now + 800;
         this.resetEnemyNav(enemy, now);
+        if (hitWall) {
+          this.handleRobotChargerWallImpact(enemy);
+        }
       }
       return;
     }
     default: enemy.aiState = "idle"; return;
   }
 }
+
+  handleRobotChargerWallImpact(enemy) {
+    if (!enemy || enemy.enemyType !== "robotcharger") return;
+    const center = { x: enemy.x, y: enemy.y };
+    const currentHp = Number.isFinite(enemy.hp) ? enemy.hp : 0;
+    const hpLoss = Math.max(0, Math.round(currentHp * 0.5));
+    if (hpLoss > 0) {
+      enemy.hp = Math.max(0, currentHp - hpLoss);
+      this.showDamageNumber(center.x, center.y, hpLoss, "physical");
+    }
+    const tier = enemy.enemyTier;
+    if (!tier) return;
+    const attackDamage = Number.isFinite(enemy.attackDamage) ? Math.round(enemy.attackDamage) : 0;
+    if (tier === ENEMY_RARITIES.MID) {
+      this.enemyFireRing(enemy, {
+        count: 10,
+        speed: 150,
+        textureKey: "enemy_bullet_basic",
+        center,
+        damage: attackDamage,
+      });
+    } else if (tier === ENEMY_RARITIES.EPIC) {
+      this.enemyFireRing(enemy, {
+        count: 20,
+        speed: 150,
+        textureKey: "enemy_bullet_basic",
+        center,
+        damage: attackDamage,
+      });
+      this.spawnRobotChargerMinions(center, ENEMY_RARITIES.MID, 2);
+    } else if (tier === ENEMY_RARITIES.LEGENDARY) {
+      this.enemyFireRing(enemy, {
+        count: 40,
+        speed: 150,
+        textureKey: "enemy_bullet_basic",
+        center,
+        damage: attackDamage,
+      });
+      this.spawnRobotChargerMinions(center, ENEMY_RARITIES.EPIC, 2);
+    }
+    if (enemy.hp <= 0) {
+      this.killEnemy(enemy);
+    }
+  }
 
 
 /* ==== Caster（yousei）AI ==== */
@@ -1916,6 +2116,100 @@ updateCasterAI(enemy, now, _delta) {
   }
 }
 
+
+  updateRobotCasterAI(enemy, now, delta) {
+    if (!enemy || !enemy.active || !this.player) return;
+    const dist = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+    const inRange = dist <= (enemy.detectionRadius ?? 1200);
+    const speed = enemy.moveSpeed ?? 50;
+    const navTarget = this.resolveEnemyNavigationTarget(enemy, now);
+    if (navTarget) {
+      const dx = navTarget.x - enemy.x; const dy = navTarget.y - enemy.y;
+      const distNav = Math.hypot(dx, dy);
+      if (distNav > 1) {
+        const factor = speed / Math.max(distNav, 1);
+        enemy.body.setVelocity(dx * factor, dy * factor);
+      } else {
+        enemy.body.setVelocity(0, 0);
+      }
+    } else {
+      this.physics.moveToObject(enemy, this.player, speed);
+    }
+    if (!inRange) return;
+    const rotationSpeed = enemy.robotCasterRotationSpeed ?? 0.002;
+    const nodes = Array.isArray(enemy.robotCasterNodes) ? enemy.robotCasterNodes : [];
+    if (nodes.length > 0) {
+      for (let i = 0; i < nodes.length; i += 1) {
+        const node = nodes[i];
+        node.angle = (node.angle + rotationSpeed * delta) % Phaser.Math.PI2;
+      }
+      if (!enemy.nextShotTime) enemy.nextShotTime = now;
+      if (now >= enemy.nextShotTime) {
+        this.fireRobotCasterNodes(enemy);
+        enemy.nextShotTime = now + (enemy.shotIntervalMs ?? 200);
+      }
+    }
+  }
+
+  fireRobotCasterNodes(enemy) {
+    if (!enemy || !enemy.active) return;
+    const nodes = Array.isArray(enemy.robotCasterNodes) ? enemy.robotCasterNodes : [];
+    if (nodes.length === 0) return;
+    for (let i = 0; i < nodes.length; i += 1) {
+      const node = nodes[i];
+      const radius = Number.isFinite(node.radius) ? node.radius : (enemy.tierConfig?.nodeRadius ?? 100);
+      const x = enemy.x + Math.cos(node.angle) * radius;
+      const y = enemy.y + Math.sin(node.angle) * radius;
+      this.spawnRobotCasterNodeBullet(enemy, x, y);
+    }
+  }
+
+  spawnRobotCasterNodeBullet(enemy, x, y) {
+    if (!enemy || !enemy.active) return;
+    const tierConfig = enemy.tierConfig || {};
+    const textureKey = tierConfig.bulletTextureKey || "enemy_bullet_basic";
+    const forwardSpeed = tierConfig.bulletSpeed ?? 100;
+    const angleRad = Phaser.Math.Angle.Between(x, y, enemy.x, enemy.y);
+    const bullet = this.spawnBossBullet({
+      key: textureKey,
+      sizeTiles: 1,
+      judgeTiles: 0.5,
+      from: { x, y },
+      dirAngleDeg: Phaser.Math.RadToDeg(angleRad),
+      forwardSpeed,
+      accel: 0,
+      sideSpeed: 0,
+      owner: enemy,
+    }, enemy.abilityPower ?? 0, false);
+    if (bullet && tierConfig.extraGun) {
+      bullet.onWallHit = () => this.spawnRobotCasterGunOnWall(enemy, tierConfig.extraGun);
+    }
+  }
+
+  spawnRobotCasterGunOnWall(enemy, extraGun) {
+    if (!enemy || !enemy.active || !extraGun || !this.player || !this.player.active) return;
+    const offsets = Array.isArray(extraGun.offsetsDeg) && extraGun.offsetsDeg.length > 0
+      ? extraGun.offsetsDeg
+      : [0];
+    const speed = extraGun.speed ?? enemy.tierConfig?.bulletSpeed ?? 100;
+    const textureKey = extraGun.textureKey || "enemy_bullet_gun";
+    const baseAngleRad = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+    for (let i = 0; i < offsets.length; i += 1) {
+      const offsetDeg = Number.isFinite(offsets[i]) ? offsets[i] : 0;
+      const dirDeg = Phaser.Math.RadToDeg(baseAngleRad) + offsetDeg;
+      this.spawnBossBullet({
+        key: textureKey,
+        sizeTiles: 1,
+        judgeTiles: 0.5,
+        from: { x: enemy.x, y: enemy.y },
+        dirAngleDeg: dirDeg,
+        forwardSpeed: speed,
+        accel: 0,
+        sideSpeed: 0,
+        owner: enemy,
+      }, enemy.abilityPower ?? 0, false);
+    }
+  }
 
 /* ==== Turret（orb）AI ==== */
 /* 静止；每 attackIntervalMs 发一圈环状弹幕（随机相位）。自机进入 proximityRadius 100 时：
@@ -2031,6 +2325,8 @@ updateTurretAI(enemy, now, _delta) {
     if (this.debugMode && !this.debugShopMode) {
       this.equipItem(0, HEARTSTEEL_ID);
       this.equipItem(1, TITANIC_HYDRA_ID);
+      this.equipItem(2, RIFTMAKER_ID);
+      this.equipItem(3, BLOODTHIRSTER_ID);
     } else if (this.debugBossMode && !this.debugShopMode) {
       this.equipItem(0, BROKEN_KINGS_BLADE_ID);
       this.equipItem(1, WITS_END_ID);
@@ -2228,6 +2524,12 @@ updateSpellbladeOverlays() {
     title.className = "sidebar-equipment-title";
     title.textContent = item.name;
     container.appendChild(title);
+    if (item.intro) {
+      const intro = document.createElement("span");
+      intro.className = "sidebar-equipment-intro";
+      intro.textContent = item.intro;
+      container.appendChild(intro);
+    }
     (item.description || []).forEach((line) => {
       const row = document.createElement("span");
       row.textContent = line;
@@ -2455,7 +2757,9 @@ updateSpellbladeOverlays() {
       }
       // Aggregate on-hit flats (recurve bow & similar)
       if (Number.isFinite(effects.onHitPhysicalFlat)) {
-        onHitPhysicalFlat += Math.max(0, effects.onHitPhysicalFlat);
+        if (item.id !== RECURVE_BOW_ID) {
+          onHitPhysicalFlat += Math.max(0, effects.onHitPhysicalFlat);
+        }
       }
       // Magic on-hit + spell bonus (Riftmaker explicitly affects both; Hextech affects spells / empowered hits)
       if (Number.isFinite(effects.onHitMagicFlat)) {
@@ -2754,9 +3058,8 @@ updateSpellbladeOverlays() {
 
     this.hasGuinsoo = hasGuinsoo;
     if (!this.hasGuinsoo) {
-      this.guinsooStacks = 0;
-      this.guinsooStacksExpireAt = 0;
-      this.guinsooFullProcCounter = 0;
+      this.guinsooKillStacks = 0;
+      this.guinsooKillExpiresAt = 0;
     }
 
     // 将装备汇总的资源回复生效
@@ -2834,11 +3137,22 @@ updateSpellbladeOverlays() {
     this.recalculateEquipmentEffects();
   }
 
+  applyGuinsooKillStack() {
+    if (!this.hasGuinsoo) return;
+    const eff = EQUIPMENT_DATA[GUINSOOS_RAGEBLADE_ID]?.effects || {};
+    const maxStacks = Number.isFinite(eff.killAsMaxStacks) ? Math.max(0, eff.killAsMaxStacks) : 0;
+    const duration = Number.isFinite(eff.killAsDurationMs) ? Math.max(0, eff.killAsDurationMs) : 0;
+    if (maxStacks <= 0 || duration <= 0) return;
+    this.guinsooKillStacks = Math.min(maxStacks, (this.guinsooKillStacks || 0) + 1);
+    this.guinsooKillExpiresAt = this.time.now + duration;
+    this.rebuildAttackTimer();
+  }
+
   getAttackSpeedBonusMultiplier() {
     const data = EQUIPMENT_DATA[GUINSOOS_RAGEBLADE_ID]?.effects;
     if (!this.hasGuinsoo || !data) return 1;
-    const stacks = Math.min(this.guinsooStacks || 0, data.ragebladeMaxStacks || 0);
-    return 1 + stacks * (data.ragebladeStackAsPct || 0);
+    const stacks = Math.min(this.guinsooKillStacks || 0, data.killAsMaxStacks || 0);
+    return 1 + stacks * (data.killAsStackPct || 0);
   }
 
   rebuildAttackTimer() {
@@ -4028,10 +4342,9 @@ this.events.once("destroy", offSkills);
     if (this.isGameplaySuspended()) return;
     this.elapsed += delta;
 
-    if (this.guinsooStacks > 0 && this.time.now >= (this.guinsooStacksExpireAt || 0)) {
-      this.guinsooStacks = 0;
-      this.guinsooStacksExpireAt = 0;
-      this.guinsooFullProcCounter = 0;
+    if (this.guinsooKillStacks > 0 && this.time.now >= (this.guinsooKillExpiresAt || 0)) {
+      this.guinsooKillStacks = 0;
+      this.guinsooKillExpiresAt = 0;
       this.rebuildAttackTimer();
     }
 
@@ -4355,6 +4668,8 @@ this.updateMikoOrbs(delta);
       const timeAlive = this.time.now - bullet.spawnTime;
       if (timeAlive > BULLET_LIFETIME) { this.destroyBullet(bullet); continue; }
 
+      if (bullet.disableHoming || bullet.isEffectBullet) continue;
+
       const target = this.findNearestEnemy(bullet.x, bullet.y, Number.MAX_VALUE);
       if (target) {
         const angle = Phaser.Math.Angle.Between(bullet.x, bullet.y, target.x, target.y);
@@ -4507,6 +4822,9 @@ isPlayerInvulnerable() {
         break;
       case "caster":
         this.updateCasterAI(enemy, now, delta);
+        break;
+      case "robotcaster":
+        this.updateRobotCasterAI(enemy, now, delta);
         break;
       case "turret":
       default:
@@ -5636,8 +5954,10 @@ castR() {
 }
 
 
-
-
+  nextAttackSequence() {
+    this.attackSequence = (this.attackSequence || 0) + 1;
+    return this.attackSequence;
+  }
 
   tryFireBullet() {
     // 耀光检查
@@ -5652,11 +5972,15 @@ castR() {
     const target = this.findNearestEnemy(originX, originY, rangePixels);
     if (!target) return;
 
+    const attackSeq = this.nextAttackSequence();
     const bullet = this.physics.add.sprite(originX, originY, "bullet");
     bullet.setDepth(8); bullet.setScale(0.64);
     bullet.body.setAllowGravity(false);
     bullet.body.setSize(8, 16); bullet.body.setOffset(4, 0);
     bullet.spawnTime = this.time.now;
+    bullet.attackSeq = attackSeq;
+    bullet.originX = originX;
+    bullet.originY = originY;
     bullet.damage = this.playerStats.attackDamage;
     bullet.damageType = "physical";
     bullet.isCrit = false;
@@ -5671,38 +5995,22 @@ castR() {
     const angle = Phaser.Math.Angle.Between(bullet.x, bullet.y, target.x, target.y);
     this.physics.velocityFromRotation(angle, BULLET_SPEED, bullet.body.velocity);
     bullet.setRotation(angle + Math.PI / 2);
-    this.spawnRunaanBolts(originX, originY, target, rangePixels, angle);
+    this.spawnRunaanBolts(originX, originY, target, rangePixels, angle, attackSeq);
   }
 
-  spawnRunaanBolts(originX, originY, primaryTarget, rangePixels, initialAngle) {
+  spawnRunaanBolts(originX, originY, primaryTarget, _rangePixels, initialAngle, attackSeq) {
     if (!this.hasRunaan || !this.runaanConfig) return;
     const { boltCount, damageMultiplier, boltsTriggerOnHit } = this.runaanConfig;
     if (!boltCount || boltCount <= 0 || !damageMultiplier || damageMultiplier <= 0) return;
-    const enemies = (this.enemies && typeof this.enemies.getChildren === "function")
-      ? this.enemies.getChildren()
-      : [];
-    const corpses = (this.rinCorpses && typeof this.rinCorpses.getChildren === "function")
-      ? this.rinCorpses.getChildren()
-      : [];
-    const all = enemies.concat(corpses);
-    if (!all.length) return;
 
-    const rangeSq = rangePixels * rangePixels;
-    const candidates = [];
-    for (let i = 0; i < all.length; i += 1) {
-      const enemy = all[i];
-      if (!enemy || !enemy.active) continue;
-      if (enemy === primaryTarget) continue;
-      const distSq = Phaser.Math.Distance.Squared(originX, originY, enemy.x, enemy.y);
-      if (distSq > rangeSq) continue;
-      candidates.push({ enemy, distSq });
-    }
-    if (candidates.length === 0) return;
-    candidates.sort((a, b) => a.distSq - b.distSq);
-    const count = Math.min(boltCount, candidates.length);
+    const baseAngle = Number.isFinite(initialAngle)
+      ? initialAngle
+      : (primaryTarget ? Phaser.Math.Angle.Between(originX, originY, primaryTarget.x, primaryTarget.y) : 0);
+    const count = Math.min(boltCount, RUNAAN_BOLT_ANGLES_DEG.length);
 
     for (let i = 0; i < count; i += 1) {
-      const target = candidates[i].enemy;
+      const offset = Phaser.Math.DegToRad(RUNAAN_BOLT_ANGLES_DEG[i]);
+      const angle = baseAngle + offset;
       const bolt = this.physics.add.sprite(originX, originY, "item_effect_arrow");
       bolt.setDepth(8);
       bolt.setScale(0.85);
@@ -5710,26 +6018,181 @@ castR() {
       bolt.body.setSize(8, 16);
       bolt.body.setOffset(4, 0);
       bolt.spawnTime = this.time.now;
+      bolt.attackSeq = attackSeq;
+      bolt.originX = originX;
+      bolt.originY = originY;
       bolt.damage = Math.max(1, Math.round(this.playerStats.attackDamage * damageMultiplier));
       bolt.damageType = "physical";
       bolt.isCrit = false;
       bolt.onHitScale = boltsTriggerOnHit ? damageMultiplier : 0;
       bolt.cleaveScale = damageMultiplier;
       bolt.isRunaanBolt = true;
-      bolt.ignoresWallCollision = true;
+      bolt.disableHoming = true;
+      bolt.ignoresWallCollision = false;
 
       this.bullets.add(bolt);
       this.attachBulletTrailToBullet(bolt);
 
-      const angle = Phaser.Math.Angle.Between(originX, originY, target.x, target.y);
-      this.physics.velocityFromRotation(angle, BULLET_SPEED, bolt.body.velocity);
+      this.physics.velocityFromRotation(angle, EFFECT_BULLET_SPEED, bolt.body.velocity);
       bolt.setRotation(angle + Math.PI / 2);
+    }
+  }
 
-      // 若没有目标角度（极端情况），使用主射角保证贴图方向
-      if (!Number.isFinite(angle) && Number.isFinite(initialAngle)) {
-        bolt.setRotation(initialAngle + Math.PI / 2);
+  getGuinsooExtraOnHitCount(attackSeq) {
+    if (!this.hasGuinsoo) return 0;
+    const eff = EQUIPMENT_DATA[GUINSOOS_RAGEBLADE_ID]?.effects || {};
+    const every = Number.isFinite(eff.extraOnHitEvery) ? Math.max(1, eff.extraOnHitEvery) : 0;
+    const extra = Number.isFinite(eff.extraOnHitCount) ? Math.max(0, eff.extraOnHitCount) : 0;
+    if (!every || !extra) return 0;
+    if (!Number.isFinite(attackSeq) || attackSeq <= 0) return 0;
+    return (attackSeq % every === 0) ? extra : 0;
+  }
+
+  collectOnHitEffectSpecs() {
+    const specs = [];
+
+    const recurveCount = this.countItemEquipped(RECURVE_BOW_ID);
+    if (recurveCount > 0) {
+      const eff = EQUIPMENT_DATA[RECURVE_BOW_ID]?.effects || {};
+      if (Number.isFinite(eff.onHitPhysicalFlat) && eff.onHitPhysicalFlat > 0) {
+        for (let i = 0; i < recurveCount; i += 1) {
+          specs.push({
+            source: "recurve",
+            textureKey: "item_effect_arrow",
+            damageType: "physical",
+            computeDamage: () => Math.round(eff.onHitPhysicalFlat),
+          });
+        }
       }
     }
+
+    if (this.hasItemEquipped(BROKEN_KINGS_BLADE_ID)) {
+      const eff = EQUIPMENT_DATA[BROKEN_KINGS_BLADE_ID]?.effects || {};
+      specs.push({
+        source: "bork",
+        textureKey: "item_effect_sword",
+        damageType: "physical",
+        computeDamage: (enemy) => {
+          if (!enemy) return 0;
+          const rawPercent = Math.max(0, (enemy.hp || 0)) * (eff.percentCurrentHp || 0);
+          let percentDmg = Math.max(eff.percentMinDamage || 0, rawPercent);
+          if (enemy.isBoss) {
+            percentDmg = Math.min(percentDmg, eff.percentMaxDamageBoss || percentDmg);
+          } else {
+            percentDmg = Math.min(percentDmg, eff.percentMaxDamageNonBoss || percentDmg);
+          }
+          return Math.round(percentDmg);
+        },
+      });
+    }
+
+    if (this.hasItemEquipped(WITS_END_ID)) {
+      const eff = EQUIPMENT_DATA[WITS_END_ID]?.effects || {};
+      if (Number.isFinite(eff.witsMagicOnHit) && eff.witsMagicOnHit > 0) {
+        specs.push({
+          source: "wits",
+          textureKey: "item_effect_wit",
+          damageType: "magic",
+          computeDamage: () => Math.round(eff.witsMagicOnHit),
+        });
+      }
+    }
+
+    if (this.hasItemEquipped(NASHORS_TOOTH_ID)) {
+      const eff = EQUIPMENT_DATA[NASHORS_TOOTH_ID]?.effects || {};
+      if (Number.isFinite(eff.nashorBase) || Number.isFinite(eff.nashorApRatio)) {
+        specs.push({
+          source: "nashor",
+          textureKey: "item_effect_nashor",
+          damageType: "magic",
+          computeDamage: () => {
+            const ap = this.playerStats?.abilityPower || 0;
+            const base = Number.isFinite(eff.nashorBase) ? eff.nashorBase : 0;
+            const ratio = Number.isFinite(eff.nashorApRatio) ? eff.nashorApRatio : 0;
+            return Math.round(base + ratio * ap);
+          },
+        });
+      }
+    }
+
+    if (this.hasItemEquipped(GUINSOOS_RAGEBLADE_ID)) {
+      const eff = EQUIPMENT_DATA[GUINSOOS_RAGEBLADE_ID]?.effects || {};
+      if (Number.isFinite(eff.ragebladeMagicOnHit) && eff.ragebladeMagicOnHit > 0) {
+        specs.push({
+          source: "guinsoo",
+          textureKey: "item_effect_guinsoo",
+          damageType: "magic",
+          computeDamage: () => Math.round(eff.ragebladeMagicOnHit),
+        });
+      }
+    }
+
+    return specs;
+  }
+
+  selectEffectBulletTarget(originX, originY, preferredTarget) {
+    const rangePixels = statUnitsToPixels(this.playerStats?.range || PLAYER_BASE_STATS.range);
+    if (preferredTarget && preferredTarget.active) {
+      const distSq = Phaser.Math.Distance.Squared(originX, originY, preferredTarget.x, preferredTarget.y);
+      if (distSq <= rangePixels * rangePixels) return preferredTarget;
+    }
+    return this.findNearestEnemy(originX, originY, rangePixels);
+  }
+
+  queueOnHitEffectBullets({ originX, originY, preferredTarget, onHitScale, attackSeq }) {
+    const scale = Number.isFinite(onHitScale) ? Math.max(0, onHitScale) : 1;
+    if (scale <= 0) return;
+    const specs = this.collectOnHitEffectSpecs();
+    if (specs.length === 0) return;
+
+    const spawnX = Number.isFinite(originX) ? originX : this.player.x;
+    const spawnY = Number.isFinite(originY) ? originY : this.player.y;
+
+    const extraCount = this.getGuinsooExtraOnHitCount(attackSeq);
+    const rounds = 1 + extraCount;
+    const queue = [];
+    for (let r = 0; r < rounds; r += 1) {
+      specs.forEach((spec) => queue.push(spec));
+    }
+
+    queue.forEach((spec, index) => {
+      this.time.delayedCall(index * EFFECT_BULLET_INTERVAL_MS, () => {
+        const target = this.selectEffectBulletTarget(spawnX, spawnY, preferredTarget);
+        if (!target) return;
+        this.spawnEffectBullet(spec, spawnX, spawnY, target, scale);
+      });
+    });
+  }
+
+  spawnEffectBullet(spec, originX, originY, target, onHitScale) {
+    if (!spec || !target) return;
+    const bullet = this.physics.add.sprite(originX, originY, spec.textureKey);
+    bullet.setDepth(8);
+    bullet.setScale(EFFECT_BULLET_SCALE);
+    bullet.body.setAllowGravity(false);
+    bullet.body.setSize(8, 16);
+    bullet.body.setOffset(4, 0);
+    bullet.spawnTime = this.time.now;
+    bullet.originX = originX;
+    bullet.originY = originY;
+    bullet.isEffectBullet = true;
+    bullet.disableHoming = true;
+    bullet.ignoresWallCollision = false;
+    bullet.effectSource = spec.source;
+    bullet.damageType = spec.damageType;
+    bullet.computeDamage = spec.computeDamage;
+    bullet.effectScale = onHitScale;
+
+    this.bullets.add(bullet);
+    this.attachBulletTrailToBullet(bullet);
+
+    const angle = Phaser.Math.Angle.Between(originX, originY, target.x, target.y);
+    if (!Number.isFinite(angle)) {
+      this.destroyBullet(bullet);
+      return;
+    }
+    this.physics.velocityFromRotation(angle, EFFECT_BULLET_SPEED, bullet.body.velocity);
+    bullet.setRotation(angle + Math.PI / 2);
   }
 
   findNearestEnemy(x, y, range = Number.MAX_VALUE) {
@@ -6022,6 +6485,23 @@ castR() {
       enemy.nextShotTime = this.time.now + enemy.shotIntervalMs;
     }
 
+    if (enemy.enemyKind === "robotcaster") {
+      enemy.aiState = "idle";
+      enemy.shotIntervalMs = tierConfig.shotIntervalMs ?? 200;
+      enemy.nextShotTime = this.time.now;
+      const nodeCount = Math.max(1, Math.round(tierConfig.nodeCount ?? 4));
+      const rotationSpeed = tierConfig.nodeRotationSpeed ?? 0.002;
+      const radius = Math.max(0, Number.isFinite(tierConfig.nodeRadius) ? tierConfig.nodeRadius : 100);
+      enemy.robotCasterRotationSpeed = rotationSpeed;
+      enemy.robotCasterNodes = [];
+      for (let i = 0; i < nodeCount; i += 1) {
+        enemy.robotCasterNodes.push({
+          angle: (Phaser.Math.PI2 / nodeCount) * i,
+          radius,
+        });
+      }
+    }
+
     if (enemy.enemyKind === "charger") {
       enemy.aiState = "idle";
     }
@@ -6029,6 +6509,37 @@ castR() {
     enemy.isBoss = false;
     this.createEnemyHealthBar(enemy);
     return enemy;
+  }
+
+  spawnEnemyInstantly(typeKey, tierKey, position) {
+    if (!typeKey || !tierKey || !position) return null;
+    if (!this.enemies || typeof this.enemies.getChildren !== "function") return null;
+    const children = this.enemies.getChildren();
+    if (Array.isArray(children) && children.length >= ENEMY_MAX_COUNT) return null;
+    const typeConfig = ENEMY_TYPE_CONFIG[typeKey];
+    const tierConfig = typeConfig?.tiers?.[tierKey];
+    if (!tierConfig) return null;
+    const spawnX = Phaser.Math.Clamp(position.x, TILE_SIZE, WORLD_SIZE - TILE_SIZE);
+    const spawnY = Phaser.Math.Clamp(position.y, TILE_SIZE, WORLD_SIZE - TILE_SIZE);
+    const spawnPos = { x: spawnX, y: spawnY };
+    return this.createEnemyFromDefinition(
+      { typeKey, tierKey, typeConfig, tierConfig },
+      spawnPos,
+    );
+  }
+
+  spawnRobotChargerMinions(center, tierKey, count = 2) {
+    if (!center || !Number.isFinite(center.x) || !Number.isFinite(center.y)) return;
+    const baseRadius = 32;
+    for (let i = 0; i < count; i += 1) {
+      const angle = Phaser.Math.FloatBetween(0, Phaser.Math.PI2);
+      const offset = baseRadius + Phaser.Math.FloatBetween(-10, 10);
+      const pos = {
+        x: center.x + Math.cos(angle) * offset,
+        y: center.y + Math.sin(angle) * offset,
+      };
+      this.spawnEnemyInstantly("robotcharger", tierKey, pos);
+    }
   }
 
   initializeEnemyNav(enemy, now = this.time.now) {
@@ -6145,11 +6656,95 @@ handleQMeleeSlashOverlap(slash, enemy) {
   this.applyLiandryBurn(enemy);
 }
 
+  handleEffectBulletEnemyOverlap(bullet, enemy) {
+    if (!bullet || !enemy || !enemy.active) return;
+    const scale = Number.isFinite(bullet.effectScale) ? Math.max(0, bullet.effectScale) : 1;
+    let rawDamage = 0;
+    if (typeof bullet.computeDamage === "function") rawDamage = bullet.computeDamage(enemy);
+    else if (Number.isFinite(bullet.damage)) rawDamage = bullet.damage;
+    const baseAmount = Math.max(0, Math.round(rawDamage * scale));
+    if (baseAmount <= 0) { this.destroyBullet(bullet); return; }
+
+    let amount = baseAmount;
+    const damageType = bullet.damageType || "physical";
+    let showType = damageType;
+
+    if (damageType === "magic" && this.hasItemEquipped(INFINITY_ORB_ID)) {
+      const eff = EQUIPMENT_DATA[INFINITY_ORB_ID]?.effects || {};
+      const threshold = Number.isFinite(eff.executeHpPct) ? eff.executeHpPct : 0.5;
+      const mult = Number.isFinite(eff.magicCritMultiplier) ? eff.magicCritMultiplier : 1.5;
+      if ((enemy.hp / (enemy.maxHp || 1)) <= threshold) {
+        amount = Math.max(0, Math.round(amount * mult));
+        showType = "spellcrit";
+      }
+    }
+
+    const dealt = this.applyMitigationToTarget(amount, enemy, this.playerStats, damageType, 1);
+    if (dealt > 0) {
+      enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
+      this.showDamageNumber(enemy.x, enemy.y, dealt, showType);
+      if (enemy.isBoss && typeof enemy.setData === "function") {
+        enemy.setData("hp", enemy.hp);
+        this.updateBossUI(enemy);
+      }
+
+      if (bullet.effectSource === "wits") {
+        const eff = EQUIPMENT_DATA[WITS_END_ID]?.effects || {};
+        const threshold = Number.isFinite(eff.witsHealThresholdHpPct) ? eff.witsHealThresholdHpPct : 0.5;
+        const ratio = Number.isFinite(eff.witsHealPctOfOnHit) ? eff.witsHealPctOfOnHit : 0;
+        if (ratio > 0) {
+          const hpPct = this.currentHp / this.playerStats.maxHp;
+          if (hpPct < threshold) {
+            const heal = Math.max(0, Math.round(dealt * ratio));
+            if (heal > 0) {
+              this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
+              this.showHealNumber(this.player.x, this.player.y - 28, heal);
+              this.updateResourceBars();
+            }
+          }
+        }
+      }
+
+      if (enemy.hp <= 0) {
+        this.killEnemy(enemy);
+      } else {
+        this.maybeExecuteTheCollector(enemy);
+      }
+
+      if (damageType === "physical") {
+        const ls = this.playerEquipmentStats.physicalLifeSteal ?? 0;
+        if (ls > 0) {
+          const heal = Math.max(0, Math.round(dealt * ls));
+          if (heal > 0) {
+            this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
+            this.showHealNumber(this.player.x, this.player.y - 14, heal);
+            this.updateResourceBars();
+          }
+        }
+      }
+
+      const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
+      if (omni > 0) {
+        const healAny = Math.max(0, Math.round(dealt * omni));
+        if (healAny > 0) {
+          this.currentHp = Math.min(this.currentHp + healAny, this.playerStats.maxHp);
+          this.showHealNumber(this.player.x, this.player.y - 18, healAny);
+          this.updateResourceBars();
+        }
+      }
+    }
+
+    this.destroyBullet(bullet);
+  }
+
   handleBulletEnemyOverlap(bullet, enemy) {
-    if (!enemy.active) return;  const now = this.time.now;
+    if (!enemy.active) return;
+    if (bullet?.isEffectBullet) {
+      this.handleEffectBulletEnemyOverlap(bullet, enemy);
+      return;
+    }
     // 普攻命中音效（远程）
     this.playSfx("enemyhit");
-    const preHp = enemy.hp;
 
   const entries = [];
 
@@ -6194,71 +6789,6 @@ if (this.nextAttackTriggersSpellblade) {
     entries.push({ type: "magic", amount: flatOnHitMagic, source: "onhit_magic_flat", isOnHit: true });
   }
 
-  // === 装备：破败王者之刃（示例常量名保持与原代码一致） ===
-  let tripleProc = false;
-  if (this.hasItemEquipped(BROKEN_KINGS_BLADE_ID)) {
-    const blade = EQUIPMENT_DATA[BROKEN_KINGS_BLADE_ID];
-    const eff = blade.effects;
-
-    const rawPercent = preHp * eff.percentCurrentHp;
-    let percentDmg = Math.max(eff.percentMinDamage, rawPercent);
-    if (enemy.isBoss) {
-      percentDmg = Math.min(percentDmg, eff.percentMaxDamageBoss);
-    } else {
-      percentDmg = Math.min(percentDmg, eff.percentMaxDamageNonBoss);
-    }
-    entries.push({ type: "physical", amount: Math.round(percentDmg), source: "bork_percent", isOnHit: true });
-
-    if (enemy.hitComboCount >= eff.tripleHitThreshold) {
-      entries.push({ type: "magic", amount: Math.round(eff.tripleHitMagicDamage), source: "bork_triple", isOnHit: false });
-      enemy.slowPct = Math.max(enemy.slowPct || 0, eff.tripleHitSlowPct);
-      enemy.slowUntil = now + eff.tripleHitSlowMs;
-      this.playerSpeedBuffMultiplier = Math.max(this.playerSpeedBuffMultiplier || 1, 1 + eff.selfHastePct);
-      this.playerSpeedBuffExpiresAt = now + eff.selfHasteMs;
-      enemy.hitComboCount = 0;
-      enemy.hitComboExpireAt = 0;
-      tripleProc = true;
-    }
-  }
-
-  // === 装备：智慧末刃 ===
-  let witsOnHitDamagePerProc = 0;
-  if (this.hasItemEquipped(WITS_END_ID)) {
-    const eff = EQUIPMENT_DATA[WITS_END_ID].effects;
-    witsOnHitDamagePerProc = Math.round(eff.witsMagicOnHit);
-    entries.push({ type: "magic", amount: witsOnHitDamagePerProc, source: "wits", isOnHit: true });
-  }
-
-  // === 装备：纳什之牙 ===
-  if (this.hasItemEquipped(NASHORS_TOOTH_ID)) {
-    const eff = EQUIPMENT_DATA[NASHORS_TOOTH_ID].effects;
-    const bonusAD = Math.max(0, this.playerStats.attackDamage - PLAYER_BASE_STATS.attackDamage);
-    const ap = this.playerStats.abilityPower || 0;
-    const nashorDmg = Math.round(eff.nashorBase + eff.nashorBonusAdRatio * bonusAD + eff.nashorApRatio * ap);
-    entries.push({ type: "magic", amount: nashorDmg, source: "nashor", isOnHit: true });
-  }
-
-  // === 装备：鬼索的狂暴之刃（额外触发倍数） ===
-  let extraProcMultiplier = 1;
-  if (this.hasItemEquipped(GUINSOOS_RAGEBLADE_ID)) {
-    const eff = EQUIPMENT_DATA[GUINSOOS_RAGEBLADE_ID].effects;
-    entries.push({ type: "magic", amount: Math.round(eff.ragebladeMagicOnHit), source: "guinsoo", isOnHit: true });
-
-    this.guinsooStacks = Math.min((this.guinsooStacks || 0) + 1, eff.ragebladeMaxStacks || 4);
-    this.guinsooStacksExpireAt = now + (eff.ragebladeStackDurationMs || 5000);
-
-    if (this.guinsooStacks >= (eff.ragebladeMaxStacks || 4)) {
-      this.guinsooFullProcCounter = (this.guinsooFullProcCounter || 0) + 1;
-      if (this.guinsooFullProcCounter % (eff.ragebladeExtraProcEvery || 3) === 0) {
-        extraProcMultiplier = 1 + (eff.ragebladeExtraProcsAtFull || 2);
-      }
-    } else {
-      this.guinsooFullProcCounter = 0;
-    }
-
-    this.rebuildAttackTimer();
-  }
-
   if (this.hasTitanicHydra && this.titanicCleaveBonus > 0) {
     const maxHpStat = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
     const bonusDamage = Math.round(maxHpStat * this.titanicCleaveBonus);
@@ -6290,25 +6820,12 @@ if (this.nextAttackTriggersSpellblade) {
   };
 
   for (const e of entries) {
-    const times = e.isOnHit ? extraProcMultiplier : 1;
-    for (let k = 0; k < times; k += 1) {
-      const minDamageOutput = Number.isFinite(e.minDamage) ? Math.max(0, Math.ceil(e.minDamage)) : 0;
-      const after = this.applyMitigationToTarget(e.amount, enemy, this.playerStats, e.type, minDamageOutput);
-      if (after <= 0) continue;
+    const minDamageOutput = Number.isFinite(e.minDamage) ? Math.max(0, Math.ceil(e.minDamage)) : 0;
+    const after = this.applyMitigationToTarget(e.amount, enemy, this.playerStats, e.type, minDamageOutput);
+    if (after <= 0) continue;
 
-      const group = e.isOnHit ? damageGroups.onHit : damageGroups.basic;
-      group[e.type] += after;
-
-      // 智慧末刃治疗
-      if (e.source === "wits") {
-        const hpPct = this.currentHp / this.playerStats.maxHp;
-        if (hpPct < (EQUIPMENT_DATA[WITS_END_ID].effects.witsHealThresholdHpPct || 0.5)) {
-          this.currentHp = Math.min(this.currentHp + after, this.playerStats.maxHp);
-          this.showHealNumber(this.player.x, this.player.y - 28, after);
-          this.updateResourceBars();
-        }
-      }
-    }
+    const group = e.isOnHit ? damageGroups.onHit : damageGroups.basic;
+    group[e.type] += after;
   }
 
   // === 显示：基础物理伤害若来自暴击，用“crit”样式渲染 ===
@@ -6400,6 +6917,16 @@ const totalDamage =
   }
   // 讯刃：普攻命中返还技能冷却
   this.applyNavoriQuickbladesOnHitRefund();
+
+  const effectOriginX = Number.isFinite(bullet?.originX) ? bullet.originX : (Number.isFinite(bullet?.x) ? bullet.x : this.player.x);
+  const effectOriginY = Number.isFinite(bullet?.originY) ? bullet.originY : (Number.isFinite(bullet?.y) ? bullet.y : this.player.y);
+  this.queueOnHitEffectBullets({
+    originX: effectOriginX,
+    originY: effectOriginY,
+    preferredTarget: enemy,
+    onHitScale,
+    attackSeq: bullet?.attackSeq,
+  });
 
   // === 物理吸血 ===
   const ls = this.playerEquipmentStats.physicalLifeSteal ?? 0;
@@ -6582,6 +7109,10 @@ const totalDamage =
 
   hasItemEquipped(itemId) {
     return this.playerEquipmentSlots.some((id) => id === itemId);
+  }
+
+  countItemEquipped(itemId) {
+    return this.playerEquipmentSlots.reduce((count, id) => count + (id === itemId ? 1 : 0), 0);
   }
 
   handleBrokenKingsBladeOnHit(_context) { return null; }
@@ -7045,6 +7576,7 @@ consumeSpellbladeIfReady(enemy) {
     this.applyHeartsteelKillStack();
     this.applyDarkSealKillProgress(enemy);
     this.applyBailouMomentumOnKill();
+    this.applyGuinsooKillStack();
 
     // 收集者：只要装备者击杀，显示白色“真伤9999”
     if (this.hasItemEquipped(THE_COLLECTOR_ID) && !enemy._collectorExecuteDisplayed) {
@@ -8304,10 +8836,29 @@ castDash() {
     icon.alt = offerData.item.name;
     header.appendChild(icon);
 
+    const titleWrap = document.createElement("div");
+    titleWrap.className = "shop-item-title";
+
     const name = document.createElement("div");
     name.className = "shop-item-name";
     name.textContent = offerData.item.name;
-    header.appendChild(name);
+    titleWrap.appendChild(name);
+
+    if (offerData.item.intro) {
+      const intro = document.createElement("div");
+      intro.className = "shop-item-intro";
+      intro.textContent = offerData.item.intro;
+      titleWrap.appendChild(intro);
+    }
+
+    if (Array.isArray(offerData.item.tags) && offerData.item.tags.length > 0) {
+      const tagLine = document.createElement("div");
+      tagLine.className = "shop-item-tag";
+      tagLine.textContent = `Tag：${offerData.item.tags.join("，")}`;
+      titleWrap.appendChild(tagLine);
+    }
+
+    header.appendChild(titleWrap);
 
     card.appendChild(header);
 
