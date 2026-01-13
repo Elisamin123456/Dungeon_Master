@@ -5,6 +5,11 @@ const GAME_WIDTH = 640;
 const GAME_HEIGHT = 480;
 const MAP_TILES = 64;
 const TILE_SIZE = 16;
+const AMBIENT_BATTLE_BGM_KEY = "battle_bgm";
+const AMBIENT_NON_BATTLE_BGM_KEY = "nonbattle_bgm";
+const BGM_NEARBY_RADIUS_PX = TILE_SIZE * 12;
+const BGM_MAX_NEARBY_ENEMIES = 10;
+const AMBIENT_MIX_SCALE = 0.5;
 const WALL_COLLISION_MARGIN = 1;
 const ENEMY_NAV_RECALC_INTERVAL_MS = 450;
 const ENEMY_PATH_NODE_REACHED_THRESHOLD = TILE_SIZE * 0.35;
@@ -58,13 +63,45 @@ const HEALTH_POTION_ID = "healthPotion";
 const REFILLABLE_POTION_ID = "refillablePotion";
 const EQUIPMENT_TOOLTIP_DEFAULT = "查看鼠标移动到的位置";
 const DEBUG_INITIAL_RANK = 10;
-const DEBUG_SCENARIO = (() => {
-  if (typeof window === "undefined") {
-    return false;
+const LOCATION_CONTEXT = (() => {
+  if (typeof window === "undefined" || typeof window.location === "undefined") {
+    return null;
   }
+  const rawParams = new URLSearchParams(window.location.search);
+  const rawHash = (window.location.hash || "").toLowerCase();
+  const leagueParamKeys = new Set();
+  for (const key of rawParams.keys()) {
+    const lowerKey = key.toLowerCase();
+    if (lowerKey === "league") {
+      leagueParamKeys.add(key);
+      continue;
+    }
+    if (lowerKey === "mode") {
+      const values = rawParams.getAll(key).map((value) => (value || "").toLowerCase());
+      if (values.length > 0 && values.every((value) => value === "league")) {
+        leagueParamKeys.add(key);
+      }
+    }
+  }
+  const hasLeagueQuery = leagueParamKeys.size > 0;
+  const hasOtherQuery = Array.from(rawParams.keys()).some((key) => !leagueParamKeys.has(key));
+  const hasOtherHashFlags = /(debug|boss|rin|shop)/.test(rawHash);
+  const hasLeagueHash = rawHash.includes("league");
+  const leagueAliasActive = (hasLeagueQuery || hasLeagueHash) && !hasOtherQuery && !hasOtherHashFlags;
+  const sanitizedParams = new URLSearchParams(rawParams);
+  if (leagueAliasActive) {
+    leagueParamKeys.forEach((key) => {
+      sanitizedParams.delete(key);
+    });
+  }
+  const sanitizedHash = leagueAliasActive ? rawHash.replace(/league/gi, "") : rawHash;
+  return { params: sanitizedParams, hash: sanitizedHash, leagueAliasActive };
+})();
+
+const DEBUG_SCENARIO = (() => {
+  if (!LOCATION_CONTEXT) return false;
   try {
-    const params = new URLSearchParams(window.location.search);
-    const hash = (window.location.hash || "").toLowerCase();
+    const { params, hash } = LOCATION_CONTEXT;
     return params.has("debug") || hash.includes("debug");
   } catch (error) {
     console.warn("Failed to parse debug flag", error); // eslint-disable-line no-console
@@ -74,10 +111,9 @@ const DEBUG_SCENARIO = (() => {
 
 /* ==== Boss 调试开关与测试配置 ==== */
 const DEBUG_BOSS = (() => {
-  if (typeof window === "undefined") return false;
+  if (!LOCATION_CONTEXT) return false;
   try {
-    const params = new URLSearchParams(window.location.search);
-    const hash = (window.location.hash || "").toLowerCase();
+    const { params, hash } = LOCATION_CONTEXT;
     return (params.get("debug") === "boss")
       || params.has("boss")
       || params.has("bossDebug")
@@ -93,10 +129,9 @@ const DEBUG_BOSS = (() => {
 })();
 
 const DEBUG_SHOP = (() => {
-  if (typeof window === "undefined") return false;
+  if (!LOCATION_CONTEXT) return false;
   try {
-    const params = new URLSearchParams(window.location.search);
-    const hash = (window.location.hash || "").toLowerCase();
+    const { params, hash } = LOCATION_CONTEXT;
     return params.get("debug") === "shop"
       || params.has("shop")
       || hash.includes("debug-shop")
@@ -841,6 +876,7 @@ class PreloadScene extends Phaser.Scene {
     this.load.image("item_effect_titanic", "assets/item/effect/Titanichydra.png");
     this.load.audio("utsuho_bgm", "music/boss.mp3"); 
     this.load.audio("battle_bgm", "music/battle.mp3");
+    this.load.audio("nonbattle_bgm", "music/non_battle.mp3");
     // 移除敌人charge音效加载
     this.load.audio("enemyexploded", "se/enemyexploded.wav");
     this.load.audio("itempick", "se/itempick.wav");
@@ -933,6 +969,10 @@ class GameScene extends Phaser.Scene {
     super("GameScene");
     this.elapsed = 0;
     this.killCount = 0;
+    this.battleBgm = null;
+    this.nonBattleBgm = null;
+    this._ambientMusicCleanupRegistered = false;
+    this._ambientBattleRatio = -1;
   }
 
   init() {
@@ -1450,18 +1490,12 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
     }
 
     if (!this.isBossStage) {
-      if (!this.battleBgm) {
-        this.battleBgm = this.sound.add("battle_bgm", { loop: true, volume: 0.4 });
-        this.battleBgm.play();
-        this.events.once("shutdown", () => { if (this.battleBgm?.isPlaying) this.battleBgm.stop(); });
-        this.events.once("destroy", () => { if (this.battleBgm) { this.battleBgm.stop(); this.battleBgm.destroy(); this.battleBgm = null; } });
-      } else if (!this.battleBgm.isPlaying) {
-        this.battleBgm.play();
-      }
+      this.ensureAmbientMusicPlaying();
     }
 
     // Debug Boss 模式：停止一切音乐 -> 生成Utsuho -> 再播放Boss曲
     if (this.debugBossMode) {
+      this.stopAmbientMusic({ destroy: true });
       try { this.sound.stopAll(); } catch (_) {}
       if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
 
@@ -2551,11 +2585,18 @@ updateSpellbladeOverlays() {
     }
     const bonusManaFromStacks = (this.manaStackCount || 0) * (this.manaStackPerCast || 0);
     base.maxMana = Math.max(0, Math.round(baseMaxMana + addMana + bonusManaFromStacks));
-    // 暴击率：先记录未封顶值用于显示，再对内逻辑封顶
+    // 暴击率：先记录未封顶值用于显示，再对内逻辑封顶（正向增益最多到 100%）
     {
-      const uncapped01 = (base.critChance ?? 0) + addCritChancePct;
+      const baseCritChanceRaw = base.critChance ?? 0;
+      const baseCritChanceClamped = Math.min(1, Math.max(0, baseCritChanceRaw));
+      const maxEquipmentCritAdd = Math.max(0, 1 - baseCritChanceClamped);
+      const positiveAdd = Math.max(0, addCritChancePct);
+      const negativeAdd = Math.min(0, addCritChancePct);
+      const clampedPositiveAdd = Math.min(positiveAdd, maxEquipmentCritAdd);
+      const clampedAddCritChancePct = clampedPositiveAdd + negativeAdd;
+      const uncapped01 = baseCritChanceRaw + addCritChancePct;
       base.critChanceUncapped = Math.max(0, uncapped01);
-      base.critChance = Math.min(1, Math.max(0, uncapped01));
+      base.critChance = Math.min(1, Math.max(0, baseCritChanceClamped + clampedAddCritChancePct));
     }
     base.critDamage = Math.max(0, Math.round((base.critDamage ?? 0) + addCritDamageBonusPct * 100));
 
@@ -2825,7 +2866,7 @@ updateSpellbladeOverlays() {
     this.generateRandomSegmentsMap();
   }
 
-  generateRandomSegmentsMap() {
+  generateRandomSegmentsMap(preservePlayer = false) {
     if (this.wallGroup) this.wallGroup.clear(true, true);
     if (!this.wallTiles) this.wallTiles = [];
     this.wallTiles.forEach((tile) => tile?.destroy?.());
@@ -2925,6 +2966,18 @@ updateSpellbladeOverlays() {
 
     placeSegments(25, false);
     placeSegments(25, true);
+
+    if (preservePlayer && this.player) {
+      const playerTile = this.worldToTileCoords(this.player.x, this.player.y);
+      const preserveRadius = 2;
+      const clampX = (value) => Phaser.Math.Clamp(value, 1, width - 2);
+      const clampY = (value) => Phaser.Math.Clamp(value, 1, height - 2);
+      for (let dy = -preserveRadius; dy <= preserveRadius; dy += 1) {
+        for (let dx = -preserveRadius; dx <= preserveRadius; dx += 1) {
+          markWall(clampX(playerTile.x + dx), clampY(playerTile.y + dy), false);
+        }
+      }
+    }
 
     this.wallGrid = isWall.map((row) => row.slice());
 
@@ -3290,6 +3343,7 @@ updateSpellbladeOverlays() {
     this.qAimGraphics.clear();
 
     this.playerWallCollider = this.physics.add.collider(this.player, this.wallGroup);
+    this.ensurePlayerOnValidPosition({ randomizeSpawn: true });
 
   }
 
@@ -3478,10 +3532,11 @@ updateSpellbladeOverlays() {
 
     // 玩家子弹撞墙：生成小爆炸特效并销毁子弹
     if (this.wallGroup) {
-      this.physics.add.collider(this.bullets, this.wallGroup, (bullet, _wall) => {
-        if (bullet && bullet.active) this.spawnWallHitExplosion(bullet.x, bullet.y);
-        this.destroyBullet(bullet);
-      });
+    this.physics.add.collider(this.bullets, this.wallGroup, (bullet, _wall) => {
+      if (!bullet || !bullet.active || bullet.ignoresWallCollision) return;
+      this.spawnWallHitExplosion(bullet.x, bullet.y);
+      this.destroyBullet(bullet);
+    });
     }
     // 玩家子弹可击杀尸体（不生成 round 子弹）
     this.physics.add.overlap(this.bullets, this.rinCorpses, (_bullet, corpse) => {
@@ -3552,6 +3607,71 @@ updateSpellbladeOverlays() {
     const baseConfig = this.sfxConfig?.[key] ?? {};
     this.sound.play(key, { ...baseConfig, ...overrides });
   }
+  ensureAmbientMusicPlaying() {
+    if (!this.sound || this.isBossStage || this.debugBossMode) return;
+    if (!this.battleBgm) {
+      this.battleBgm = this.sound.add("battle_bgm", { loop: true, volume: 0 });
+    }
+    if (!this.nonBattleBgm) {
+      this.nonBattleBgm = this.sound.add("nonbattle_bgm", { loop: true, volume: 1 });
+    }
+    [this.battleBgm, this.nonBattleBgm].forEach((track) => {
+      if (!track) return;
+      if (track.isPaused) track.resume();
+      else if (!track.isPlaying) track.play();
+    });
+    this.registerAmbientMusicCleanup();
+    this.updateAmbientMusicVolumes(true);
+  }
+  registerAmbientMusicCleanup() {
+    if (this._ambientMusicCleanupRegistered) return;
+    const cleanup = () => this.stopAmbientMusic({ destroy: true });
+    this.events.once("shutdown", cleanup);
+    this.events.once("destroy", cleanup);
+    this._ambientMusicCleanupRegistered = true;
+  }
+  stopAmbientMusic({ destroy = false } = {}) {
+    const stopTrack = (track) => {
+      if (!track) return;
+      try {
+        if (track.isPlaying || track.isPaused) track.stop();
+      } catch (_) {}
+      if (destroy) {
+        try { track.destroy(); } catch (_) {}
+      }
+    };
+    stopTrack(this.battleBgm);
+    stopTrack(this.nonBattleBgm);
+    if (destroy) {
+      this.battleBgm = null;
+      this.nonBattleBgm = null;
+      this._ambientBattleRatio = -1;
+      this._ambientMusicCleanupRegistered = false;
+    }
+  }
+  updateAmbientMusicVolumes(force = false) {
+    if (!this.battleBgm || !this.nonBattleBgm) return;
+    if (this.isBossStage || this.debugBossMode) return;
+    if (!this.player) return;
+    const radiusSq = BGM_NEARBY_RADIUS_PX * BGM_NEARBY_RADIUS_PX;
+    const enemies = (this.enemies?.getChildren?.() || []);
+    let nearby = 0;
+    const maxNearby = Math.max(1, BGM_MAX_NEARBY_ENEMIES);
+    for (const enemy of enemies) {
+      if (!enemy?.active || enemy.isBoss || enemy.isChest || enemy.isRinCorpse) continue;
+      const dx = enemy.x - this.player.x;
+      const dy = enemy.y - this.player.y;
+      if ((dx * dx + dy * dy) <= radiusSq) {
+        nearby += 1;
+        if (nearby >= maxNearby) break;
+      }
+    }
+    const ratio = Phaser.Math.Clamp(nearby / maxNearby, 0, 1);
+    if (!force && Number.isFinite(this._ambientBattleRatio) && this._ambientBattleRatio === ratio) return;
+    this._ambientBattleRatio = ratio;
+    this.battleBgm.setVolume(ratio * AMBIENT_MIX_SCALE);
+    this.nonBattleBgm.setVolume((1 - ratio) * AMBIENT_MIX_SCALE);
+  }
   handlePauseKey(event) {
     if (!event || event.code !== "Escape") return;
     if (event.repeat) { event.preventDefault(); return; }
@@ -3578,6 +3698,7 @@ updateSpellbladeOverlays() {
     this.physics.pause();
     this.time.timeScale = 0;
     if (this.battleBgm?.isPlaying) this.battleBgm.pause();
+    if (this.nonBattleBgm?.isPlaying) this.nonBattleBgm.pause();
     if (this.attackTimer) this.attackTimer.paused = true;
     if (this.spawnTimer) this.spawnTimer.paused = true;
     // 改为使用 HTML 统计浮层：标题“游戏暂停”
@@ -3589,10 +3710,11 @@ updateSpellbladeOverlays() {
     this.isPaused = false;
        this.time.timeScale = 1;
     this.physics.resume();
-    if (this.battleBgm) {
-      if (this.battleBgm.isPaused) this.battleBgm.resume();
-      else if (!this.battleBgm.isPlaying) this.battleBgm.play();
-    }
+    [this.battleBgm, this.nonBattleBgm].forEach((track) => {
+      if (!track) return;
+      if (track.isPaused) track.resume();
+      else if (!track.isPlaying) track.play();
+    });
     if (this.attackTimer) this.attackTimer.paused = false;
     if (this.spawnTimer) this.spawnTimer.paused = false;
     // 关闭 HTML 统计浮层
@@ -3606,10 +3728,11 @@ updateSpellbladeOverlays() {
     this.isPaused = false;
     this.time.timeScale = 1;
     this.physics.resume();
-    if (this.battleBgm) {
-      if (this.battleBgm.isPaused) this.battleBgm.resume();
-      else if (!this.battleBgm.isPlaying) this.battleBgm.play();
-    }
+    [this.battleBgm, this.nonBattleBgm].forEach((track) => {
+      if (!track) return;
+      if (track.isPaused) track.resume();
+      else if (!track.isPlaying) track.play();
+    });
     if (this.attackTimer) this.attackTimer.paused = false;
     if (this.spawnTimer) this.spawnTimer.paused = false;
     this.scene.start("StartScene");
@@ -3718,17 +3841,16 @@ this.events.once("destroy", offSkills);
     // 正式 Boss 关（第10关与每20关）：不刷怪，直接生成 Boss
     if (this.isBossStage) {
       if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
+      this.stopAmbientMusic();
       if (!this.boss) {
         if (this.level === 10) {
           this.spawnBoss(BOSS_RIN_CONFIG);
           this.createBossUI(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
           this.showBossHeader(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
-          try { if (this.battleBgm?.isPlaying) this.battleBgm.stop(); } catch (_) {}
           if (!this.bossMusic) { this.bossMusic = this.sound.add(BOSS_RIN_CONFIG.musicKey, { loop: true, volume: 1.0 }); }
           if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
         } else {
           this.spawnBossById("Utsuho", { x: WORLD_SIZE/2, y: Math.floor(WORLD_SIZE * 0.25) });
-          try { if (this.battleBgm?.isPlaying) this.battleBgm.stop(); } catch (_) {}
           if (!this.bossMusic) { this.bossMusic = this.sound.add(BOSS_UTSUHO_CONFIG.musicKey, { loop: true, volume: 1.5 }); }
           if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
         }
@@ -3844,6 +3966,26 @@ this.events.once("destroy", offSkills);
     return null;
   }
 
+  findPlayerSpawnPosition(radius = PLAYER_HITBOX_RADIUS) {
+    const spawn = this.findClearPosition(radius, { avoidPlayer: false });
+    if (spawn) return spawn;
+    return { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2 };
+  }
+
+  ensurePlayerOnValidPosition({ randomizeSpawn = false } = {}) {
+    if (!this.player) return;
+    if (randomizeSpawn) {
+      const spawn = this.findPlayerSpawnPosition();
+      if (spawn) {
+        this.player.setPosition(spawn.x, spawn.y);
+        return;
+      }
+    }
+    if (this.isPositionWalkable(this.player.x, this.player.y)) return;
+    const fallback = this.findPlayerSpawnPosition();
+    if (fallback) this.player.setPosition(fallback.x, fallback.y);
+  }
+
   spawnChestAt(x, y) {
     if (!this.enemies) return null;
     const chest = this.enemies.create(x, y, "place_chest");
@@ -3926,6 +4068,7 @@ this.updateMikoOrbs(delta);
 
     this.updateRoundTimer(delta);
     this.checkNoDamageRankBonus();
+    this.updateAmbientMusicVolumes();
     this.updateHUD();
   }
 
@@ -4324,12 +4467,16 @@ isPlayerInvulnerable() {
 
 
 
-updateEnemies() {
-  const enemies = this.enemies.getChildren();
-  const now = this.time.now;
-  for (let i = enemies.length - 1; i >= 0; i -= 1) {
-    const enemy = enemies[i];
-    if (!enemy?.active) continue;
+  updateEnemies() {
+    const enemies = this.enemies.getChildren();
+    const now = this.time.now;
+    const focusDown = this.keys?.focus?.isDown === true;
+    for (let i = enemies.length - 1; i >= 0; i -= 1) {
+      const enemy = enemies[i];
+      if (!enemy?.active) continue;
+      if (!enemy.isBoss && !enemy.isChest) {
+        this.updateEnemyHealthBar(enemy, focusDown);
+      }
 
     // 导航状态初始化（仅对可移动体）
     if (!enemy.nav && enemy.enemyKind !== "turret") {
@@ -4366,8 +4513,52 @@ updateEnemies() {
         this.updateTurretAI(enemy, now, delta);
         break;
     }
+    }
   }
-}
+
+  updateEnemyHealthBar(enemy, focusDown = false) {
+    if (!enemy || !enemy.healthBar || enemy.isBoss) return;
+    const bar = enemy.healthBar;
+    if (!focusDown) {
+      if (bar.visible) {
+        bar.clear();
+        bar.setVisible(false);
+      }
+      return;
+    }
+    if (!bar.visible) bar.setVisible(true);
+    const displayWidth = Math.max(1, enemy.displayWidth || enemy.width || TILE_SIZE);
+    const displayHeight = Math.max(1, enemy.displayHeight || enemy.height || TILE_SIZE);
+    const barWidth = Math.max(2, (displayWidth * 3) / 4);
+    const barHeight = Math.max(2, Math.min(6, Math.round(displayHeight * 0.12)));
+    const offsetY = displayHeight / 2 + barHeight + 4;
+    const barX = enemy.x - barWidth / 2;
+    const barY = enemy.y - offsetY;
+    const ratio = (enemy.maxHp > 0 && Number.isFinite(enemy.hp))
+      ? Phaser.Math.Clamp(enemy.hp / enemy.maxHp, 0, 1)
+      : 0;
+    bar.clear();
+    bar.fillStyle(0x000000, 0.65);
+    bar.fillRect(barX - 1, barY - 1, barWidth + 2, barHeight + 2);
+    const fillWidth = Math.max(1, Math.round(barWidth * ratio));
+    bar.fillStyle(0xff4a2b, 0.95);
+    bar.fillRect(barX, barY, fillWidth, barHeight);
+  }
+
+  createEnemyHealthBar(enemy) {
+    if (!enemy || enemy.healthBar || enemy.isBoss || enemy.isChest || enemy.isRinCorpse) return;
+    const bar = this.add.graphics();
+    bar.setDepth((enemy.depth ?? 0) + 0.5);
+    bar.setVisible(false);
+    enemy.healthBar = bar;
+    this.updateEnemyHealthBar(enemy, false);
+  }
+
+  destroyEnemyHealthBar(enemy) {
+    if (!enemy?.healthBar) return;
+    try { enemy.healthBar.destroy(); } catch (_) {}
+    enemy.healthBar = null;
+  }
 
 
   updateLoot(_delta) {
@@ -4626,11 +4817,11 @@ updateEnemies() {
       this.isBossStage = (this.level === 10) || (this.level % 20 === 0);
 
       // 刷新地形（Boss关卡仅保留边框）
-      this.generateRandomSegmentsMap();
+      this.generateRandomSegmentsMap(true);
 
       // 重置玩家位置
       if (this.player) {
-        this.player.setPosition(WORLD_SIZE/2, WORLD_SIZE/2);
+        this.ensurePlayerOnValidPosition();
         this.player.body.setVelocity(0, 0);
         this.playerFacing = "down";
         this.stopPlayerAnimation(this.playerFacing);
@@ -4647,13 +4838,13 @@ updateEnemies() {
 
       // 普通关卡：恢复刷怪；Boss关卡：生成Boss且暂停刷怪
       if (this.isBossStage) {
+        this.stopAmbientMusic();
         // 第10关：作为 Boss 关，生成 Rin 并直接进入Boss流程
         if (this.level === 10) {
           if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
           this.spawnBoss(BOSS_RIN_CONFIG);
           this.createBossUI(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
           this.showBossHeader(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
-          try { if (this.battleBgm?.isPlaying) this.battleBgm.stop(); } catch (_) {}
           if (!this.bossMusic) { this.bossMusic = this.sound.add(BOSS_RIN_CONFIG.musicKey, { loop: true, volume: 1.0 }); }
           if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
           return;
@@ -4687,9 +4878,6 @@ updateEnemies() {
           }
         }
         // 音乐：切到Boss曲
-        try {
-          if (this.battleBgm?.isPlaying) this.battleBgm.stop();
-        } catch (_) {}
         if (!this.bossMusic) {
           const key = (this.level === 10) ? BOSS_RIN_CONFIG.musicKey : BOSS_UTSUHO_CONFIG.musicKey;
           const vol = (this.level === 10) ? 1.0 : 1.5;
@@ -4701,10 +4889,7 @@ updateEnemies() {
         this.scheduleSpawnTimer();
         // 停掉Boss曲，恢复战斗BGM
         if (this.bossMusic) { this.bossMusic.stop(); this.bossMusic.destroy(); this.bossMusic = null; }
-        if (!this.battleBgm) {
-          this.battleBgm = this.sound.add("battle_bgm", { loop: true, volume: 0.4 });
-        }
-        if (this.battleBgm && !this.battleBgm.isPlaying) this.battleBgm.play();
+        this.ensureAmbientMusicPlaying();
       }
     } else {
       this.roundComplete = true;
@@ -5477,6 +5662,7 @@ castR() {
     bullet.isCrit = false;
     bullet.onHitScale = 1;
     bullet.cleaveScale = 1;
+    bullet.ignoresWallCollision = true;
 
     this.bullets.add(bullet);
     this.attachBulletTrailToBullet(bullet);
@@ -5530,6 +5716,7 @@ castR() {
       bolt.onHitScale = boltsTriggerOnHit ? damageMultiplier : 0;
       bolt.cleaveScale = damageMultiplier;
       bolt.isRunaanBolt = true;
+      bolt.ignoresWallCollision = true;
 
       this.bullets.add(bolt);
       this.attachBulletTrailToBullet(bolt);
@@ -5840,6 +6027,7 @@ castR() {
     }
 
     enemy.isBoss = false;
+    this.createEnemyHealthBar(enemy);
     return enemy;
   }
 
@@ -6519,7 +6707,12 @@ const totalDamage =
           }
         }
       }
-      const dmg = (enemy.isBoss && enemy.contactDamage) ? enemy.contactDamage : ENEMY_CONTACT_DAMAGE;
+      const contactAttackPower = Number.isFinite(enemy.attackDamage)
+        ? enemy.attackDamage
+        : Number.isFinite(enemy.contactDamage)
+          ? enemy.contactDamage
+          : ENEMY_CONTACT_DAMAGE;
+      const dmg = Math.max(0, Math.round(contactAttackPower));
       this.applyDamageToPlayer(dmg, enemy);
       enemy.lastDamageTick = now;
     }
@@ -6769,6 +6962,7 @@ consumeSpellbladeIfReady(enemy) {
 
 
   killEnemy(enemy) {
+    this.destroyEnemyHealthBar(enemy);
     this.playSfx("enemyexploded");
     // Rin 第三阶段：连锁召唤逻辑
     if (this.boss && this.boss.isBoss && this.boss.bossKind === "Rin") {
@@ -7293,6 +7487,7 @@ castDash() {
     if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
     // 音乐静音
     if (this.battleBgm?.isPlaying) this.battleBgm.pause();
+    if (this.nonBattleBgm?.isPlaying) this.nonBattleBgm.pause();
     // 显示 HTML 统计覆盖层（失败）
     this.showHtmlStatsOverlay("fail");
   }
@@ -7331,7 +7526,7 @@ castDash() {
     this.clearGameOverOverlay();
     this.isGameOver = false;
     // 恢复音乐（新场景会自行创建/播放）
-    if (this.battleBgm?.isPaused) this.battleBgm.stop?.();
+    this.stopAmbientMusic({ destroy: true });
     // 需求：死亡后的重开应完全重新加载界面
     // 使用浏览器刷新来确保所有状态（包括全局/静态单例）被重置
     if (typeof window !== "undefined" && window.location) {
@@ -7344,7 +7539,7 @@ castDash() {
   exitToStartFromGameOver() {
     this.clearGameOverOverlay();
     this.isGameOver = false;
-    if (this.battleBgm?.isPaused) this.battleBgm.stop?.();
+    this.stopAmbientMusic({ destroy: true });
     this.scene.start("StartScene");
   }
 
