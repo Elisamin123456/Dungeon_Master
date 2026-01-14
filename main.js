@@ -40,6 +40,9 @@ const DARK_SEAL_ID = "darkSeal";
 const THORNMAIL_ID = "thornmail";
 const LOST_CHAPTER_ID = "lostChapter";
 const TEAR_OF_THE_GODDESS_ID = "tearOfTheGoddess";
+const VAMPIRIC_SCEPTER_ID = "vampiricScepter";
+const NEEDLESSLY_LARGE_ROD_ID = "needlesslyLargeRod";
+const GIANTS_BELT_ID = "giantsBelt";
 const SERAPHS_EMBRACE_ID = "seraphsEmbrace";
 const BAILOU_SWORD_ID = "bailouSword";
 const RUNAANS_HURRICANE_ID = "runaansHurricane";
@@ -253,6 +256,111 @@ const SHOP_TEXT = Object.freeze({
   offerUnavailable: "商品不可用。",
   refreshed: "列表已刷新。",
 });
+
+const QUEST_IDS = Object.freeze({
+  RED_MIST: "red_mist",
+  SPRING_SNOW: "spring_snow",
+  ETERNAL_NIGHT: "eternal_night",
+  BLOOMING: "blooming",
+  SHINTO: "religious_shinto",
+  BUDDHIST: "religious_buddhist",
+  TAOIST: "religious_taoist",
+  FUSION: "nuclear_fusion",
+});
+
+const formatQuestTime = (ms) => {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+  return `${minutes}:${seconds}`;
+};
+
+const QUEST_DEFINITIONS = Object.freeze([
+  {
+    id: QUEST_IDS.RED_MIST,
+    name: "红雾异变",
+    type: "heal",
+    target: 10000,
+    initialReward: "吸血鬼节杖",
+    initialGrant: { itemId: VAMPIRIC_SCEPTER_ID },
+    reward: "你的治疗量提升100%，且溢出的治疗可以突破生命上限100%",
+    needsRecalc: false,
+    formatProgress: (value, target) => `累计治疗 ${value}/${target}生命值`,
+  },
+  {
+    id: QUEST_IDS.SPRING_SNOW,
+    name: "春雪异变",
+    type: "ap",
+    target: 1000,
+    initialReward: "无用大棒",
+    initialGrant: { itemId: NEEDLESSLY_LARGE_ROD_ID },
+    reward: "获得等同于20%法术强度的护甲",
+    needsRecalc: true,
+    formatProgress: (value, target) => `当前拥有 ${value}/${target}法术强度`,
+  },
+  {
+    id: QUEST_IDS.ETERNAL_NIGHT,
+    name: "永夜异变",
+    type: "mana",
+    target: 10000,
+    initialReward: "女神之泪",
+    initialGrant: { itemId: TEAR_OF_THE_GODDESS_ID },
+    reward: "当受到攻击时，优先使用蓝量抵消造成的伤害",
+    needsRecalc: false,
+    formatProgress: (value, target) => `累计获得 ${value}/${target}蓝量`,
+  },
+  {
+    id: QUEST_IDS.BLOOMING,
+    name: "开花异变",
+    type: "kills",
+    target: 8000,
+    reward: "击杀敌人后，对敌人死亡100范围内所有敌方单位造成等同于被击杀单位生命值的真实伤害。",
+    needsRecalc: false,
+    formatProgress: (value, target) => `累计击杀 ${value}/${target}名敌人`,
+  },
+  {
+    id: QUEST_IDS.SHINTO,
+    name: "宗教战争-神道",
+    type: "noskill",
+    target: 10 * 60 * 1000,
+    initialReward: "3000金币",
+    initialGrant: { gold: 3000 },
+    reward: "你获得额外100%攻速，并获得等同于攻速/100%的护甲",
+    needsRecalc: true,
+    formatProgress: (value, target) => `你不被允许使用所有技能 ${formatQuestTime(value)}/${formatQuestTime(target)}`,
+  },
+  {
+    id: QUEST_IDS.BUDDHIST,
+    name: "宗教战争-佛教",
+    type: "maxHpGain",
+    target: 2000,
+    initialReward: "巨人腰带",
+    initialGrant: { itemId: GIANTS_BELT_ID },
+    reward: "获得10%生命值的法术强度和攻击力",
+    needsRecalc: true,
+    formatProgress: (value, target) => `累计获得 ${value}/${target}生命值`,
+  },
+  {
+    id: QUEST_IDS.TAOIST,
+    name: "宗教战争-道教",
+    type: "gold",
+    target: 30000,
+    reward: "获得等同于10%当前拥有金币的伤害增幅。",
+    needsRecalc: false,
+    formatProgress: (value, target) => `累计获得 ${value}/${target}金币`,
+  },
+  {
+    id: QUEST_IDS.FUSION,
+    name: "核聚变",
+    type: "damage",
+    target: 1000000,
+    reward: "你的每次伤害额外对敌人造成等同于敌人当前生命值20%的真实伤害。",
+    needsRecalc: false,
+    formatProgress: (value, target) => `累计造成 ${value}/${target}伤害`,
+  },
+]);
+
+const QUEST_BY_ID = Object.freeze(Object.fromEntries(QUEST_DEFINITIONS.map((q) => [q.id, q])));
 
 const ITEMS_BY_TIER = Object.freeze({
   [ITEM_TIERS.BASIC]: Object.values(EQUIPMENT_DATA).filter((item) => item.tier === ITEM_TIERS.BASIC),
@@ -1233,6 +1341,18 @@ class GameScene extends Phaser.Scene {
     // —— Run stats for HTML overlay —— //
     this.runStats = { dealtPhys: 0, dealtMagic: 0, taken: 0, heal: 0, gold: 0 };
     this._statsOverlayHandlers = null;
+    // —— 任务系统 —— //
+    this.questState = {
+      options: [],
+      selectedId: null,
+      completed: false,
+      healTotal: 0,
+      manaGained: 0,
+      maxHpGained: 0,
+      noSkillElapsed: 0,
+      lastMaxHp: PLAYER_BASE_STATS.maxHp,
+    };
+    this.isQuestSelectionActive = false;
     // —— Q技能瞄准状态 —— //
     this.qAiming = false;           // 是否在按住Q进行瞄准
     this.qAimGraphics = null;       // Q的施法范围图形
@@ -1579,7 +1699,9 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
       damageGroups.onHit.physical + damageGroups.onHit.magic +
       spellbladeDamage;
     if (totalDamage > 0) this.playSfx("orbhit");
+    const fusionExtra = this.getQuestFusionExtraDamage(enemy);
     enemy.hp = Math.max(0, (enemy.hp ?? 0) - totalDamage);
+    if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
     if (enemy.isBoss && typeof enemy.setData === "function") enemy.setData("hp", enemy.hp);
     if (enemy.isBoss) this.updateBossUI(enemy);
     this.queueOnHitEffectBullets({
@@ -1610,9 +1732,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
       if (physicalTotal > 0) {
         const heal = Math.max(0, Math.round(physicalTotal * ls));
         if (heal > 0) {
-          this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
-          this.showHealNumber(this.player.x, this.player.y - 14, heal);
-          this.updateResourceBars();
+          this.applyPlayerHealing(heal, { offsetY: -14 });
         }
       }
     }
@@ -1622,9 +1742,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
     if (omni > 0) {
       const healAny = Math.max(0, Math.round(totalDamage * omni));
       if (healAny > 0) {
-        this.currentHp = Math.min(this.currentHp + healAny, this.playerStats.maxHp);
-        this.showHealNumber(this.player.x, this.player.y - 18, healAny);
-        this.updateResourceBars();
+        this.applyPlayerHealing(healAny, { offsetY: -18 });
       }
     }
   }
@@ -1701,6 +1819,8 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
         if (this.bossMusic) { this.bossMusic.stop(); this.bossMusic.destroy(); this.bossMusic = null; }
       });
     }
+
+    this.setupQuestSystem();
   }
 
   /* ==== UI 绑定 ==== */
@@ -1736,6 +1856,10 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       levelProgress: document.getElementById("level-progress"),
       levelArrow: document.getElementById("level-arrow"),
       levelLabel: document.getElementById("level-label"),
+      questOverlay: document.getElementById("quest-overlay"),
+      questItems: document.getElementById("quest-items"),
+      questTitle: document.getElementById("quest-title"),
+      questStatus: document.getElementById("quest-status"),
     };
     const selectFirst = (selectors) => selectors.map((s) => document.querySelector(s)).find(Boolean);
     const skillSelectors = {
@@ -1868,9 +1992,317 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
 
   clearBossHeader() {
       if (!this.ui.bossHeader) return;
-      this.ui.bossHeader.style.display = "none";
       if (this.ui.bossName) this.ui.bossName.textContent = "";
       if (this.ui.bossTitle) this.ui.bossTitle.textContent = "";
+      const keepQuest = this.shouldShowQuestStatus ? this.shouldShowQuestStatus() : false;
+      this.ui.bossHeader.style.display = keepQuest ? "block" : "none";
+  }
+
+  /* ==== 任务系统 ==== */
+  shouldShowQuestStatus() {
+    return !!(this.questState && this.questState.selectedId);
+  }
+
+  getQuestDefinition(id) {
+    if (!id) return null;
+    return QUEST_BY_ID[id] || null;
+  }
+
+  pickQuestOptions(count = 3) {
+    const pool = QUEST_DEFINITIONS.slice();
+    const picks = [];
+    const total = Math.max(0, Math.min(count, pool.length));
+    for (let i = 0; i < total; i += 1) {
+      const idx = Phaser.Math.Between(0, pool.length - 1);
+      picks.push(pool.splice(idx, 1)[0]);
+    }
+    return picks;
+  }
+
+  setupQuestSystem() {
+    if (this.debugBossMode) return;
+    if (!this.questState || this.questState.selectedId) return;
+    if (Math.floor(this.level || 1) !== 1) return;
+    this.questState.options = this.pickQuestOptions(3);
+    this.showQuestSelectionOverlay();
+  }
+
+  pauseForQuestSelection() {
+    if (this.isQuestSelectionActive) return;
+    this.isQuestSelectionActive = true;
+    this.physics.pause();
+    this.time.timeScale = 0;
+    if (this.battleBgm?.isPlaying) this.battleBgm.pause();
+    if (this.nonBattleBgm?.isPlaying) this.nonBattleBgm.pause();
+    if (this.attackTimer) this.attackTimer.paused = true;
+    if (this.spawnTimer) this.spawnTimer.paused = true;
+  }
+
+  resumeAfterQuestSelection() {
+    if (!this.isQuestSelectionActive) return;
+    this.isQuestSelectionActive = false;
+    this.time.timeScale = 1;
+    this.physics.resume();
+    [this.battleBgm, this.nonBattleBgm].forEach((track) => {
+      if (!track) return;
+      if (track.isPaused) track.resume();
+      else if (!track.isPlaying) track.play();
+    });
+    if (this.attackTimer) this.attackTimer.paused = false;
+    if (this.spawnTimer) this.spawnTimer.paused = false;
+  }
+
+  showQuestSelectionOverlay() {
+    const overlay = this.ui?.questOverlay;
+    const items = this.ui?.questItems;
+    if (!overlay || !items) return;
+    items.innerHTML = "";
+    const options = Array.isArray(this.questState?.options) ? this.questState.options : [];
+    options.forEach((quest) => {
+      const card = document.createElement("div");
+      card.className = "quest-card";
+      const title = document.createElement("div");
+      title.className = "quest-card-title";
+      title.textContent = quest.name;
+      const desc = document.createElement("div");
+      desc.className = "quest-card-desc";
+      desc.textContent = quest.formatProgress(0, quest.target);
+      const initialReward = quest.initialReward ? document.createElement("div") : null;
+      if (initialReward) {
+        initialReward.className = "quest-card-initial";
+        initialReward.textContent = `初始获得：${quest.initialReward}`;
+      }
+      const reward = document.createElement("div");
+      reward.className = "quest-card-reward";
+      reward.textContent = `奖励：${quest.reward}`;
+      card.appendChild(title);
+      card.appendChild(desc);
+      if (initialReward) card.appendChild(initialReward);
+      card.appendChild(reward);
+      card.addEventListener("click", () => this.selectQuest(quest.id));
+      items.appendChild(card);
+    });
+    overlay.classList.add("visible");
+    this.pauseForQuestSelection();
+  }
+
+  hideQuestSelectionOverlay() {
+    const overlay = this.ui?.questOverlay;
+    const items = this.ui?.questItems;
+    if (overlay) overlay.classList.remove("visible");
+    if (items) items.innerHTML = "";
+    this.resumeAfterQuestSelection();
+  }
+
+  applyQuestInitialReward(def) {
+    const grant = def?.initialGrant;
+    if (!grant) return;
+    if (Number.isFinite(grant.gold)) this.grantQuestGold(grant.gold);
+    if (grant.itemId) this.grantQuestItem(grant.itemId);
+  }
+
+  grantQuestGold(amount) {
+    const add = Math.max(0, Math.floor(amount || 0));
+    if (add <= 0) return;
+    this.playerPoints = Math.max(0, Math.floor(this.playerPoints || 0)) + add;
+    if (this.runStats) this.runStats.gold += add;
+  }
+
+  grantQuestItem(itemId) {
+    const item = this.getEquipmentDefinition(itemId);
+    if (!item) return false;
+    const empty = this.playerEquipmentSlots.findIndex((id) => id == null);
+    if (empty < 0) return false;
+    this.equipItem(empty, item.id);
+    return true;
+  }
+
+  selectQuest(id) {
+    const def = this.getQuestDefinition(id);
+    if (!def || !this.questState) return;
+    this.questState.selectedId = def.id;
+    this.questState.completed = false;
+    this.questState.noSkillElapsed = 0;
+    this.questState.lastMaxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
+    this.applyQuestInitialReward(def);
+    this.hideQuestSelectionOverlay();
+    this.updateQuestStatusUI();
+    this.updateHUD();
+  }
+
+  isQuestRewardActive(id) {
+    return !!(this.questState?.completed && this.questState?.selectedId === id);
+  }
+
+  getQuestProgressValue(def) {
+    if (!def) return 0;
+    switch (def.type) {
+      case "heal":
+        return Math.max(0, Math.floor(this.questState?.healTotal || 0));
+      case "ap":
+        return Math.max(0, Math.floor(this.playerStats?.abilityPower || 0));
+      case "mana":
+        return Math.max(0, Math.floor(this.questState?.manaGained || 0));
+      case "kills":
+        return Math.max(0, Math.floor(this.killCount || 0));
+      case "noskill":
+        return Math.max(0, Math.floor(this.questState?.noSkillElapsed || 0));
+      case "maxHpGain":
+        return Math.max(0, Math.floor(this.questState?.maxHpGained || 0));
+      case "gold":
+        return Math.max(0, Math.floor(this.runStats?.gold || 0));
+      case "damage":
+        return Math.max(0, Math.floor((this.runStats?.dealtPhys || 0) + (this.runStats?.dealtMagic || 0)));
+      default:
+        return 0;
+    }
+  }
+
+  updateQuestProgress(delta) {
+    const def = this.getQuestDefinition(this.questState?.selectedId);
+    if (!def || this.questState?.completed) return;
+    if (def.type === "noskill") {
+      const add = Math.max(0, delta);
+      this.questState.noSkillElapsed = Math.min(def.target, (this.questState.noSkillElapsed || 0) + add);
+    }
+    const progress = this.getQuestProgressValue(def);
+    if (progress >= def.target) {
+      this.questState.completed = true;
+      if (def.needsRecalc) this.recalculateEquipmentEffects();
+      this.updateQuestStatusUI();
+    }
+  }
+
+  updateQuestStatusUI() {
+    const statusEl = this.ui?.questStatus;
+    if (!statusEl) return;
+    const def = this.getQuestDefinition(this.questState?.selectedId);
+    if (!def) {
+      statusEl.style.display = "none";
+      statusEl.classList.remove("completed");
+      return;
+    }
+    const progress = this.getQuestProgressValue(def);
+    const displayValue = Math.min(progress, def.target);
+    statusEl.innerHTML = "";
+    const nameEl = document.createElement("div");
+    nameEl.className = "quest-status-name";
+    nameEl.textContent = `任务：${def.name}${this.questState.completed ? "（完成）" : ""}`;
+    const progEl = document.createElement("div");
+    progEl.className = "quest-status-progress";
+    progEl.textContent = def.formatProgress(displayValue, def.target);
+    statusEl.appendChild(nameEl);
+    statusEl.appendChild(progEl);
+    statusEl.style.display = "block";
+    statusEl.classList.toggle("completed", !!this.questState.completed);
+    if (this.ui?.bossHeader) this.ui.bossHeader.style.display = "block";
+  }
+
+  recordQuestHeal(amount) {
+    if (!this.questState) return;
+    const gain = Math.max(0, Math.floor(amount || 0));
+    if (gain <= 0) return;
+    this.questState.healTotal = (this.questState.healTotal || 0) + gain;
+  }
+
+  recordQuestManaGain(amount) {
+    if (!this.questState) return;
+    const gain = Math.max(0, Math.floor(amount || 0));
+    if (gain <= 0) return;
+    this.questState.manaGained = (this.questState.manaGained || 0) + gain;
+  }
+
+  recordQuestMaxHpGain(newMaxHp) {
+    if (!this.questState) return;
+    const next = Math.max(0, Math.floor(newMaxHp || 0));
+    const last = Math.max(0, Math.floor(this.questState.lastMaxHp || 0));
+    if (next > last) {
+      this.questState.maxHpGained = (this.questState.maxHpGained || 0) + (next - last);
+    }
+    this.questState.lastMaxHp = next;
+  }
+
+  getQuestDamageMultiplier() {
+    if (!this.isQuestRewardActive(QUEST_IDS.TAOIST)) return 1;
+    const gold = Math.max(0, Math.floor(this.playerPoints || 0));
+    return 1 + (gold / 1000);
+  }
+
+  getPlayerHpCap(maxHp) {
+    const base = Math.max(1, Math.floor(maxHp || 1));
+    if (this.isQuestRewardActive(QUEST_IDS.RED_MIST)) return base * 2;
+    return base;
+  }
+
+  applyPlayerHealing(amount, opts = {}) {
+    const raw = Math.max(0, Math.round(amount || 0));
+    if (raw <= 0) return 0;
+    const multiplier = this.isQuestRewardActive(QUEST_IDS.RED_MIST) ? 2 : 1;
+    const healed = Math.max(0, Math.round(raw * multiplier));
+    const maxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
+    const cap = this.getPlayerHpCap(maxHp);
+    const before = Math.max(0, this.currentHp || 0);
+    const after = Math.min(cap, before + healed);
+    const applied = Math.max(0, after - before);
+    if (applied <= 0) return 0;
+    this.currentHp = after;
+    if (opts.show !== false) {
+      const x = Number.isFinite(opts.x) ? opts.x : (this.player?.x ?? 0);
+      const y = Number.isFinite(opts.y) ? opts.y : (this.player?.y ?? 0) + (opts.offsetY ?? -18);
+      this.showHealNumber(x, y, applied);
+    }
+    this.updateResourceBars();
+    this.recordQuestHeal(applied);
+    return applied;
+  }
+
+  applyManaShieldDamage(amount) {
+    const raw = Math.max(0, Math.round(amount || 0));
+    if (raw <= 0) return { hpDamage: 0, manaUsed: 0 };
+    if (!this.isQuestRewardActive(QUEST_IDS.ETERNAL_NIGHT)) {
+      return { hpDamage: raw, manaUsed: 0 };
+    }
+    const mana = Math.max(0, Math.floor(this.currentMana || 0));
+    const used = Math.min(mana, raw);
+    if (used > 0) this.currentMana = mana - used;
+    return { hpDamage: raw - used, manaUsed: used };
+  }
+
+  getQuestFusionExtraDamage(enemy) {
+    if (!this.isQuestRewardActive(QUEST_IDS.FUSION)) return 0;
+    const hp = Math.max(0, Math.floor(enemy?.hp || 0));
+    if (hp <= 0) return 0;
+    return Math.max(0, Math.round(hp * 0.2));
+  }
+
+  applyQuestTrueDamage(enemy, amount) {
+    const extra = Math.max(0, Math.round(amount || 0));
+    if (!enemy || !enemy.active || extra <= 0) return 0;
+    enemy.hp = Math.max(0, (enemy.hp ?? 0) - extra);
+    this.showDamageNumber(enemy.x, enemy.y, extra, "true");
+    if (enemy.isBoss && typeof enemy.setData === "function") {
+      enemy.setData("hp", enemy.hp);
+      this.updateBossUI(enemy);
+    }
+    return extra;
+  }
+
+  applyBloomingOnKill(enemy) {
+    if (!this.isQuestRewardActive(QUEST_IDS.BLOOMING)) return;
+    if (!enemy) return;
+    const baseHp = Math.max(0, Math.round(enemy.maxHp || enemy.hp || 0));
+    if (baseHp <= 0) return;
+    const radius = 100;
+    const radiusSq = radius * radius;
+    const targets = this.enemies?.getChildren?.() || [];
+    targets.forEach((target) => {
+      if (!target || !target.active || target === enemy) return;
+      const distSq = Phaser.Math.Distance.Squared(enemy.x, enemy.y, target.x, target.y);
+      if (distSq > radiusSq) return;
+      this.applyQuestTrueDamage(target, baseHp);
+      if (target.hp <= 0) this.killEnemy(target);
+      else this.maybeExecuteTheCollector(target);
+    });
   }
 
 /* ==== 敌人通用发弹工具（加入 GameScene 原型内） ==== */
@@ -2631,7 +3063,8 @@ updateSpellbladeOverlays() {
     const prevStats = this.playerStats ?? PLAYER_BASE_STATS;
     const prevMaxHp = prevStats.maxHp ?? PLAYER_BASE_STATS.maxHp;
     const prevMaxMana = prevStats.maxMana ?? PLAYER_BASE_STATS.maxMana ?? PLAYER_MANA_MAX;
-    const prevCurrentHp = Math.min(this.currentHp ?? prevMaxHp, prevMaxHp);
+    const prevHpCap = this.getPlayerHpCap(prevMaxHp);
+    const prevCurrentHp = Math.min(this.currentHp ?? prevMaxHp, prevHpCap);
     const prevCurrentMana = Math.min(this.currentMana ?? prevMaxMana, prevMaxMana);
     const hpRatio = prevMaxHp > 0 ? prevCurrentHp / prevMaxHp : 1;
     const manaRatio = prevMaxMana > 0 ? prevCurrentMana / prevMaxMana : 1;
@@ -2650,6 +3083,9 @@ updateSpellbladeOverlays() {
     let moveSpeedPct = 0;
     let abilityHaste = 0;
     let armorPenFlat = 0;
+    const questShintoActive = this.isQuestRewardActive(QUEST_IDS.SHINTO);
+    const questSpringActive = this.isQuestRewardActive(QUEST_IDS.SPRING_SNOW);
+    const questBuddhistActive = this.isQuestRewardActive(QUEST_IDS.BUDDHIST);
     // New aggregated equipment-driven effects
     let onHitPhysicalFlat = 0;
     let onHitMagicFlat = 0;           // for items that add magic on-hit (e.g., Riftmaker)
@@ -2866,10 +3302,16 @@ updateSpellbladeOverlays() {
     armorPenFlat += Math.max(0, this.shardBonuses.armorPenFlat || 0);
     hpRegenPerSecondFlat += Math.max(0, this.shardBonuses.hpRegenPerSecond || 0);
 
+    if (questShintoActive) addASPct += 1;
+
     base.attackDamage = Math.max(1, Math.round(base.attackDamage + addAD));
     base.attackSpeed = Math.max(0.1, Number((base.attackSpeed * (1 + addASPct)).toFixed(3)));
     base.abilityPower = Math.max(0, Math.round((base.abilityPower ?? 0) + addAP));
     base.armor = Math.max(0, Math.round((base.armor ?? 0) + addAR));
+    if (questShintoActive) {
+      const armorFromAS = Math.max(0, Math.round(base.attackSpeed || 0));
+      base.armor = Math.max(0, Math.round((base.armor ?? 0) + armorFromAS));
+    }
     base.defense = Math.max(0, Math.round((base.defense ?? 0) + addDEF));
     const baseMaxHpValue = base.maxHp ?? PLAYER_BASE_STATS.maxHp;
     const heartsteelBonusHp = heartsteelGainPerKill > 0 ? this.heartsteelBonusHp : 0;
@@ -2933,6 +3375,13 @@ updateSpellbladeOverlays() {
       if (arpPct > 0) base.armorPenPct = Math.max(0, (base.armorPenPct || 0) + arpPct);
     }
 
+    if (questBuddhistActive) {
+      const hpForBonus = base.maxHp ?? PLAYER_BASE_STATS.maxHp;
+      const bonus = Math.max(0, Math.round(hpForBonus * 0.1));
+      base.attackDamage = Math.max(1, Math.round((base.attackDamage ?? 0) + bonus));
+      base.abilityPower = Math.max(0, Math.round((base.abilityPower ?? 0) + bonus));
+    }
+
     // Apply AP from HP conversion after maxHp is settled
     if (apFromHpPctSum > 0) {
       const hpForAp = base.maxHp ?? PLAYER_BASE_STATS.maxHp;
@@ -2944,6 +3393,11 @@ updateSpellbladeOverlays() {
     if (apMultiplierSum > 0) {
       const mult = 1 + apMultiplierSum; // e.g. 0.25 => 1.25
       base.abilityPower = Math.max(0, Math.round((base.abilityPower ?? 0) * mult));
+    }
+
+    if (questSpringActive) {
+      const apArmor = Math.max(0, Math.round((base.abilityPower ?? 0) * 0.2));
+      base.armor = Math.max(0, Math.round((base.armor ?? 0) + apArmor));
     }
 
     this.playerStats = base;
@@ -3047,8 +3501,10 @@ updateSpellbladeOverlays() {
 
     const newMaxHp = this.playerStats.maxHp ?? prevMaxHp;
     const newMaxMana = this.playerStats.maxMana ?? prevMaxMana;
-    this.currentHp = Math.min(newMaxHp, Math.max(0, Math.round(newMaxHp * hpRatio)));
+    const hpCap = this.getPlayerHpCap(newMaxHp);
+    this.currentHp = Math.min(hpCap, Math.max(0, Math.round(newMaxHp * hpRatio)));
     this.currentMana = Math.min(newMaxMana, Math.max(0, Math.round(newMaxMana * manaRatio)));
+    this.recordQuestMaxHpGain(newMaxHp);
 
     if (!this.auraEffect) {
       this.stopAuraVisual();
@@ -3079,12 +3535,14 @@ updateSpellbladeOverlays() {
     this.heartsteelBonusHp = (this.heartsteelBonusHp ?? 0) + gainPerKill;
 
     const prevMaxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
-    const prevHp = this.currentHp ?? prevMaxHp;
+    const prevHp = Math.min(this.currentHp ?? prevMaxHp, this.getPlayerHpCap(prevMaxHp));
     const newMaxHp = prevMaxHp + gainPerKill;
     const ratio = prevMaxHp > 0 ? prevHp / prevMaxHp : 1;
 
     if (this.playerStats) this.playerStats.maxHp = newMaxHp;
-    this.currentHp = Math.min(newMaxHp, Math.max(0, Math.round(newMaxHp * ratio)));
+    const hpCap = this.getPlayerHpCap(newMaxHp);
+    this.currentHp = Math.min(hpCap, Math.max(0, Math.round(newMaxHp * ratio)));
+    this.recordQuestMaxHpGain(newMaxHp);
 
     this.updateStatPanel();
     this.updateResourceBars();
@@ -3990,7 +4448,7 @@ updateSpellbladeOverlays() {
     if (!event || event.code !== "Escape") return;
     if (event.repeat) { event.preventDefault(); return; }
     // Do not toggle pause when any interactive overlay is active
-    if (this.isGameOver || this.isShopOpen?.() || this.roundAwaitingDecision || (this.roundComplete && !this.isPaused)) return;
+    if (this.isQuestSelectionActive || this.isGameOver || this.isShopOpen?.() || this.roundAwaitingDecision || (this.roundComplete && !this.isPaused)) return;
     event.preventDefault();
     if (this.isPaused) this.resumeGame();
     else this.pauseGame();
@@ -4000,6 +4458,7 @@ updateSpellbladeOverlays() {
   isGameplaySuspended() {
     // Paused explicitly, or at end/win/fail overlays, or shop/decision UIs
     if (this.isPaused) return true;
+    if (this.isQuestSelectionActive) return true;
     if (this.isGameOver) return true;
     if (this.isShopOpen && this.isShopOpen()) return true;
     if (this.roundAwaitingDecision) return true;
@@ -4341,6 +4800,7 @@ this.events.once("destroy", offSkills);
     if (this.boss) this.updateBossUI(this.boss);
     if (this.isGameplaySuspended()) return;
     this.elapsed += delta;
+    this.updateQuestProgress(delta);
 
     if (this.guinsooKillStacks > 0 && this.time.now >= (this.guinsooKillExpiresAt || 0)) {
       this.guinsooKillStacks = 0;
@@ -4411,7 +4871,11 @@ this.updateMikoOrbs(delta);
         const gain = Math.floor(gainRaw);
         this._manaRegenCarry = gainRaw - gain;
         if (gain > 0) {
-          this.currentMana = Math.min(maxMana, (this.currentMana || 0) + gain);
+          const before = Math.max(0, this.currentMana || 0);
+          const next = Math.min(maxMana, before + gain);
+          const applied = Math.max(0, next - before);
+          this.currentMana = next;
+          if (applied > 0) this.recordQuestManaGain(applied);
           this.updateResourceBars();
         }
       }
@@ -4426,8 +4890,7 @@ this.updateMikoOrbs(delta);
         const gain = Math.floor(gainRaw);
         this._hpRegenCarry = gainRaw - gain;
         if (gain > 0) {
-          this.currentHp = Math.min(maxHp, (this.currentHp || 0) + gain);
-          this.updateResourceBars();
+          this.applyPlayerHealing(gain, { show: false });
         }
       }
     }
@@ -4494,6 +4957,7 @@ this.updateMikoOrbs(delta);
   startQAiming() {
     if (this.qAiming) return;
     if (this.isGameplaySuspended && this.isGameplaySuspended()) return;
+    if (this.questState?.selectedId === QUEST_IDS.SHINTO && !this.questState.completed) return;
     this.qAiming = true;
     // 初始化角度为当前鼠标方向
     const pointer = this.input?.activePointer ?? null;
@@ -4724,6 +5188,7 @@ onSpellCastComplete() {
 canCast(key) {
   // Block all casting while gameplay is suspended (pause/shop/game over/round UI)
   if (this.isGameplaySuspended && this.isGameplaySuspended()) return false;
+  if (this.questState?.selectedId === QUEST_IDS.SHINTO && !this.questState.completed) return false;
   const now = this.time.now;
   const cfg = this.skillConfig[key];
   if (!cfg) return false;
@@ -4747,9 +5212,7 @@ spendCostAndStartCd(key) {
   if (mana > 0 && (this.manaSpendHealPerPoint || 0) > 0) {
     const heal = Math.max(0, Math.round(mana * this.manaSpendHealPerPoint));
     if (heal > 0) {
-      this.currentHp = Math.min(this.playerStats.maxHp, (this.currentHp || 0) + heal);
-      this.showHealNumber(this.player.x, this.player.y - 18, heal);
-      this.updateResourceBars();
+      this.applyPlayerHealing(heal, { offsetY: -18 });
     }
   }
   // 女神泪/炽天使：释放技能叠层
@@ -4989,7 +5452,9 @@ isPlayerInvulnerable() {
       }
       const dealt = this.applyMitigationToTarget(raw, enemy, this.playerStats, "magic", 1);
       if (dealt <= 0) continue;
+      const fusionExtra = this.getQuestFusionExtraDamage(enemy);
       enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
+      if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
       this.showDamageNumber(enemy.x, enemy.y, dealt, typeToShow);
       if (enemy.isBoss && typeof enemy.setData === "function") {
         enemy.setData("hp", enemy.hp);
@@ -5000,7 +5465,7 @@ isPlayerInvulnerable() {
       const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
       if (omni > 0) {
         const heal = Math.max(0, Math.round(dealt * omni));
-        if (heal > 0) { this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp); this.showHealNumber(this.player.x, this.player.y - 18, heal); this.updateResourceBars(); }
+        if (heal > 0) { this.applyPlayerHealing(heal, { offsetY: -18 }); }
       }
     }
   }
@@ -5242,6 +5707,7 @@ isPlayerInvulnerable() {
       if (this.ui.pointValue) this.ui.pointValue.textContent = `${this.playerPoints}`;
       this.updateSkillCooldownUI();
       this.updateSpellbladeOverlays();
+      this.updateQuestStatusUI();
 
   }
 
@@ -5496,8 +5962,12 @@ showHealNumber(x, y, amount) {
   /* ==== 伤害与战斗 ==== */
   // DEF仅对物理伤害生效；优先结算，其次按护甲乘区公式结算伤害
   applyMitigationToTarget(amount, targetStatsOrObj, sourceStatsOrObj, damageType = "physical", minimumOutput = 0) {
-    const baseDamage = Number.isFinite(amount) ? amount : 0;
+    let baseDamage = Number.isFinite(amount) ? amount : 0;
     if (baseDamage <= 0) return 0;
+    if (sourceStatsOrObj === this.playerStats) {
+      const mult = this.getQuestDamageMultiplier();
+      if (mult !== 1) baseDamage = Math.round(baseDamage * mult);
+    }
 
     // 取消 Rin 第三阶段锁血无敌：不再拦截伤害
 
@@ -5550,8 +6020,11 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
     sourceStats,
     "magic",
   );
-  this.showDamageNumber(this.player.x, this.player.y - 12, actual, "magic", true);
-  this.currentHp = Math.max(this.currentHp - actual, 0);
+  const shielded = this.applyManaShieldDamage(actual);
+  if (shielded.hpDamage > 0) {
+    this.showDamageNumber(this.player.x, this.player.y - 12, shielded.hpDamage, "magic", true);
+    this.currentHp = Math.max(this.currentHp - shielded.hpDamage, 0);
+  }
   // 关卡10：敌方伤害额外造成 10%当前生命值 + rank 的同属性伤害（法术）
   if (Math.floor(this.level || 0) > 10) {
     const bonusRaw = Math.max(0, Math.round(hpBefore * 0.10) + Math.round(this.rank || 0));
@@ -5563,8 +6036,11 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
         "magic",
       );
       if (bonus > 0) {
-        this.showDamageNumber(this.player.x, this.player.y - 12, bonus, "magic", true);
-        this.currentHp = Math.max(this.currentHp - bonus, 0);
+        const bonusShielded = this.applyManaShieldDamage(bonus);
+        if (bonusShielded.hpDamage > 0) {
+          this.showDamageNumber(this.player.x, this.player.y - 12, bonusShielded.hpDamage, "magic", true);
+          this.currentHp = Math.max(this.currentHp - bonusShielded.hpDamage, 0);
+        }
       }
     }
   }
@@ -5577,18 +6053,20 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
   if (sourceStats && typeof sourceStats === "object" && sourceStats.active) {
     const thBase = Math.max(0, this.playerEquipmentStats?.thornsBase || 0);
     const thRatio = Math.max(0, this.playerEquipmentStats?.thornsArmorRatio || 0);
-    if (thBase > 0 || thRatio > 0) {
-      const armor = Math.max(0, this.playerStats?.armor || 0);
-      const raw = Math.round(thBase + armor * thRatio);
-      if (raw > 0) {
-        const dealt = this.applyMitigationToTarget(raw, sourceStats, this.playerStats, "magic", 1);
-        if (dealt > 0) {
-          sourceStats.hp = Math.max(0, (sourceStats.hp || 0) - dealt);
-          this.showDamageNumber(sourceStats.x, sourceStats.y, dealt, "magic");
-          if (sourceStats.isBoss && typeof sourceStats.setData === "function") {
-            sourceStats.setData("hp", sourceStats.hp);
-            this.updateBossUI(sourceStats);
-          }
+      if (thBase > 0 || thRatio > 0) {
+        const armor = Math.max(0, this.playerStats?.armor || 0);
+        const raw = Math.round(thBase + armor * thRatio);
+        if (raw > 0) {
+          const dealt = this.applyMitigationToTarget(raw, sourceStats, this.playerStats, "magic", 1);
+          if (dealt > 0) {
+            const fusionExtra = this.getQuestFusionExtraDamage(sourceStats);
+            sourceStats.hp = Math.max(0, (sourceStats.hp || 0) - dealt);
+            if (fusionExtra > 0) this.applyQuestTrueDamage(sourceStats, fusionExtra);
+            this.showDamageNumber(sourceStats.x, sourceStats.y, dealt, "magic");
+            if (sourceStats.isBoss && typeof sourceStats.setData === "function") {
+              sourceStats.setData("hp", sourceStats.hp);
+              this.updateBossUI(sourceStats);
+            }
           if (sourceStats.hp <= 0) this.killEnemy(sourceStats);
         }
       }
@@ -5607,12 +6085,11 @@ else this.playSfx("player_gethit");
     if (!this.hasItemEquipped(HEALTH_POTION_ID)) return false;
     if (!Number.isFinite(this.healthPotionCount) || this.healthPotionCount <= 0) return false;
     const maxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
-    if ((this.currentHp ?? 0) >= maxHp) return false;
+    const cap = this.getPlayerHpCap(maxHp);
+    if ((this.currentHp ?? 0) >= cap) return false;
     const heal = 100;
-    const before = this.currentHp || 0;
-    this.currentHp = Math.min(maxHp, before + heal);
-    const gained = this.currentHp - before;
-    if (gained > 0) this.showHealNumber(this.player.x, this.player.y - 18, gained);
+    const gained = this.applyPlayerHealing(heal, { offsetY: -18 });
+    if (gained <= 0) return false;
     this.playSfx?.("potion");
     this.lastPotionUsedAt = this.time?.now ?? performance.now();
     this.healthPotionCount = Math.max(0, Math.floor(this.healthPotionCount - 1));
@@ -5633,12 +6110,11 @@ else this.playSfx("player_gethit");
     if (!this.hasItemEquipped(REFILLABLE_POTION_ID)) return false;
     if (!Number.isFinite(this.refillablePotionCharges) || this.refillablePotionCharges <= 0) return false;
     const maxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
-    if ((this.currentHp ?? 0) >= maxHp) return false;
+    const cap = this.getPlayerHpCap(maxHp);
+    if ((this.currentHp ?? 0) >= cap) return false;
     const heal = 50;
-    const before = this.currentHp || 0;
-    this.currentHp = Math.min(maxHp, before + heal);
-    const gained = this.currentHp - before;
-    if (gained > 0) this.showHealNumber(this.player.x, this.player.y - 18, gained);
+    const gained = this.applyPlayerHealing(heal, { offsetY: -18 });
+    if (gained <= 0) return false;
     this.playSfx?.("potion");
     this.lastPotionUsedAt = this.time?.now ?? performance.now();
     this.refillablePotionCharges = Math.max(0, Math.floor(this.refillablePotionCharges - 1));
@@ -5650,7 +6126,8 @@ else this.playSfx("player_gethit");
   tryAutoUsePotions() {
     const maxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
     if (!Number.isFinite(maxHp) || maxHp <= 0) return;
-    let missing = Math.max(0, maxHp - (this.currentHp || 0));
+    const cap = this.getPlayerHpCap(maxHp);
+    let missing = Math.max(0, cap - (this.currentHp || 0));
     // 冷却：0.5s 内只允许喝一次
     const now = this.time?.now ?? performance.now();
     if (now - (this.lastPotionUsedAt || 0) < 500) return;
@@ -5812,9 +6289,7 @@ castR() {
 
   const ap = this.playerStats.abilityPower || 0;
   const heal = Math.max(0, Math.round(5*ap + 500)); // 解释：按文意“500%AP+500”
-  this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
-  this.showHealNumber(this.player.x, this.player.y - 24, heal);
-  this.updateResourceBars();
+  this.applyPlayerHealing(heal, { offsetY: -24 });
 
   // 准备物理组
   if (!this.mikoOrbsGroup) this.mikoOrbsGroup = this.physics.add.group();
@@ -5874,14 +6349,16 @@ castR() {
       }
       const dealt = this.applyMitigationToTarget(raw, enemy, this.playerStats, "magic", 1);
       if (dealt > 0) {
+        const fusionExtra = this.getQuestFusionExtraDamage(enemy);
         enemy.hp = Math.max(0, enemy.hp - dealt);
+        if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
         this.showDamageNumber(enemy.x, enemy.y, dealt, dtype);
         if (enemy.hp<=0) this.killEnemy(enemy); else this.maybeExecuteTheCollector(enemy);
         // Omnivamp（单次命中）
         const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
         if (omni > 0) {
           const heal = Math.max(0, Math.round(dealt * omni));
-          if (heal > 0) { this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp); this.showHealNumber(this.player.x, this.player.y - 18, heal); this.updateResourceBars(); }
+          if (heal > 0) { this.applyPlayerHealing(heal, { offsetY: -18 }); }
         }
         // Liandry 持续伤害
         this.applyLiandryBurn(enemy);
@@ -5912,7 +6389,9 @@ castR() {
         }
         const dealt = this.applyMitigationToTarget(raw, e, this.playerStats, "magic", 1);
         if (dealt <= 0) continue;
+        const fusionExtra = this.getQuestFusionExtraDamage(e);
         e.hp = Math.max(0, e.hp - dealt);
+        if (fusionExtra > 0) this.applyQuestTrueDamage(e, fusionExtra);
         this.showDamageNumber(e.x, e.y, dealt, dtype);
         if (e.isBoss && typeof e.setData === "function") { e.setData("hp", e.hp); this.updateBossUI(e); }
         if (e.hp<=0) this.killEnemy(e); else this.maybeExecuteTheCollector(e);
@@ -5925,7 +6404,7 @@ castR() {
       const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
       if (omni > 0 && totalDealt > 0) {
         const heal = Math.max(0, Math.round(totalDealt * omni));
-        if (heal > 0) { this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp); this.showHealNumber(this.player.x, this.player.y - 18, heal); this.updateResourceBars(); }
+        if (heal > 0) { this.applyPlayerHealing(heal, { offsetY: -18 }); }
       }
 
       // 结束该珠：改为将弹幕本体放大为4格半径、50%透明度，并在2秒内淡出后销毁（视觉爆炸特效）
@@ -6590,7 +7069,9 @@ handleQTalismanEnemyOverlap(projectile, enemy) {
   if (rawDamage <= 0) return;
 
   const dealt = this.applyMitigationToTarget(rawDamage, enemy, this.playerStats, "physical", 1);
+  const fusionExtra = this.getQuestFusionExtraDamage(enemy);
   enemy.hp = Math.max(0, enemy.hp - dealt);
+  if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
   this.showDamageNumber(enemy.x, enemy.y, dealt, "physical");
   if (enemy.hp <= 0) this.killEnemy(enemy);
   else this.maybeExecuteTheCollector(enemy);
@@ -6600,9 +7081,7 @@ handleQTalismanEnemyOverlap(projectile, enemy) {
   if (omni > 0 && dealt > 0) {
     const heal = Math.max(0, Math.round(dealt * omni));
     if (heal > 0) {
-      this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
-      this.showHealNumber(this.player.x, this.player.y - 18, heal);
-      this.updateResourceBars();
+      this.applyPlayerHealing(heal, { offsetY: -18 });
     }
   }
 
@@ -6636,7 +7115,9 @@ handleQMeleeSlashOverlap(slash, enemy) {
   }
 
   const dealt = this.applyMitigationToTarget(amount, enemy, this.playerStats, "magic", 1);
+  const fusionExtra = this.getQuestFusionExtraDamage(enemy);
   enemy.hp = Math.max(0, enemy.hp - dealt);
+  if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
   this.showDamageNumber(enemy.x, enemy.y, dealt, showType);
   if (enemy.hp <= 0) this.killEnemy(enemy);
   else this.maybeExecuteTheCollector(enemy);
@@ -6646,9 +7127,7 @@ handleQMeleeSlashOverlap(slash, enemy) {
   if (omni > 0 && dealt > 0) {
     const heal = Math.max(0, Math.round(dealt * omni));
     if (heal > 0) {
-      this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
-      this.showHealNumber(this.player.x, this.player.y - 18, heal);
-      this.updateResourceBars();
+      this.applyPlayerHealing(heal, { offsetY: -18 });
     }
   }
 
@@ -6681,7 +7160,9 @@ handleQMeleeSlashOverlap(slash, enemy) {
 
     const dealt = this.applyMitigationToTarget(amount, enemy, this.playerStats, damageType, 1);
     if (dealt > 0) {
+      const fusionExtra = this.getQuestFusionExtraDamage(enemy);
       enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
+      if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
       this.showDamageNumber(enemy.x, enemy.y, dealt, showType);
       if (enemy.isBoss && typeof enemy.setData === "function") {
         enemy.setData("hp", enemy.hp);
@@ -6697,9 +7178,7 @@ handleQMeleeSlashOverlap(slash, enemy) {
           if (hpPct < threshold) {
             const heal = Math.max(0, Math.round(dealt * ratio));
             if (heal > 0) {
-              this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
-              this.showHealNumber(this.player.x, this.player.y - 28, heal);
-              this.updateResourceBars();
+              this.applyPlayerHealing(heal, { offsetY: -28 });
             }
           }
         }
@@ -6716,9 +7195,7 @@ handleQMeleeSlashOverlap(slash, enemy) {
         if (ls > 0) {
           const heal = Math.max(0, Math.round(dealt * ls));
           if (heal > 0) {
-            this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
-            this.showHealNumber(this.player.x, this.player.y - 14, heal);
-            this.updateResourceBars();
+            this.applyPlayerHealing(heal, { offsetY: -14 });
           }
         }
       }
@@ -6727,9 +7204,7 @@ handleQMeleeSlashOverlap(slash, enemy) {
       if (omni > 0) {
         const healAny = Math.max(0, Math.round(dealt * omni));
         if (healAny > 0) {
-          this.currentHp = Math.min(this.currentHp + healAny, this.playerStats.maxHp);
-          this.showHealNumber(this.player.x, this.player.y - 18, healAny);
-          this.updateResourceBars();
+          this.applyPlayerHealing(healAny, { offsetY: -18 });
         }
       }
     }
@@ -6897,7 +7372,9 @@ const totalDamage =
   damageGroups.onHit.physical + damageGroups.onHit.magic +
   spellbladeDamage;
 
+  const fusionExtra = this.getQuestFusionExtraDamage(enemy);
   enemy.hp = Math.max(0, (enemy.hp ?? 0) - totalDamage);
+  if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
   if (enemy.isBoss && typeof enemy.setData === "function") {
     enemy.setData("hp", enemy.hp);
   }
@@ -6935,9 +7412,7 @@ const totalDamage =
     if (physicalTotal > 0) {
       const heal = Math.max(0, Math.round(physicalTotal * ls));
       if (heal > 0) {
-        this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
-        this.showHealNumber(this.player.x, this.player.y - 14, heal);
-        this.updateResourceBars();
+        this.applyPlayerHealing(heal, { offsetY: -14 });
       }
     }
   }
@@ -6947,9 +7422,7 @@ const totalDamage =
   if (omni > 0) {
     const healAny = Math.max(0, Math.round(totalDamage * omni));
     if (healAny > 0) {
-      this.currentHp = Math.min(this.currentHp + healAny, this.playerStats.maxHp);
-      this.showHealNumber(this.player.x, this.player.y - 18, healAny);
-      this.updateResourceBars();
+      this.applyPlayerHealing(healAny, { offsetY: -18 });
     }
   }
 
@@ -7046,7 +7519,9 @@ const totalDamage =
       if (effect.hitSet.has(enemy)) return;
       const dealt = this.applyMitigationToTarget(damage, enemy, this.playerStats, damageType, 1);
       if (dealt <= 0) { effect.hitSet.add(enemy); return; }
+      const fusionExtra = this.getQuestFusionExtraDamage(enemy);
       enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
+      if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
       this.showDamageNumber(enemy.x, enemy.y, dealt, damageType);
       if (enemy.isBoss && typeof enemy.setData === "function") { enemy.setData("hp", enemy.hp); this.updateBossUI(enemy); }
       if (enemy.hp <= 0) this.killEnemy(enemy);
@@ -7096,7 +7571,9 @@ const totalDamage =
       if (distSq > radiusSq) continue;
       const dealt = this.applyMitigationToTarget(damage, enemy, this.playerStats, damageType, 1);
       if (dealt <= 0) continue;
+      const fusionExtra = this.getQuestFusionExtraDamage(enemy);
       enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
+      if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
       this.showDamageNumber(enemy.x, enemy.y, dealt, damageType);
       if (enemy.isBoss && typeof enemy.setData === "function") {
         enemy.setData("hp", enemy.hp);
@@ -7158,7 +7635,9 @@ const totalDamage =
 
       const dealt = this.applyMitigationToTarget(rawDamage, enemy, this.playerStats, "magic", 1);
       if (dealt <= 0) return;
+      const fusionExtra = this.getQuestFusionExtraDamage(enemy);
       enemy.hp = Math.max(0, (enemy.hp || 0) - dealt);
+      if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
       this.showDamageNumber(enemy.x, enemy.y, dealt, typeToShow);
       if (enemy.isBoss && typeof enemy.setData === "function") {
         enemy.setData("hp", enemy.hp);
@@ -7171,9 +7650,7 @@ const totalDamage =
       if (omni > 0) {
         const heal = Math.max(0, Math.round(dealt * omni));
         if (heal > 0) {
-          this.currentHp = Math.min(this.currentHp + heal, this.playerStats.maxHp);
-          this.showHealNumber(this.player.x, this.player.y - 18, heal);
-          this.updateResourceBars();
+          this.applyPlayerHealing(heal, { offsetY: -18 });
         }
       }
     };
@@ -7445,16 +7922,22 @@ consumeSpellbladeIfReady(enemy) {
     if (this.isPlayerInvulnerable()) return;
     const hpBefore = this.currentHp;
     const actual = this.applyMitigationToTarget(Math.round(amount), this.playerStats, sourceStats, "physical");
-    this.showDamageNumber(this.player.x, this.player.y - 12, actual, "physical", true);
-    this.currentHp = Math.max(this.currentHp - actual, 0);
+    const shielded = this.applyManaShieldDamage(actual);
+    if (shielded.hpDamage > 0) {
+      this.showDamageNumber(this.player.x, this.player.y - 12, shielded.hpDamage, "physical", true);
+      this.currentHp = Math.max(this.currentHp - shielded.hpDamage, 0);
+    }
     // 关卡10：敌方伤害额外造成 10%当前生命值 + rank 的同属性伤害
     if (Math.floor(this.level || 0) > 10) {
       const bonusRaw = Math.max(0, Math.round(hpBefore * 0.10) + Math.round(this.rank || 0));
       if (bonusRaw > 0) {
         const bonus = this.applyMitigationToTarget(bonusRaw, this.playerStats, sourceStats, "physical");
         if (bonus > 0) {
-          this.showDamageNumber(this.player.x, this.player.y - 12, bonus, "physical", true);
-          this.currentHp = Math.max(this.currentHp - bonus, 0);
+          const bonusShielded = this.applyManaShieldDamage(bonus);
+          if (bonusShielded.hpDamage > 0) {
+            this.showDamageNumber(this.player.x, this.player.y - 12, bonusShielded.hpDamage, "physical", true);
+            this.currentHp = Math.max(this.currentHp - bonusShielded.hpDamage, 0);
+          }
         }
       }
     }
@@ -7473,7 +7956,9 @@ consumeSpellbladeIfReady(enemy) {
         if (raw > 0) {
           const dealt = this.applyMitigationToTarget(raw, sourceStats, this.playerStats, "magic", 1);
           if (dealt > 0) {
+            const fusionExtra = this.getQuestFusionExtraDamage(sourceStats);
             sourceStats.hp = Math.max(0, (sourceStats.hp || 0) - dealt);
+            if (fusionExtra > 0) this.applyQuestTrueDamage(sourceStats, fusionExtra);
             this.showDamageNumber(sourceStats.x, sourceStats.y, dealt, "magic");
             if (sourceStats.isBoss && typeof sourceStats.setData === "function") {
               sourceStats.setData("hp", sourceStats.hp);
@@ -7572,6 +8057,7 @@ consumeSpellbladeIfReady(enemy) {
     enemy.active = false;
     enemy.body.enable = false;
     this.killCount += 1;
+    this.applyBloomingOnKill(enemy);
     this.updateHUD();
     this.applyHeartsteelKillStack();
     this.applyDarkSealKillProgress(enemy);
@@ -7824,7 +8310,11 @@ maybeDropPoint(enemyOrX, maybeY) {
     const gainInt = Math.floor(total);
     this._manaRegenCarry = total - gainInt;
     if (gainInt > 0) {
-      this.currentMana = Math.min((this.currentMana ?? 0) + gainInt, maxMana);
+      const before = Math.max(0, this.currentMana || 0);
+      const next = Math.min(maxMana, before + gainInt);
+      const applied = Math.max(0, next - before);
+      this.currentMana = next;
+      if (applied > 0) this.recordQuestManaGain(applied);
     }
     this.updateResourceBars();
     this.updateHUD();
