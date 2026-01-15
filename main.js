@@ -250,12 +250,35 @@ const SHOP_TEXT = Object.freeze({
   refresh: `刷新 (-${SHOP_REFRESH_COST})`,
   continueRun: "继续",
   exitRun: "结束探险",
+  backToSelect: "返回选择",
+  selectShopLabel: "请选择商店",
+  selectShopPrompt: "请先选择一个商店。",
   notEnoughGold: "金币不足。",
   inventoryFull: "库存已满。",
   offerPurchased: "已购买",
   offerUnavailable: "商品不可用。",
   refreshed: "列表已刷新。",
 });
+
+const SHOP_TYPES = Object.freeze({
+  POTION: "potion",
+  BASIC: "basic",
+  SYNTHESIS: "synthesis",
+});
+
+const SHOP_TYPE_LABELS = Object.freeze({
+  [SHOP_TYPES.POTION]: "药水商店",
+  [SHOP_TYPES.BASIC]: "基础商店",
+  [SHOP_TYPES.SYNTHESIS]: "合成商店",
+});
+
+const SHOP_TYPE_DESCRIPTIONS = Object.freeze({
+  [SHOP_TYPES.POTION]: "仅出售生命药水和复用性药水。",
+  [SHOP_TYPES.BASIC]: "仅出售基础装备（不含药水）。",
+  [SHOP_TYPES.SYNTHESIS]: "出售进阶/传说装备（不含基础与药水）。",
+});
+
+const POTION_ITEM_IDS = Object.freeze([HEALTH_POTION_ID, REFILLABLE_POTION_ID]);
 
 const QUEST_IDS = Object.freeze({
   RED_MIST: "red_mist",
@@ -531,9 +554,7 @@ const BOSS_REGISTRY = {
 /* ==== 装备数据 ==== */
 /* ==== 回合与数值 ==== */
 const ROUND_DURATION = 60000;
-const NO_DAMAGE_RANK_INTERVAL = 60000;
 const RANK_INITIAL = 10;
-const RANK_NO_DAMAGE_MULTIPLIER = 1.1;
 const ROUND_CONTINUE_RANK_BONUS = 1;
 const PICKUP_ATTRACT_SPEED = 240;
 
@@ -1313,7 +1334,6 @@ class GameScene extends Phaser.Scene {
     // 初始化：根据关卡确定是否为 Boss 关（第10关和每20关）
     this.isBossStage = (this.level === 10) || (this.level % 20 === 0);
     this.lastDamageTimestamp = 0;
-    this.nextNoDamageRankCheck = 0;
     this.roundTimeLeft = ROUND_DURATION;
     this.roundComplete = false;
     this.roundAwaitingDecision = false;
@@ -1325,6 +1345,7 @@ class GameScene extends Phaser.Scene {
       isOpen: false,
       offers: [],
       reason: null,
+      shopType: null,
       lastMessage: "",
       refreshCost: SHOP_REFRESH_COST, // 动态刷新费用（进入商店时重置为初始值）
     };
@@ -1590,7 +1611,6 @@ this.playerWallCollider = null; // 保存玩家-墙体碰撞体
 
     const now = this.time.now;
     this.lastDamageTimestamp = now;
-    this.nextNoDamageRankCheck = now + NO_DAMAGE_RANK_INTERVAL;
     this.roundTimeLeft = ROUND_DURATION;
     this.roundComplete = false;
     this.roundAwaitingDecision = false;
@@ -1844,6 +1864,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       shopMessage: document.getElementById("shop-message"),
       shopGoldValue: document.getElementById("shop-gold"),
       shopRefreshBtn: document.getElementById("shop-refresh-btn"),
+      shopBackBtn: document.getElementById("shop-back-btn"),
       shopCloseBtn: document.getElementById("shop-close-btn"),
       shopExitRunBtn: document.getElementById("shop-exit-run-btn"),
       shopTitle: document.querySelector("#shop-overlay .shop-title"),
@@ -2239,20 +2260,21 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
     if (raw <= 0) return 0;
     const multiplier = this.isQuestRewardActive(QUEST_IDS.RED_MIST) ? 2 : 1;
     const healed = Math.max(0, Math.round(raw * multiplier));
+    if (healed <= 0) return 0;
     const maxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
     const cap = this.getPlayerHpCap(maxHp);
     const before = Math.max(0, this.currentHp || 0);
     const after = Math.min(cap, before + healed);
     const applied = Math.max(0, after - before);
-    if (applied <= 0) return 0;
-    this.currentHp = after;
+    const counted = applied > 0 ? applied : healed;
+    if (applied > 0) this.currentHp = after;
     if (opts.show !== false) {
       const x = Number.isFinite(opts.x) ? opts.x : (this.player?.x ?? 0);
       const y = Number.isFinite(opts.y) ? opts.y : (this.player?.y ?? 0) + (opts.offsetY ?? -18);
-      this.showHealNumber(x, y, applied);
+      this.showHealNumber(x, y, counted);
     }
-    this.updateResourceBars();
-    this.recordQuestHeal(applied);
+    if (applied > 0) this.updateResourceBars();
+    this.recordQuestHeal(counted);
     return applied;
   }
 
@@ -4840,7 +4862,6 @@ this.updateMikoOrbs(delta);
     this.updateBailouMomentum(delta);
 
     this.updateRoundTimer(delta);
-    this.checkNoDamageRankBonus();
     this.updateAmbientMusicVolumes();
     this.updateHUD();
   }
@@ -5476,15 +5497,6 @@ isPlayerInvulnerable() {
     if (this.roundTimeLeft <= 0) this.handleRoundComplete();
   }
 
-  checkNoDamageRankBonus() {
-    if (this.roundComplete || !this.nextNoDamageRankCheck) return;
-    if (this.time.now >= this.nextNoDamageRankCheck) {
-      this.rank = Number((this.rank * RANK_NO_DAMAGE_MULTIPLIER).toFixed(2));
-      this.scheduleSpawnTimer();
-      this.updateHUD();
-      this.nextNoDamageRankCheck += NO_DAMAGE_RANK_INTERVAL;
-    }
-  }
 
   handleRoundComplete() {
     if (this.roundComplete) return;
@@ -5587,7 +5599,6 @@ isPlayerInvulnerable() {
       this.roundComplete = false;
       const now = this.time.now;
       this.lastDamageTimestamp = now;
-      this.nextNoDamageRankCheck = now + NO_DAMAGE_RANK_INTERVAL;
       this.roundTimeLeft = ROUND_DURATION;
 
       // 进入下一关：复用性药水补充可用次数
@@ -6047,7 +6058,6 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
   this.updateResourceBars();
   const now = this.time.now;
   this.lastDamageTimestamp = now;
-  this.nextNoDamageRankCheck = now + NO_DAMAGE_RANK_INTERVAL;
 
   // 反甲："受到攻击时"也对施法者反伤（魔法伤害）
   if (sourceStats && typeof sourceStats === "object" && sourceStats.active) {
@@ -7944,7 +7954,6 @@ consumeSpellbladeIfReady(enemy) {
     this.updateResourceBars();
     const now = this.time.now;
     this.lastDamageTimestamp = now;
-    this.nextNoDamageRankCheck = now + NO_DAMAGE_RANK_INTERVAL;
 
     // 反甲：反伤给攻击者（魔法伤害）
     if (sourceStats && typeof sourceStats === "object" && sourceStats.active) {
@@ -8786,6 +8795,7 @@ castDash() {
       message: ui.shopMessage,
       goldValue: ui.shopGoldValue,
       refreshBtn: ui.shopRefreshBtn,
+      backBtn: ui.shopBackBtn,
       closeBtn: ui.shopCloseBtn,
       exitBtn: ui.shopExitRunBtn,
       title: ui.shopTitle,
@@ -8808,10 +8818,12 @@ castDash() {
       }
     }
     if (shopUi.refreshBtn) shopUi.refreshBtn.textContent = SHOP_TEXT.refresh;
+    if (shopUi.backBtn) shopUi.backBtn.textContent = SHOP_TEXT.backToSelect;
     if (shopUi.closeBtn) shopUi.closeBtn.textContent = SHOP_TEXT.continueRun;
     if (shopUi.exitBtn) shopUi.exitBtn.textContent = SHOP_TEXT.exitRun;
 
     this.registerShopUiHandler(shopUi.refreshBtn, "click", () => this.handleShopRefresh());
+    this.registerShopUiHandler(shopUi.backBtn, "click", () => this.handleShopBackToSelection());
     this.registerShopUiHandler(shopUi.closeBtn, "click", () => this.handleShopClose(true));
     this.registerShopUiHandler(shopUi.exitBtn, "click", () => this.handleShopClose(false));
 
@@ -8856,24 +8868,46 @@ castDash() {
     return Boolean(this.shopState?.isOpen);
   }
 
+  isShopSelectionStage() {
+    const reason = this.shopState?.reason;
+    return (reason === "roundEnd" || reason === "debug") && !this.shopState?.shopType;
+  }
+
+  updateShopTitle() {
+    if (!this.shopUi?.title) return;
+    const reason = this.shopState?.reason;
+    if (reason === "inRun") {
+      this.shopUi.title.textContent = "属性碎片商店";
+      return;
+    }
+    if (this.isShopSelectionStage()) {
+      this.shopUi.title.textContent = "选择商店";
+      return;
+    }
+    const label = SHOP_TYPE_LABELS[this.shopState?.shopType] || "装备商店";
+    this.shopUi.title.textContent = label;
+  }
+
   openShop(reason = "roundEnd") {
     if (!this.shopUi?.overlay) return;
     this.shopState.reason = reason;
     this.shopState.isOpen = true;
     this.shopState.lastMessage = "";
+    this.shopState.shopType = null;
     // 每次进入商店重置刷新费用为初始值
     this.shopState.refreshCost = SHOP_REFRESH_COST;
-    // 根据进入原因切换商店标题
-    if (this.shopUi?.title) {
-      this.shopUi.title.textContent = (reason === "inRun") ? "属性碎片商店" : "装备商店";
-    }
+    this.updateShopTitle();
 
     this.physics.pause();
     this.time.timeScale = 0;
     if (this.attackTimer) this.attackTimer.paused = true;
     if (this.spawnTimer) this.spawnTimer.paused = true;
 
-    this.generateShopOffers();
+    if (this.isShopSelectionStage()) {
+      this.shopState.offers = [];
+    } else {
+      this.generateShopOffers();
+    }
     this.renderShop();
     this.updateShopGoldLabel();
     this.updateShardProgressHeader();
@@ -8904,6 +8938,7 @@ castDash() {
     this.closeShopOverlay();
     this.clearShopDynamicHandlers();
     this.shopState.offers = [];
+    this.shopState.shopType = null;
     this.clearShopMessage();
 
     if (this.shopState.reason === "roundEnd") {
@@ -8928,6 +8963,10 @@ castDash() {
 
   handleShopRefresh() {
     if (!this.isShopOpen()) return;
+    if (this.isShopSelectionStage()) {
+      this.setShopMessage(SHOP_TEXT.selectShopPrompt);
+      return;
+    }
     const currentCost = Math.max(1, Math.floor(this.shopState?.refreshCost ?? SHOP_REFRESH_COST));
     if (this.playerPoints < currentCost) {
       this.setShopMessage(SHOP_TEXT.notEnoughGold);
@@ -8945,13 +8984,48 @@ castDash() {
     this.setShopMessage(SHOP_TEXT.refreshed);
   }
 
+  handleShopBackToSelection() {
+    if (!this.isShopOpen()) return;
+    const reason = this.shopState?.reason;
+    if (reason !== "roundEnd" && reason !== "debug") return;
+    this.shopState.shopType = null;
+    this.shopState.offers = [];
+    this.updateShopTitle();
+    this.renderShop();
+    this.updateShopGoldLabel();
+    this.clearShopMessage();
+  }
+
+  enterShopType(type) {
+    if (!this.isShopOpen()) return;
+    const reason = this.shopState?.reason;
+    if (reason !== "roundEnd" && reason !== "debug") return;
+    if (!Object.values(SHOP_TYPES).includes(type)) return;
+    this.shopState.shopType = type;
+    this.updateShopTitle();
+    this.generateShopOffers();
+    this.renderShop();
+    this.updateShopGoldLabel();
+    this.clearShopMessage();
+  }
+
   updateShopGoldLabel() {
     if (this.shopUi?.goldValue) this.shopUi.goldValue.textContent = `${this.playerPoints}`;
+    const selecting = this.isShopSelectionStage();
     const cost = Math.max(1, Math.floor(this.shopState?.refreshCost ?? SHOP_REFRESH_COST));
     if (this.shopUi?.refreshBtn) {
       // 动态更新刷新按钮的文案与可用状态
-      this.shopUi.refreshBtn.textContent = `刷新 (-${cost})`;
-      this.shopUi.refreshBtn.disabled = this.playerPoints < cost;
+      if (selecting) {
+        this.shopUi.refreshBtn.textContent = SHOP_TEXT.selectShopLabel;
+        this.shopUi.refreshBtn.disabled = true;
+      } else {
+        this.shopUi.refreshBtn.textContent = `刷新 (-${cost})`;
+        this.shopUi.refreshBtn.disabled = this.playerPoints < cost;
+      }
+    }
+    if (this.shopUi?.backBtn) {
+      const canBack = (this.shopState?.reason === "roundEnd" || this.shopState?.reason === "debug") && !selecting;
+      this.shopUi.backBtn.style.display = canBack ? "" : "none";
     }
   }
 
@@ -8993,7 +9067,7 @@ castDash() {
   }
 
   generateShopOffers() {
-    // 仅“地图中进入商店”（inRun）才使用碎片商店，其余（roundEnd/debug）使用原装备商店
+    // inRun：碎片商店；roundEnd/debug：依据选择的商店类型生成
     if (this.shopState?.reason === "inRun") {
       const offers = [];
       const unlocked = this.getUnlockedShardRarities();
@@ -9012,9 +9086,147 @@ castDash() {
         if (pick) offers.push({ type: "shard", id: pick.id });
       }
       this.shopState.offers = offers;
-    } else {
-      this.generateEquipmentShopOffers();
+      return;
     }
+    if (this.isShopSelectionStage()) {
+      this.shopState.offers = [];
+      return;
+    }
+    if (this.shopState?.reason === "roundEnd" || this.shopState?.reason === "debug") {
+      if (this.shopState.shopType === SHOP_TYPES.POTION) {
+        this.generatePotionShopOffers();
+        return;
+      }
+      if (this.shopState.shopType === SHOP_TYPES.BASIC) {
+        this.generateBasicShopOffers();
+        return;
+      }
+      if (this.shopState.shopType === SHOP_TYPES.SYNTHESIS) {
+        this.generateSynthesisShopOffers();
+        return;
+      }
+    }
+    this.generateEquipmentShopOffers();
+  }
+
+  isPotionItemId(id) {
+    return id === HEALTH_POTION_ID || id === REFILLABLE_POTION_ID;
+  }
+
+  generatePotionShopOffers() {
+    const offers = [];
+    POTION_ITEM_IDS.forEach((id) => {
+      const item = this.getEquipmentDefinition(id);
+      if (!item) return;
+      offers.push({ id, tier: item.tier });
+    });
+    this.shopState.offers = offers;
+  }
+
+  generateBasicShopOffers() {
+    const pool = (ITEMS_BY_TIER[ITEM_TIERS.BASIC] || []).filter(
+      (item) => item && !this.isPotionItemId(item.id),
+    );
+    const picks = randomSample(pool, SHOP_ITEM_COUNT, shopRandom);
+    this.shopState.offers = picks.map((item) => ({ id: item.id, tier: item.tier }));
+  }
+
+  rollSynthesisTier(ownedMid) {
+    if (ownedMid.length > 0 && shopRandom() < 0.5) return ITEM_TIERS.LEGENDARY;
+    return ITEM_TIERS.MID;
+  }
+
+  generateSynthesisShopOffers() {
+    const ownedIds = this.getOwnedItemIds();
+    const ownedBasics = this.getOwnedItemsByTier(ITEM_TIERS.BASIC);
+    const ownedMid = this.getOwnedItemsByTier(ITEM_TIERS.MID);
+    const ownedCounts = this.countOwnedItemIds(ownedIds);
+    const usedIds = new Set();
+    const offers = [];
+
+    const guaranteedIds = this.collectGuaranteedItems(ownedCounts).filter((id) => {
+      const item = this.getEquipmentDefinition(id);
+      return item && item.tier !== ITEM_TIERS.BASIC && !this.isPotionItemId(item.id);
+    });
+    guaranteedIds.forEach((id) => {
+      if (offers.length >= SHOP_ITEM_COUNT) return;
+      if (usedIds.has(id)) return;
+      const item = this.getEquipmentDefinition(id);
+      if (!item) return;
+      offers.push({ id, tier: item.tier });
+      usedIds.add(id);
+    });
+
+    const maxAttempts = 100;
+    const preferredPicks = { [ITEM_TIERS.MID]: 0, [ITEM_TIERS.LEGENDARY]: 0 };
+    let attempts = 0;
+    while (offers.length < SHOP_ITEM_COUNT && attempts < maxAttempts) {
+      attempts += 1;
+      const initialTier = this.rollSynthesisTier(ownedMid);
+      const tierPriority = initialTier === ITEM_TIERS.LEGENDARY
+        ? [ITEM_TIERS.LEGENDARY, ITEM_TIERS.MID]
+        : [ITEM_TIERS.MID, ITEM_TIERS.LEGENDARY];
+
+      let tier = initialTier;
+      let weightedCandidates = [];
+      let fallbackUsed = false;
+      for (const candidateTier of tierPriority) {
+        const candidates = this.getWeightedCandidatesForTier(
+          candidateTier,
+          ownedBasics,
+          ownedMid,
+          ownedCounts,
+          usedIds,
+        ).filter((entry) => !this.isPotionItemId(entry.id));
+        if (candidates.length > 0) {
+          weightedCandidates = candidates;
+          tier = candidateTier;
+          break;
+        }
+      }
+
+      if (weightedCandidates.length === 0) {
+        fallbackUsed = true;
+        const fallback = [];
+        [ITEM_TIERS.MID, ITEM_TIERS.LEGENDARY].forEach((candidateTier) => {
+          (ITEMS_BY_TIER[candidateTier] || []).forEach((item) => {
+            if (!item || usedIds.has(item.id) || this.isPotionItemId(item.id)) return;
+            fallback.push({ id: item.id, weight: 1, preferred: false });
+          });
+        });
+        if (fallback.length === 0) break;
+        weightedCandidates = fallback;
+      }
+
+      let candidatePool = weightedCandidates;
+      if (!fallbackUsed && (tier === ITEM_TIERS.MID || tier === ITEM_TIERS.LEGENDARY)) {
+        const limit = tier === ITEM_TIERS.MID ? 1 : 1;
+        if ((preferredPicks[tier] ?? 0) >= limit) {
+          const nonPreferred = weightedCandidates.filter((entry) => !entry.preferred);
+          if (nonPreferred.length > 0) candidatePool = nonPreferred;
+        } else if (shopRandom() < 0.4) {
+          const nonPreferred = weightedCandidates.filter((entry) => !entry.preferred);
+          if (nonPreferred.length > 0) candidatePool = nonPreferred;
+        }
+      }
+
+      let chosenId = this.pickWeightedCandidate(candidatePool);
+      if (!chosenId) chosenId = this.pickWeightedCandidate(weightedCandidates);
+      if (!chosenId) continue;
+      if (usedIds.has(chosenId)) continue;
+      const item = this.getEquipmentDefinition(chosenId);
+      if (!item || item.tier === ITEM_TIERS.BASIC || this.isPotionItemId(item.id)) continue;
+      usedIds.add(chosenId);
+      const tierForOffer = item.tier ?? tier;
+      if (item && (tierForOffer === ITEM_TIERS.MID || tierForOffer === ITEM_TIERS.LEGENDARY)) {
+        const entry = weightedCandidates.find((candidate) => candidate.id === chosenId);
+        if (entry?.preferred) preferredPicks[tierForOffer] = (preferredPicks[tierForOffer] ?? 0) + 1;
+      }
+      offers.push({ id: chosenId, tier: tierForOffer });
+    }
+
+    if (offers.length === 0) return;
+    this.shopState.offers = offers;
   }
 
   // 原装备商店生成逻辑（保留）：根据已有基础/进阶装备偏好生成
@@ -9301,12 +9513,66 @@ castDash() {
 
   renderShop() {
     if (!this.shopUi?.items) return;
+    if (this.isShopSelectionStage()) {
+      this.renderShopSelection();
+      return;
+    }
     this.clearShopDynamicHandlers();
     this.shopUi.items.innerHTML = "";
     this.shopState.offers.forEach((offer, index) => {
       const data = this.evaluateShopOffer(offer);
       if (!data) return;
       const card = this.createShopOfferElement(data, index);
+      this.shopUi.items.appendChild(card);
+    });
+  }
+
+  renderShopSelection() {
+    if (!this.shopUi?.items) return;
+    this.clearShopDynamicHandlers();
+    this.shopUi.items.innerHTML = "";
+
+    const options = [
+      {
+        type: SHOP_TYPES.POTION,
+        title: SHOP_TYPE_LABELS[SHOP_TYPES.POTION],
+        desc: SHOP_TYPE_DESCRIPTIONS[SHOP_TYPES.POTION],
+      },
+      {
+        type: SHOP_TYPES.BASIC,
+        title: SHOP_TYPE_LABELS[SHOP_TYPES.BASIC],
+        desc: SHOP_TYPE_DESCRIPTIONS[SHOP_TYPES.BASIC],
+      },
+      {
+        type: SHOP_TYPES.SYNTHESIS,
+        title: SHOP_TYPE_LABELS[SHOP_TYPES.SYNTHESIS],
+        desc: SHOP_TYPE_DESCRIPTIONS[SHOP_TYPES.SYNTHESIS],
+      },
+    ];
+
+    options.forEach((option) => {
+      const card = document.createElement("div");
+      card.className = "shop-item-card shop-category-card";
+
+      const title = document.createElement("div");
+      title.className = "shop-category-title";
+      title.textContent = option.title;
+      card.appendChild(title);
+
+      const desc = document.createElement("div");
+      desc.className = "shop-category-desc";
+      desc.textContent = option.desc;
+      card.appendChild(desc);
+
+      const actionRow = document.createElement("div");
+      actionRow.className = "shop-category-actions";
+      const enterBtn = document.createElement("button");
+      enterBtn.className = "shop-button";
+      enterBtn.textContent = "进入";
+      this.registerShopDynamicHandler(enterBtn, "click", () => this.enterShopType(option.type));
+      actionRow.appendChild(enterBtn);
+      card.appendChild(actionRow);
+
       this.shopUi.items.appendChild(card);
     });
   }
@@ -9358,7 +9624,7 @@ castDash() {
     card.appendChild(cost);
 
     if (!offerData.item.isShard) {
-      // 装备（兼容旧逻辑，不再使用）
+      // 装备
       const itemTier = offerData.item.tier;
       if (itemTier !== ITEM_TIERS.BASIC) {
         const recipe = document.createElement("div");
@@ -9455,7 +9721,7 @@ castDash() {
       };
     }
 
-    // 旧：装备商品（目前不会再生成）
+    // 装备商品
     const item = this.getEquipmentDefinition(offer?.id);
     if (!item) return null;
     const { matches, missing } = this.matchComponentsForItem(item);

@@ -796,6 +796,28 @@
       font-size: 12px;
       color: #ff8080;
     }
+
+    .shop-category-card {
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .shop-category-title {
+      font-size: 16px;
+      letter-spacing: 1px;
+      color: #ffd966;
+    }
+
+    .shop-category-desc {
+      font-size: 12px;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .shop-category-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: auto;
+    }
     
     /* ==== Stats Overlay (HTML) ==== */
     .stats-overlay {
@@ -1114,6 +1136,7 @@
             <div class="shop-controls">
               <span class="shop-gold">Gold: <span id="shop-gold">0</span></span>
               <button class="shop-button" id="shop-refresh-btn">Refresh (-10)</button>
+              <button class="shop-button" id="shop-back-btn" style="display:none;">选择商店</button>
               <button class="shop-button" id="shop-exit-run-btn" style="display:none;">Retire</button>
               <button class="shop-button" id="shop-close-btn">Continue</button>
             </div>
