@@ -224,7 +224,7 @@ const RAW_ITEMS = [
     cost: 800,
     stats: { abilityHaste: 10 },
     buildsFrom: [],
-    effects: { sheenBonusBaseAdPct: 1.0 },
+    effects: { spellbladeBaseAdPct: 1.0, spellbladeDamageType: "physical" },
     description: [
       "价格：800 金币",
       "技能急速 +10",

@@ -563,6 +563,7 @@ const PIXELS_PER_TILE = TILE_SIZE;
 const UNIT_TO_PIXEL = PIXELS_PER_TILE / STAT_UNITS_PER_TILE;
 const statUnitsToPixels = (value) => value * UNIT_TO_PIXEL;
 const statUnitsToTiles = (value) => value / STAT_UNITS_PER_TILE;
+const INFINITE_RANGE_UNITS = STAT_UNITS_PER_TILE * MAP_TILES;
 
 /* ==== 玩家参数 ==== */
 const PLAYER_BASE_SPEED = 120;
@@ -832,7 +833,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         moveSpeed: 50,
         detectionRadius: 300,
         shotIntervalMs: 200,
-        bulletSpeed: 100,
+        bulletSpeed: 30,
         bulletTextureKey: "enemy_bullet_basic",
         nodeCount: 2,
         nodeRadius: 50,
@@ -853,7 +854,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         moveSpeed: 50,
         detectionRadius: 300,
         shotIntervalMs: 200,
-        bulletSpeed: 100,
+        bulletSpeed: 30,
         bulletTextureKey: "enemy_bullet_mid",
         nodeCount: 4,
         nodeRadius: 20,
@@ -879,7 +880,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         moveSpeed: 50,
         detectionRadius: 300,
         shotIntervalMs: 200,
-        bulletSpeed: 100,
+        bulletSpeed: 30,
         bulletTextureKey: "enemy_bullet_epic",
         nodeCount: 8,
         nodeRadius: 30,
@@ -905,7 +906,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         moveSpeed: 50,
         detectionRadius: 300,
         shotIntervalMs: 200,
-        bulletSpeed: 300,
+        bulletSpeed: 50,
         bulletTextureKey: "enemy_bullet_legendary",
         nodeCount: 10,
         nodeRadius: 100,
@@ -940,7 +941,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         attackDurationMs: 4000,
         shotIntervalMs: 200,
         spreadDeg: 45,
-        bulletSpeed: 110,
+        bulletSpeed: 100,
         bulletTextureKey: "enemy_bullet_basic",
         textureKey: "enemy_yousei_basic",
         spawnEffectKey: "enemy_spawn_basic",
@@ -1002,8 +1003,8 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         moveDurationMs: 0,
         attackDurationMs: 4000,
         shotIntervalMs: 10,
-        spreadDeg: 20,
-        bulletSpeed: 180,
+        spreadDeg: 50,
+        bulletSpeed: 100,
         bulletTextureKey: "enemy_bullet_legendary",
         textureKey: "enemy_yousei_legendary",
         spawnEffectKey: "enemy_spawn_legendary",
@@ -1031,7 +1032,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         hitRadius: 13,
         attackIntervalMs: 4000,
         ringBulletCount: 8,
-        ringBulletSpeed: 160,
+        ringBulletSpeed: 40,
         ringBulletTextureKey: "enemy_bullet_basic",
         proximityRadius: 100,
         extraRing: { count: 20, speed: 10, textureKey: "enemy_bullet_gun" },
@@ -1052,7 +1053,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         hitRadius: 14,
         attackIntervalMs: 4000,
         ringBulletCount: 20,
-        ringBulletSpeed: 80,
+        ringBulletSpeed: 60,
         ringBulletTextureKey: "enemy_bullet_mid",
         proximityRadius: 100,
         extraRing: { count: 30, speed: 30, textureKey: "enemy_bullet_gun" },
@@ -1125,7 +1126,7 @@ const PLAYER_BASE_STATS = {
   maxHp: 300,
   maxMana: PLAYER_MANA_MAX,
   critChance: 0,
-  critDamage: 150,
+  critDamage: 200,
   defense: 0,
   armor: 0,
   moveSpeed: PLAYER_BASE_SPEED,
@@ -1134,6 +1135,90 @@ const PLAYER_BASE_STATS = {
   cooldownReduction: 0,
   armorPenFlat: 0,
 };
+
+/* ==== 机体与普攻模组 ==== */
+const MECH_IDS = Object.freeze({
+  TALISMAN: "talisman",
+  NEEDLE: "needle",
+  YINYANG: "yinyang",
+});
+
+const MECH_ATTACK_MODES = Object.freeze({
+  TALISMAN: "talisman",
+  NEEDLE: "needle",
+  YINYANG: "yinyang",
+});
+
+const MECH_CONFIGS = Object.freeze({
+  [MECH_IDS.TALISMAN]: {
+    id: MECH_IDS.TALISMAN,
+    name: "诱导护符",
+    attackMode: MECH_ATTACK_MODES.TALISMAN,
+    baseAttackSpeed: 1.5,
+    baseBulletSpeed: 200,
+    baseRange: 600,
+    shiftAttackSpeedBonus: 0.2,
+    ui: {
+      lines: [
+        "基础射速：1.5",
+        "基础弹速：200",
+        "射程：600",
+        "操作方式：自动锁敌，不可穿墙。（和当前普攻模式一致）",
+        "Shift：显示判定点，并额外提升20%攻击速度",
+      ],
+    },
+  },
+  [MECH_IDS.NEEDLE]: {
+    id: MECH_IDS.NEEDLE,
+    name: "封魔针",
+    attackMode: MECH_ATTACK_MODES.NEEDLE,
+    baseAttackSpeed: 2.0,
+    baseBulletSpeed: 200,
+    baseRange: INFINITE_RANGE_UNITS,
+    needleExtraPerAd: 100,
+    needleExtraMax: 6,
+    needleExtraDamageScale: 0.5,
+    ui: {
+      lines: [
+        "基础射速：2.0",
+        "基础弹速：200",
+        "射程：无限",
+        "操作方式：向鼠标指针方向自动射击，可穿墙（碰到地图边缘或敌人消失）",
+        "Shift：显示判定点，并根据额外攻击力提升射出的封魔针，每100攻击额外射出一个，最多6个，造成50%的伤害。（额外的封魔针横向排列，并且可以独立触发特效和暴击）",
+      ],
+    },
+  },
+  [MECH_IDS.YINYANG]: {
+    id: MECH_IDS.YINYANG,
+    name: "阴阳宝玉",
+    attackMode: MECH_ATTACK_MODES.YINYANG,
+    baseAttackSpeed: PLAYER_BASE_STATS.attackSpeed,
+    baseBulletSpeed: 200,
+    baseRange: INFINITE_RANGE_UNITS,
+    yinyangBaseCount: 1,
+    yinyangApPer: 100,
+    yinyangMaxCount: 8,
+    yinyangReturnMs: 1000,
+    yinyangReturnMagicBase: 10,
+    yinyangReturnMagicApRatio: 1,
+    yinyangBounceRandomDeg: 0,
+    yinyangPierceIntervalMs: 120,
+    yinyangSpinSpeed: 6.283,
+    ui: {
+      lines: [
+        "基础射速：NaN",
+        "基础弹速：200",
+        "射程：无限",
+        "操作方式：攻击速度%转化为弹速%。点击后将旋转在角色四周的阴阳玉向鼠标方向抛出，阴阳玉遇到墙体反弹并对路径上的敌人造成穿透伤害。初始最多场上可存在的阴阳玉为1，每100法强额外增加1，最多8个。",
+        "Shift：立刻无视墙体判定在1秒内收回阴阳玉，在1秒内回到自机位置，同时对路径上所有敌人额外造成10+100%AP的魔法伤害。",
+      ],
+    },
+  },
+});
+
+const DEFAULT_MECH_ID = MECH_IDS.TALISMAN;
+let CURRENT_MECH_ID = DEFAULT_MECH_ID;
+const getMechConfig = (id) => MECH_CONFIGS[id] ?? MECH_CONFIGS[DEFAULT_MECH_ID];
 
 /* ==== 预加载场景 ==== */
 class PreloadScene extends Phaser.Scene {
@@ -1151,6 +1236,7 @@ class PreloadScene extends Phaser.Scene {
     ].forEach((k)=> this.load.image(k, `assets/player/reimu/${k}.png`));
     this.load.image("weapon", "assets/weapon/yinyangball.png");
     this.load.image("bullet", "assets/bullet/spell.png");
+    this.load.image("bullet_needle", "assets/bullet/needle.png");
     // 子弹撞墙爆炸特效
     this.load.image("effect_explosion", "assets/effect/explosion.png");
     this.load.image("enemy", "assets/enemy/test_robot.png");
@@ -1289,8 +1375,95 @@ class StartScene extends Phaser.Scene {
     }).setOrigin(0.5);
     ensureBaseFontSize(promptText);
 
-    this.input.keyboard.once("keydown-ENTER", ()=> this.scene.start("GameScene"));
-    this.input.once("pointerdown", ()=> this.scene.start("GameScene"));
+    this.input.keyboard.once("keydown-ENTER", ()=> this.scene.start("MechSelectScene"));
+    this.input.once("pointerdown", ()=> this.scene.start("MechSelectScene"));
+  }
+}
+
+/* ==== 机体选择场景 ==== */
+class MechSelectScene extends Phaser.Scene {
+  constructor() { super("MechSelectScene"); }
+  create() {
+    const overlay = document.getElementById("mech-select-overlay");
+    if (!overlay) {
+      this.scene.start("GameScene");
+      return;
+    }
+
+    const cards = Array.from(overlay.querySelectorAll(".mech-card[data-mech-id]"));
+    const detailTitle = overlay.querySelector("#mech-detail-title");
+    const detailLines = overlay.querySelector("#mech-detail-lines");
+    const confirmBtn = overlay.querySelector("#mech-confirm-btn");
+
+    const handlers = [];
+    let selectedId = CURRENT_MECH_ID || DEFAULT_MECH_ID;
+
+    const applySelection = (id) => {
+      const cfg = getMechConfig(id);
+      selectedId = cfg.id;
+      CURRENT_MECH_ID = cfg.id;
+      cards.forEach((card) => {
+        const cardId = card.getAttribute("data-mech-id");
+        if (cardId === cfg.id) card.classList.add("active");
+        else card.classList.remove("active");
+      });
+      if (detailTitle) detailTitle.textContent = cfg.name;
+      if (detailLines) {
+        detailLines.innerHTML = "";
+        (cfg.ui?.lines || []).forEach((line) => {
+          const span = document.createElement("span");
+          span.textContent = line;
+          detailLines.appendChild(span);
+        });
+      }
+    };
+
+    const showOverlay = () => {
+      overlay.classList.add("visible");
+      overlay.setAttribute("aria-hidden", "false");
+    };
+
+    const hideOverlay = () => {
+      overlay.classList.remove("visible");
+      overlay.setAttribute("aria-hidden", "true");
+    };
+
+    cards.forEach((card) => {
+      const handler = () => applySelection(card.getAttribute("data-mech-id"));
+      card.addEventListener("click", handler);
+      handlers.push({ element: card, type: "click", handler });
+    });
+
+    if (confirmBtn) {
+      const handler = () => {
+        hideOverlay();
+        this.scene.start("GameScene");
+      };
+      confirmBtn.addEventListener("click", handler);
+      handlers.push({ element: confirmBtn, type: "click", handler });
+    }
+
+    const keyHandler = (e) => {
+      if (!e) return;
+      if (e.code === "Enter") {
+        hideOverlay();
+        this.scene.start("GameScene");
+      }
+    };
+    this.input.keyboard.on("keydown", keyHandler, this);
+
+    const cleanup = () => {
+      handlers.forEach(({ element, type, handler }) => {
+        if (element?.removeEventListener) element.removeEventListener(type, handler);
+      });
+      this.input.keyboard.off("keydown", keyHandler, this);
+      hideOverlay();
+    };
+    this.events.once("shutdown", cleanup);
+    this.events.once("destroy", cleanup);
+
+    showOverlay();
+    applySelection(selectedId);
   }
 }
 
@@ -1304,6 +1477,8 @@ class GameScene extends Phaser.Scene {
     this.nonBattleBgm = null;
     this._ambientMusicCleanupRegistered = false;
     this._ambientBattleRatio = -1;
+    this.debugQuestButtonHandler = null;
+    this.debugQuestKeyHandler = null;
   }
 
   init() {
@@ -1320,6 +1495,12 @@ class GameScene extends Phaser.Scene {
     this.attackTimer = null;
     this.spawnTimer = null;
     this.weaponAngle = 0;
+    this.selectedMechId = CURRENT_MECH_ID || DEFAULT_MECH_ID;
+    this.mechConfig = getMechConfig(this.selectedMechId);
+    this.mechAttackMode = this.mechConfig?.attackMode ?? MECH_ATTACK_MODES.TALISMAN;
+    this.yinYangOrbs = [];
+    this._lastFocusDown = false;
+    this._needleDisplaySize = null;
     this.rangeVisible = false;
     this.currentZoom = CAMERA_ZOOM;
     this.rank = this.debugMode ? DEBUG_INITIAL_RANK : 
@@ -1447,7 +1628,7 @@ class GameScene extends Phaser.Scene {
     };
     this.playerSpeedBuffMultiplier = 1;
     this.playerSpeedBuffExpiresAt = 0;
-    this.lastSpellbladeUsedAt = 0;  // 追踪耀光装备的冷却时间
+    this.lastSpellbladeUsedAt = 0;  // 追踪耀光触发时间（CD理念仍保留，但设为0）
     this.lastPotionUsedAt = 0;      // 药水使用CD时间戳
     this.equipmentCooldowns = {};    // 追踪所有装备CD: { slotIndex: { expiresAt: number, duration: number } }
     this.equipmentTriggers = {};     // 追踪装备触发状态: { slotIndex: { active: boolean, expiresAt: number } }
@@ -1482,7 +1663,7 @@ this.weaponHitbox = null;           // 近战模式下，阴阳宝玉的物理�
 // —— 技能CD/蓝耗配置 —— //
 this.skillConfig = {
   Q: { baseCd: 10000, mana: 60 },
-  E: { baseCd: 5000,  mana: 0  },
+  E: { baseCd: 100,  mana: 0  },
   R: { baseCd: 58000, mana: 180 },
   DASH: { baseCd: 5000, mana: 0, distance: 50, durationMs: 120 }
 };
@@ -1558,6 +1739,7 @@ this.playerWallCollider = null; // 保存玩家-墙体碰撞体
     this.createBulletTrailResources();
     this.createWeapon();
     this.createGroups();
+    if (this.isYinYangMode()) this.initializeYinYangOrbs();
     this.setupCamera();
     this.setupInput();
     this.setupTimers();
@@ -1881,6 +2063,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       questItems: document.getElementById("quest-items"),
       questTitle: document.getElementById("quest-title"),
       questStatus: document.getElementById("quest-status"),
+      debugQuestButton: document.getElementById("debug-quest-complete-btn"),
     };
     const selectFirst = (selectors) => selectors.map((s) => document.querySelector(s)).find(Boolean);
     const skillSelectors = {
@@ -1942,7 +2125,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
 
     const descriptions = {
       Q: "Q「妖怪破坏者」\nCD 10s  消耗 60MP\n近战：按贴图物理碰撞判定（8格大小），造成法伤(100%AP)。\n远程：正前方30°三枚穿透符札（物伤=100%AD+50%AP）。",
-      E: "E「阴阳鬼神玉」切换（CD 5s）\n远程：诱导护符，半径600普攻，攻速+20%。\n近战：阴阳宝玉巨化与半径×2旋转，接触造成(100%基础AD+100%AP)法伤。",
+      E: "E「阴阳鬼神玉」切换（CD 5s）\n远程：当前机体普通攻击。\n近战：阴阳宝玉巨化与半径×2旋转，接触造成(100%基础AD+100%AP)法伤。",
       R: "R「梦想封印」\nCD 58s  消耗 180MP\n立即治疗(500%AP+500)。召唤6枚梦想妙珠，先围绕2秒（旋转时碰撞造成(100%AP+200)法伤），随后追最近敌人命中后在4格范围内爆炸并造成(100%AP+200)法伤，清除敌方子弹。",
       DASH: "闪避（Space）\nCD 5s\n向前位移50，短暂无敌；忽略地形碰撞（边界除外）。",
     };
@@ -1978,6 +2161,19 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       targetEl.addEventListener("mouseenter", () => showTip(key));
       targetEl.addEventListener("mouseleave", clearTip);
     });
+
+    this.debugQuestButtonHandler = () => this.completeDebugQuest();
+    if (this.ui.debugQuestButton) {
+      this.ui.debugQuestButton.addEventListener("click", this.debugQuestButtonHandler);
+    }
+    const cleanupDebugQuestButton = () => {
+      if (this.ui?.debugQuestButton && this.debugQuestButtonHandler) {
+        this.ui.debugQuestButton.removeEventListener("click", this.debugQuestButtonHandler);
+      }
+      this.debugQuestButtonHandler = null;
+    };
+    this.events.once("shutdown", cleanupDebugQuestButton);
+    this.events.once("destroy", cleanupDebugQuestButton);
 
 
   }
@@ -2201,6 +2397,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
     if (!def) {
       statusEl.style.display = "none";
       statusEl.classList.remove("completed");
+      if (this.ui?.debugQuestButton) this.ui.debugQuestButton.style.display = "none";
       return;
     }
     const progress = this.getQuestProgressValue(def);
@@ -2216,7 +2413,20 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
     statusEl.appendChild(progEl);
     statusEl.style.display = "block";
     statusEl.classList.toggle("completed", !!this.questState.completed);
+    if (this.ui?.debugQuestButton) {
+      const shouldShow = this.debugMode && !this.questState?.completed;
+      this.ui.debugQuestButton.style.display = shouldShow ? "inline-flex" : "none";
+    }
     if (this.ui?.bossHeader) this.ui.bossHeader.style.display = "block";
+  }
+
+  completeDebugQuest() {
+    if (!this.debugMode || !this.questState) return;
+    const def = this.getQuestDefinition(this.questState?.selectedId);
+    if (!def || this.questState.completed) return;
+    this.questState.completed = true;
+    if (def.needsRecalc) this.recalculateEquipmentEffects();
+    this.updateQuestStatusUI();
   }
 
   recordQuestHeal(amount) {
@@ -2829,23 +3039,15 @@ isSpellbladeItem(itemId) {
 
 updateSpellbladeOverlays() {
   if (!this.equipmentUi?.slots) return;
-  const now = this.time?.now ?? Date.now();
-  const CD = 1500;
 
   this.equipmentUi.slots.forEach(({ element }, index) => {
     const itemId = this.playerEquipmentSlots[index];
     if (!this.isSpellbladeItem(itemId)) {
-      // 清理残留
       element?.querySelectorAll('.spellblade-cd, .spellblade-ready')?.forEach(el => el.remove());
       return;
     }
 
-    let cdMask = element.querySelector('.spellblade-cd');
-    if (!cdMask) {
-      cdMask = document.createElement('div');
-      cdMask.className = 'spellblade-cd';
-      element.appendChild(cdMask);
-    }
+    element?.querySelectorAll('.spellblade-cd')?.forEach(el => el.remove());
 
     let ready = element.querySelector('.spellblade-ready');
     if (!ready) {
@@ -2853,23 +3055,12 @@ updateSpellbladeOverlays() {
       ready.className = 'spellblade-ready';
       element.appendChild(ready);
     }
-
-    const remain = Math.max(0, (this.lastSpellbladeUsedAt + CD) - now);
-    if (remain > 0) {
-      const ratio = remain / CD;
-      cdMask.style.display = 'block';
-      cdMask.style.height = `${(ratio * 100).toFixed(1)}%`;
-      ready.classList.remove('active');
-    } else {
-      cdMask.style.display = 'none';
-      ready.classList.add('active');
-    }
+    ready.classList.add('active');
   });
 }
 
   refreshEquipmentUI() {
     if (!this.equipmentUi?.slots) return;
-    const now = this.time.now;
     
     this.equipmentUi.slots.forEach(({ element, icon, badge }, index) => {
       const itemId = this.playerEquipmentSlots[index];
@@ -2886,25 +3077,8 @@ updateSpellbladeOverlays() {
         
         // 处理耀光装备
         if (this.isSpellbladeItem(itemId)) {
-          const isOnCooldown = !this.canTriggerSpellblade(now);
-          
-          // 添加CD遮罩
-          const cdMask = document.createElement('div');
-          cdMask.className = 'spellblade-cd';
-          if (isOnCooldown) {
-            const remainingTime = Math.max(0, (this.lastSpellbladeUsedAt + 1500) - now);
-            const progress = remainingTime / 1500;
-            cdMask.style.height = `${progress * 100}%`;
-            cdMask.classList.add('active');
-          }
-          element.appendChild(cdMask);
-          
-          // 添加就绪指示器
           const readyIndicator = document.createElement('div');
-          readyIndicator.className = 'spellblade-ready';
-          if (!isOnCooldown) {
-            readyIndicator.classList.add('active');
-          }
+          readyIndicator.className = 'spellblade-ready active';
           element.appendChild(readyIndicator);
         }
       } else {
@@ -3092,6 +3266,9 @@ updateSpellbladeOverlays() {
     const manaRatio = prevMaxMana > 0 ? prevCurrentMana / prevMaxMana : 1;
 
     const base = { ...PLAYER_BASE_STATS };
+    const mechBase = this.getMechBaseOverrides ? this.getMechBaseOverrides() : null;
+    if (mechBase?.attackSpeed != null) base.attackSpeed = mechBase.attackSpeed;
+    if (mechBase?.range != null) base.range = mechBase.range;
     let addAD = 0;
     let addASPct = 0;
     let addAP = 0;
@@ -3423,6 +3600,9 @@ updateSpellbladeOverlays() {
     }
 
     this.playerStats = base;
+    if (this.isYinYangMode && this.isYinYangMode()) {
+      this.syncYinYangOrbCount();
+    }
     this.heartsteelGainPerKill = heartsteelGainPerKill;
 
     // Store aggregated effects for use in damage resolution
@@ -3640,9 +3820,8 @@ updateSpellbladeOverlays() {
       this.attackTimer.remove();
       this.attackTimer = null;
     }
-    // 远程形态：攻速+20%；近战：停火（但计时器仍在，tryFireBullet 会早退）
-    const modeASMult = (this.playerCombatMode === "ranged") ? E_RANGED_ATTACK_SPEED_MULTIPLIER : 1;
-    const effAS = this.playerStats.attackSpeed * this.getAttackSpeedBonusMultiplier() * modeASMult;
+    // 远程形态：按机体/Shift修正；近战：停火（但计时器仍在，tryFireBullet 会早退）
+    const effAS = this.getEffectiveAttackSpeed();
     const attackDelay = 1000 / Math.max(0.1, effAS);
     this.attackTimer = this.time.addEvent({
       delay: attackDelay,
@@ -4326,11 +4505,26 @@ updateSpellbladeOverlays() {
 
     // 玩家子弹撞墙：生成小爆炸特效并销毁子弹
     if (this.wallGroup) {
-    this.physics.add.collider(this.bullets, this.wallGroup, (bullet, _wall) => {
-      if (!bullet || !bullet.active || bullet.ignoresWallCollision) return;
-      this.spawnWallHitExplosion(bullet.x, bullet.y);
-      this.destroyBullet(bullet);
-    });
+    this.physics.add.collider(
+      this.bullets,
+      this.wallGroup,
+      (bullet, wall) => {
+        if (!bullet || !bullet.active) return;
+        if (bullet.isYinYangOrb) {
+          this.handleYinYangWallBounce(bullet, wall);
+          return;
+        }
+        if (bullet.ignoresWallCollision) return;
+        this.spawnWallHitExplosion(bullet.x, bullet.y);
+        this.destroyBullet(bullet);
+      },
+      (bullet, _wall) => {
+        if (!bullet || !bullet.active) return false;
+        if (bullet.ignoresWallCollision) return false;
+        return true;
+      },
+      this,
+    );
     }
     // 玩家子弹可击杀尸体（不生成 round 子弹）
     this.physics.add.overlap(this.bullets, this.rinCorpses, (_bullet, corpse) => {
@@ -4581,6 +4775,12 @@ this.input.keyboard.on("keydown-E", ()=> this.castE());
 this.input.keyboard.on("keydown-R", ()=> this.castR());
 this.input.keyboard.on("keydown-SPACE", ()=> this.castDash());
 
+    this.debugQuestKeyHandler = (event) => {
+      if (event?.repeat) return;
+      if (this.debugMode) this.completeDebugQuest();
+    };
+    this.input.keyboard.on("keydown-M", this.debugQuestKeyHandler, this);
+
 // 退出时清理
 const offSkills = ()=> {
   this.input.keyboard.off("keydown-Q", undefined, this);
@@ -4591,6 +4791,12 @@ const offSkills = ()=> {
 };
 this.events.once("shutdown", offSkills);
 this.events.once("destroy", offSkills);
+
+const pointerHandler = (pointer) => this.handleMechPointerDown(pointer);
+this.input.on("pointerdown", pointerHandler, this);
+const offPointer = () => { this.input.off("pointerdown", pointerHandler, this); };
+this.events.once("shutdown", offPointer);
+this.events.once("destroy", offPointer);
 
     this.movementDirectionOrder = this.movementDirectionOrder ?? [];
     this.movementKeyHandlers = [];
@@ -4613,6 +4819,10 @@ this.events.once("destroy", offSkills);
       if (this.movementKeyHandlers) {
         this.movementKeyHandlers.forEach(({ event, handler }) => this.input.keyboard.off(event, handler, this));
         this.movementKeyHandlers = [];
+      }
+      if (this.debugQuestKeyHandler) {
+        this.input.keyboard.off("keydown-M", this.debugQuestKeyHandler, this);
+        this.debugQuestKeyHandler = null;
       }
       this.movementDirectionOrder = [];
       this.stopAuraVisual();
@@ -4822,6 +5032,16 @@ this.events.once("destroy", offSkills);
     if (this.boss) this.updateBossUI(this.boss);
     if (this.isGameplaySuspended()) return;
     this.elapsed += delta;
+    const focusDown = this.keys?.focus?.isDown === true;
+    if (focusDown !== this._lastFocusDown) {
+      if (this.isTalismanMode() && this.playerCombatMode === "ranged") {
+        this.rebuildAttackTimer();
+      }
+      if (this.isYinYangMode() && focusDown) {
+        this.recallYinYangOrbs();
+      }
+      this._lastFocusDown = focusDown;
+    }
     this.updateQuestProgress(delta);
 
     if (this.guinsooKillStacks > 0 && this.time.now >= (this.guinsooKillExpiresAt || 0)) {
@@ -4832,6 +5052,7 @@ this.events.once("destroy", offSkills);
 
     this.updatePlayerMovement();
     this.updateWeapon(delta);
+    this.updateYinYangOrbs(delta);
     // Q瞄准预览
     this.updateQAim();
     this.updateBullets(delta);
@@ -4961,8 +5182,9 @@ this.updateMikoOrbs(delta);
 
   drawRangeCircle() {
     if (!this.rangeVisible) { this.rangeGraphics.clear(); return; }
-    const originX = this.weaponSprite ? this.weaponSprite.x : this.player.x;
-       const originY = this.weaponSprite ? this.weaponSprite.y : this.player.y;
+    const usePlayerOrigin = this.isYinYangMode && this.isYinYangMode() && this.playerCombatMode === "ranged";
+    const originX = (!usePlayerOrigin && this.weaponSprite) ? this.weaponSprite.x : this.player.x;
+       const originY = (!usePlayerOrigin && this.weaponSprite) ? this.weaponSprite.y : this.player.y;
     const radius = statUnitsToPixels(this.playerStats.range);
     this.rangeGraphics.clear();
     this.rangeGraphics.lineStyle(0.6, 0x44aaff, 0.4);
@@ -5072,6 +5294,14 @@ this.updateMikoOrbs(delta);
   }
 
   updateWeapon(delta) {
+    if (this.isYinYangMode() && this.playerCombatMode === "ranged") {
+      if (this.weaponSprite) this.weaponSprite.setVisible(false);
+      if (this.weaponHitbox) {
+        this.weaponHitbox.active = false;
+        this.weaponHitbox.body.enable = false;
+      }
+      return;
+    }
     // Focus(Shift)与形态对阴阳玉的半径/速度影响
     const focusDown = this.keys?.focus?.isDown === true;
     let orbitSpeed = WEAPON_ORBIT_SPEED;
@@ -5101,6 +5331,7 @@ this.updateMikoOrbs(delta);
     if (this.rangeVisible) this.drawRangeCircle();
 
     // 形态外观与命中体跟随
+    if (this.weaponSprite) this.weaponSprite.setVisible(true);
     if (this.playerCombatMode === "melee") {
       const bigScale = 2;
       this.weaponSprite.setScale(bigScale);
@@ -5150,15 +5381,35 @@ this.updateMikoOrbs(delta);
     for (let i=bullets.length-1; i>=0; i-=1) {
       const bullet = bullets[i];
       if (!bullet.active) continue;
+      if (bullet.body?.velocity) {
+        bullet._lastVelX = bullet.body.velocity.x;
+        bullet._lastVelY = bullet.body.velocity.y;
+      }
       const timeAlive = this.time.now - bullet.spawnTime;
-      if (timeAlive > BULLET_LIFETIME) { this.destroyBullet(bullet); continue; }
+      if (!bullet.ignoreLifetime) {
+        const lifetime = Number.isFinite(bullet.lifetimeMs) ? bullet.lifetimeMs : BULLET_LIFETIME;
+        if (Number.isFinite(lifetime) && timeAlive > lifetime) { this.destroyBullet(bullet); continue; }
+      }
+      if (bullet.killOnWorldBounds) {
+        const pad = Number.isFinite(bullet.boundaryPadding) ? bullet.boundaryPadding : TILE_SIZE;
+        if (
+          bullet.x < -pad ||
+          bullet.y < -pad ||
+          bullet.x > WORLD_SIZE + pad ||
+          bullet.y > WORLD_SIZE + pad
+        ) {
+          this.destroyBullet(bullet);
+          continue;
+        }
+      }
 
       if (bullet.disableHoming || bullet.isEffectBullet) continue;
 
       const target = this.findNearestEnemy(bullet.x, bullet.y, Number.MAX_VALUE);
       if (target) {
         const angle = Phaser.Math.Angle.Between(bullet.x, bullet.y, target.x, target.y);
-        this.physics.velocityFromRotation(angle, BULLET_SPEED, bullet.body.velocity);
+        const speed = Number.isFinite(bullet.speed) ? bullet.speed : BULLET_SPEED;
+        this.physics.velocityFromRotation(angle, speed, bullet.body.velocity);
         bullet.setRotation(angle + Math.PI / 2);
       } else {
         bullet.body.setVelocity(0, 0);
@@ -5520,7 +5771,13 @@ isPlayerInvulnerable() {
   clearAllBullets() {
     try {
       if (this.bullets && typeof this.bullets.getChildren === "function") {
-        this.bullets.getChildren().forEach((b) => this.destroyBullet(b));
+        this.bullets.getChildren().forEach((b) => {
+          if (b?.isYinYangOrb && this.isYinYangMode && this.isYinYangMode()) {
+            this.resetYinYangOrbAfterClear?.(b);
+            return;
+          }
+          this.destroyBullet(b);
+        });
       }
     } catch (_) {}
     try {
@@ -6440,8 +6697,476 @@ castR() {
       });
     }
   });
-}
+  }
 
+
+  getMechConfig() {
+    return getMechConfig(this.selectedMechId);
+  }
+
+  isTalismanMode() {
+    return this.mechAttackMode === MECH_ATTACK_MODES.TALISMAN;
+  }
+
+  isNeedleMode() {
+    return this.mechAttackMode === MECH_ATTACK_MODES.NEEDLE;
+  }
+
+  isYinYangMode() {
+    return this.mechAttackMode === MECH_ATTACK_MODES.YINYANG;
+  }
+
+  getMechBaseOverrides() {
+    const cfg = this.getMechConfig();
+    const overrides = {};
+    if (Number.isFinite(cfg?.baseAttackSpeed)) overrides.attackSpeed = cfg.baseAttackSpeed;
+    if (Number.isFinite(cfg?.baseRange)) overrides.range = cfg.baseRange;
+    return overrides;
+  }
+
+  getEffectiveAttackSpeed() {
+    const baseAttackSpeed = this.playerStats?.attackSpeed ?? PLAYER_BASE_STATS.attackSpeed;
+    let effAS = baseAttackSpeed * this.getAttackSpeedBonusMultiplier();
+    if (this.playerCombatMode === "ranged" && this.isTalismanMode()) {
+      const focusDown = this.keys?.focus?.isDown === true;
+      const bonus = this.getMechConfig()?.shiftAttackSpeedBonus ?? 0;
+      if (focusDown && bonus > 0) effAS *= (1 + bonus);
+    }
+    return effAS;
+  }
+
+  getMechBulletSpeed() {
+    const cfg = this.getMechConfig();
+    const baseSpeed = Number.isFinite(cfg?.baseBulletSpeed) ? cfg.baseBulletSpeed : 200;
+    if (!this.isYinYangMode()) return baseSpeed;
+
+    const baseAS = Number.isFinite(cfg?.baseAttackSpeed) ? cfg.baseAttackSpeed : PLAYER_BASE_STATS.attackSpeed;
+    const currentAS = (this.playerStats?.attackSpeed ?? baseAS) * this.getAttackSpeedBonusMultiplier();
+    const bonusPct = baseAS > 0 ? (currentAS / baseAS) - 1 : 0;
+    const multiplier = 1 + Math.max(0, bonusPct);
+    return Math.max(0, baseSpeed * multiplier);
+  }
+
+  getNeedleExtraCount(shiftDown) {
+    if (!shiftDown) return 0;
+    const cfg = this.getMechConfig();
+    const per = Number.isFinite(cfg?.needleExtraPerAd) ? cfg.needleExtraPerAd : 100;
+    const maxTotal = Number.isFinite(cfg?.needleExtraMax) ? cfg.needleExtraMax : 0;
+    const maxExtra = Math.max(0, maxTotal - 1);
+    const baseAD = PLAYER_BASE_STATS.attackDamage ?? 0;
+    const currentAD = this.playerStats?.attackDamage ?? baseAD;
+    const bonusAD = Math.max(0, currentAD - baseAD);
+    if (per <= 0) return 0;
+    return Math.min(maxExtra, Math.floor(bonusAD / per));
+  }
+
+  getNeedleDisplaySize() {
+    if (this._needleDisplaySize) return this._needleDisplaySize;
+    const baseHeight = TILE_SIZE * 2;
+    const tex = this.textures?.get("bullet_needle");
+    const source = tex?.getSourceImage?.();
+    const ratio = source && source.width && source.height ? (source.width / source.height) : 0.25;
+    const width = Math.max(2, Math.round(baseHeight * ratio));
+    this._needleDisplaySize = { width, height: baseHeight };
+    return this._needleDisplaySize;
+  }
+
+  getYinYangMaxCount() {
+    const cfg = this.getMechConfig();
+    const baseCount = Number.isFinite(cfg?.yinyangBaseCount) ? cfg.yinyangBaseCount : 1;
+    const per = Number.isFinite(cfg?.yinyangApPer) ? cfg.yinyangApPer : 100;
+    const max = Number.isFinite(cfg?.yinyangMaxCount) ? cfg.yinyangMaxCount : 8;
+    const ap = Math.max(0, this.playerStats?.abilityPower ?? 0);
+    const extra = per > 0 ? Math.floor(ap / per) : 0;
+    return Math.min(max, baseCount + extra);
+  }
+
+  initializeYinYangOrbs() {
+    if (!this.isYinYangMode() || !this.bullets) return;
+    if (!Array.isArray(this.yinYangOrbs)) this.yinYangOrbs = [];
+    if (this.yinYangOrbs.length > 0) {
+      this.yinYangOrbs.forEach((orb) => {
+        if (!orb) return;
+        if (this.bullets) this.bullets.remove(orb, false, false);
+        if (orb.destroy) orb.destroy();
+      });
+      this.yinYangOrbs.length = 0;
+    }
+    this.syncYinYangOrbCount();
+  }
+
+  syncYinYangOrbCount() {
+    if (!this.isYinYangMode() || !this.bullets) return;
+    const target = this.getYinYangMaxCount();
+    const current = this.yinYangOrbs.length;
+    if (current < target) {
+      const cfg = this.getMechConfig();
+      for (let i = current; i < target; i += 1) {
+        const orb = this.physics.add.sprite(this.player.x, this.player.y, "weapon").setDepth(9);
+        orb.body.setAllowGravity(false);
+        orb.setDisplaySize(PIXELS_PER_TILE, PIXELS_PER_TILE);
+        orb.setScale(0.5);
+        if (orb.body?.setSize) orb.body.setSize(orb.displayWidth, orb.displayHeight, true);
+        if (typeof orb.setRoundPixels === "function") orb.setRoundPixels(true);
+        orb.disableHoming = true;
+        orb.pierce = true;
+        orb.isYinYangOrb = true;
+        orb.ignoreLifetime = true;
+        orb.ignoresWallCollision = true;
+        orb.yinYangState = "orbit";
+        orb.spawnTime = this.time.now;
+        orb.hitIntervalMs = Number.isFinite(cfg?.yinyangPierceIntervalMs) ? cfg.yinyangPierceIntervalMs : 120;
+        orb.onHitScale = 1;
+        orb.cleaveScale = 1;
+        if (orb.body) orb.body.enable = false;
+        if (orb.body?.setBounce) orb.body.setBounce(0, 0);
+        this.bullets.add(orb);
+        this.yinYangOrbs.push(orb);
+      }
+    } else if (current > target) {
+      for (let i = current - 1; i >= target; i -= 1) {
+        const orb = this.yinYangOrbs.pop();
+        if (orb) this.destroyBullet(orb);
+      }
+    }
+    this.refreshYinYangOrbOffsets();
+  }
+
+  refreshYinYangOrbOffsets() {
+    const count = this.yinYangOrbs.length;
+    if (count <= 0) return;
+    const step = Phaser.Math.PI2 / count;
+    this.yinYangOrbs.forEach((orb, index) => {
+      orb.orbitIndex = index;
+      orb.orbitAngleOffset = step * index;
+    });
+  }
+
+  handleMechPointerDown(pointer) {
+    if (!pointer || !this.isYinYangMode()) return;
+    if (this.playerCombatMode !== "ranged") return;
+    if (this.isGameplaySuspended && this.isGameplaySuspended()) return;
+    this.throwYinYangOrb(pointer);
+  }
+
+  throwYinYangOrb(pointer) {
+    if (!this.yinYangOrbs || this.yinYangOrbs.length === 0) return;
+    const orbiting = this.yinYangOrbs.filter((orb) => orb && orb.active && orb.yinYangState === "orbit");
+    if (orbiting.length === 0) return;
+    const camera = this.cameras?.main ?? null;
+    const worldPoint = camera ? camera.getWorldPoint(pointer.x, pointer.y) : { x: pointer.x, y: pointer.y };
+    const targetAngle = Phaser.Math.Angle.Between(this.player.x, this.player.y, worldPoint.x, worldPoint.y);
+    if (!Number.isFinite(targetAngle)) return;
+
+    let chosen = orbiting[0];
+    let bestDiff = Number.MAX_VALUE;
+    orbiting.forEach((orb) => {
+      const orbAngle = (typeof orb.orbitAngle === "number")
+        ? orb.orbitAngle
+        : (this.weaponAngle + (orb.orbitAngleOffset || 0));
+      const diff = Math.abs(Phaser.Math.Angle.Wrap(orbAngle - targetAngle));
+      if (diff < bestDiff) { bestDiff = diff; chosen = orb; }
+    });
+
+    const angle = Phaser.Math.Angle.Between(chosen.x, chosen.y, worldPoint.x, worldPoint.y);
+    if (!Number.isFinite(angle)) return;
+
+    const attackSeq = this.nextAttackSequence();
+    chosen.yinYangState = "thrown";
+    chosen.attackSeq = attackSeq;
+    chosen.spawnTime = this.time.now;
+    chosen.originX = chosen.x;
+    chosen.originY = chosen.y;
+    chosen.damage = this.playerStats.attackDamage;
+    chosen.onHitScale = 1;
+    chosen.cleaveScale = 1;
+    chosen.ignoresWallCollision = false;
+    if (chosen.body) {
+      chosen.body.enable = true;
+      if (chosen.body.checkCollision) chosen.body.checkCollision.none = false;
+    }
+    const speed = this.getMechBulletSpeed();
+    this.physics.velocityFromRotation(angle, speed, chosen.body.velocity);
+    this.playSfx("playershoot");
+  }
+
+  updateYinYangOrbs(delta) {
+    if (!this.isYinYangMode() || !this.yinYangOrbs || this.yinYangOrbs.length === 0) return;
+    const cfg = this.getMechConfig();
+    const spinSpeed = Number.isFinite(cfg?.yinyangSpinSpeed) ? cfg.yinyangSpinSpeed : 0;
+    const focusDown = this.keys?.focus?.isDown === true;
+    const isRanged = this.playerCombatMode === "ranged";
+    let orbitRadius = WEAPON_ORBIT_RADIUS;
+    if (focusDown) orbitRadius *= FOCUS_ORBIT_RADIUS_MULTIPLIER;
+    if (isRanged) {
+      let orbitSpeed = WEAPON_ORBIT_SPEED;
+      if (focusDown) orbitSpeed *= FOCUS_ORBIT_SPEED_MULTIPLIER;
+      const angleDelta = Phaser.Math.DegToRad((orbitSpeed * delta) / 1000);
+      this.weaponAngle = (this.weaponAngle + angleDelta) % Phaser.Math.PI2;
+    }
+
+    const now = this.time.now;
+    this.yinYangOrbs.forEach((orb) => {
+      if (!orb || !orb.active) return;
+      if (spinSpeed !== 0) {
+        orb.rotation = (orb.rotation ?? 0) + (spinSpeed * delta) / 1000;
+      }
+      if (orb.yinYangState === "orbit") {
+        if (orb.body) {
+          orb.body.enable = false;
+          orb.body.setVelocity(0, 0);
+        }
+        orb.setVisible(isRanged);
+        if (isRanged) {
+          const angle = this.weaponAngle + (orb.orbitAngleOffset || 0);
+          orb.orbitAngle = angle;
+          orb.setPosition(
+            this.player.x + Math.cos(angle) * orbitRadius,
+            this.player.y + Math.sin(angle) * orbitRadius
+          );
+        }
+        return;
+      }
+
+      orb.setVisible(true);
+      if (orb.yinYangState === "returning") {
+        const endAt = orb.returnEndAt ?? now;
+        const remaining = Math.max(0, endAt - now);
+        const targetX = this.player.x;
+        const targetY = this.player.y;
+        const dx = targetX - orb.x;
+        const dy = targetY - orb.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (remaining <= 0 || dist <= 4) {
+          orb.yinYangState = "orbit";
+          orb.returnEndAt = 0;
+          orb.returnStartAt = 0;
+          orb.ignoresWallCollision = false;
+          if (orb.body) {
+            orb.body.setVelocity(0, 0);
+            orb.body.enable = false;
+          }
+          return;
+        }
+        const speed = remaining > 0 ? dist / (remaining / 1000) : dist;
+        const angle = Math.atan2(dy, dx);
+        if (orb.body) {
+          orb.body.enable = true;
+          orb.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+        }
+      }
+    });
+  }
+
+  recallYinYangOrbs() {
+    if (!this.isYinYangMode() || !this.yinYangOrbs || this.yinYangOrbs.length === 0) return;
+    const cfg = this.getMechConfig();
+    const duration = Math.max(200, Number.isFinite(cfg?.yinyangReturnMs) ? cfg.yinyangReturnMs : 1000);
+    const now = this.time.now;
+    this.yinYangOrbs.forEach((orb) => {
+      if (!orb || !orb.active) return;
+      if (orb.yinYangState === "orbit") return;
+      orb.yinYangState = "returning";
+      orb.returnStartAt = now;
+      orb.returnEndAt = now + duration;
+      orb.ignoresWallCollision = true;
+      if (orb.body) orb.body.enable = true;
+    });
+  }
+
+  handleYinYangWallBounce(bullet, wall) {
+    if (!bullet || !bullet.body || bullet.ignoresWallCollision) return;
+    const body = bullet.body;
+    const now = this.time?.now ?? performance.now();
+    if (bullet._lastBounceAt && now - bullet._lastBounceAt < 6) return;
+    bullet._lastBounceAt = now;
+    const curVx = body.velocity?.x ?? 0;
+    const curVy = body.velocity?.y ?? 0;
+    const curSpeed = Math.hypot(curVx, curVy);
+    const lastVx = Number.isFinite(bullet._lastVelX) ? bullet._lastVelX : 0;
+    const lastVy = Number.isFinite(bullet._lastVelY) ? bullet._lastVelY : 0;
+    const lastSpeed = Math.hypot(lastVx, lastVy);
+    let vx = curVx;
+    let vy = curVy;
+    let speed = curSpeed;
+    if (Number.isFinite(lastSpeed) && lastSpeed > Math.max(1, curSpeed * 1.05)) {
+      vx = lastVx; vy = lastVy; speed = lastSpeed;
+    }
+    if (!Number.isFinite(speed) || speed <= 0) return;
+
+    const bulletW = bullet.displayWidth ?? body.width ?? TILE_SIZE;
+    const bulletH = bullet.displayHeight ?? body.height ?? TILE_SIZE;
+    const halfBW = bulletW / 2;
+    const halfBH = bulletH / 2;
+    const bulletX = bullet.x ?? 0;
+    const bulletY = bullet.y ?? 0;
+
+    let nx = 0;
+    let ny = 0;
+    let pushedX = false;
+    let pushedY = false;
+
+    const grid = this.wallGrid;
+    if (Array.isArray(grid) && grid.length > 0) {
+      const leftTile = this.worldToTileCoords(bulletX - halfBW, bulletY);
+      const rightTile = this.worldToTileCoords(bulletX + halfBW, bulletY);
+      const upTile = this.worldToTileCoords(bulletX, bulletY - halfBH);
+      const downTile = this.worldToTileCoords(bulletX, bulletY + halfBH);
+      const isWall = (tile) => {
+        if (!tile) return false;
+        const row = grid[tile.y];
+        if (!Array.isArray(row)) return false;
+        return !!row[tile.x];
+      };
+      const hitLeft = isWall(leftTile);
+      const hitRight = isWall(rightTile);
+      const hitUp = isWall(upTile);
+      const hitDown = isWall(downTile);
+      if (hitLeft && hitRight) {
+        if (Math.abs(vx) >= Math.abs(vy)) nx = vx >= 0 ? -1 : 1;
+      } else if (hitLeft) nx = 1;
+      else if (hitRight) nx = -1;
+      if (hitUp && hitDown) {
+        if (Math.abs(vy) >= Math.abs(vx)) ny = vy >= 0 ? -1 : 1;
+      } else if (hitUp) ny = 1;
+      else if (hitDown) ny = -1;
+
+      const push = 0.5;
+      if (nx === 1 && leftTile) {
+        const boundary = (leftTile.x + 1) * TILE_SIZE;
+        bullet.x = boundary + halfBW + push;
+        pushedX = true;
+      } else if (nx === -1 && rightTile) {
+        const boundary = rightTile.x * TILE_SIZE;
+        bullet.x = boundary - halfBW - push;
+        pushedX = true;
+      }
+      if (ny === 1 && upTile) {
+        const boundary = (upTile.y + 1) * TILE_SIZE;
+        bullet.y = boundary + halfBH + push;
+        pushedY = true;
+      } else if (ny === -1 && downTile) {
+        const boundary = downTile.y * TILE_SIZE;
+        bullet.y = boundary - halfBH - push;
+        pushedY = true;
+      }
+    }
+
+    const touching = body.touching || {};
+    if (nx === 0 && ny === 0) {
+      if (touching.left) nx = 1;
+      else if (touching.right) nx = -1;
+      if (touching.up) ny = 1;
+      else if (touching.down) ny = -1;
+    }
+
+    if (nx === 0 && ny === 0 && Number.isFinite(body.overlapX) && Number.isFinite(body.overlapY)) {
+      if (Math.abs(body.overlapX) >= Math.abs(body.overlapY)) nx = vx >= 0 ? -1 : 1;
+      else ny = vy >= 0 ? -1 : 1;
+    }
+
+    if (nx === 0 && ny === 0 && wall) {
+      const wallBody = wall.body ?? {};
+      const wallW = wall.displayWidth ?? wallBody.width ?? TILE_SIZE;
+      const wallH = wall.displayHeight ?? wallBody.height ?? TILE_SIZE;
+      const halfW = wallW / 2;
+      const halfH = wallH / 2;
+      const dx = (bullet.x ?? 0) - (wall.x ?? 0);
+      const dy = (bullet.y ?? 0) - (wall.y ?? 0);
+      if (Math.abs(dx / Math.max(halfW, 1)) > Math.abs(dy / Math.max(halfH, 1))) {
+        nx = Math.sign(dx) || (vx >= 0 ? 1 : -1);
+      } else {
+        ny = Math.sign(dy) || (vy >= 0 ? 1 : -1);
+      }
+    }
+
+    if (nx === 0 && ny === 0) {
+      if (Math.abs(vx) >= Math.abs(vy)) nx = vx >= 0 ? -1 : 1;
+      else ny = vy >= 0 ? -1 : 1;
+    }
+
+    let rvx = vx;
+    let rvy = vy;
+    if (nx !== 0) rvx = -vx;
+    if (ny !== 0) rvy = -vy;
+
+    const cfg = this.getMechConfig();
+    const jitterDeg = Number.isFinite(cfg?.yinyangBounceRandomDeg) ? cfg.yinyangBounceRandomDeg : 5;
+    let angle = Math.atan2(rvy, rvx);
+    if (jitterDeg > 0) {
+      angle += Phaser.Math.DegToRad(Phaser.Math.FloatBetween(-jitterDeg, jitterDeg));
+    }
+    const nextVx = Math.cos(angle) * speed;
+    const nextVy = Math.sin(angle) * speed;
+    body.setVelocity(nextVx, nextVy);
+    bullet._lastVelX = nextVx;
+    bullet._lastVelY = nextVy;
+
+    if (!pushedX || !pushedY) {
+      if (wall) {
+        const wallBody = wall.body ?? {};
+        const wallW = wall.displayWidth ?? wallBody.width ?? TILE_SIZE;
+        const wallH = wall.displayHeight ?? wallBody.height ?? TILE_SIZE;
+        const bulletW2 = bullet.displayWidth ?? body.width ?? TILE_SIZE;
+        const bulletH2 = bullet.displayHeight ?? body.height ?? TILE_SIZE;
+        const halfW = wallW / 2;
+        const halfH = wallH / 2;
+        if (nx !== 0 && !pushedX) {
+          bullet.x = (wall.x ?? bullet.x) + nx * (halfW + bulletW2 / 2 + 0.5);
+        }
+        if (ny !== 0 && !pushedY) {
+          bullet.y = (wall.y ?? bullet.y) + ny * (halfH + bulletH2 / 2 + 0.5);
+        }
+      } else if (Number.isFinite(body.overlapX) || Number.isFinite(body.overlapY)) {
+        const ox = Number.isFinite(body.overlapX) ? body.overlapX : 0;
+        const oy = Number.isFinite(body.overlapY) ? body.overlapY : 0;
+        if (nx !== 0 && !pushedX) bullet.x += nx * (Math.abs(ox) + 0.5);
+        if (ny !== 0 && !pushedY) bullet.y += ny * (Math.abs(oy) + 0.5);
+      }
+    }
+  }
+
+  resetYinYangOrbAfterClear(orb) {
+    if (!orb) return;
+    orb.yinYangState = "orbit";
+    orb.ignoresWallCollision = false;
+    orb.spawnTime = this.time.now;
+    orb._pierceHitTimes = null;
+    if (orb.body) {
+      orb.body.setVelocity(0, 0);
+      orb.body.enable = false;
+    }
+    const focusDown = this.keys?.focus?.isDown === true;
+    let orbitRadius = WEAPON_ORBIT_RADIUS;
+    if (focusDown) orbitRadius *= FOCUS_ORBIT_RADIUS_MULTIPLIER;
+    const angle = (this.weaponAngle ?? 0) + (orb.orbitAngleOffset || 0);
+    orb.setPosition(
+      this.player.x + Math.cos(angle) * orbitRadius,
+      this.player.y + Math.sin(angle) * orbitRadius
+    );
+    orb.setVisible(this.playerCombatMode === "ranged");
+  }
+
+  applyYinYangReturnDamage(enemy) {
+    if (!enemy || !enemy.active) return 0;
+    const cfg = this.getMechConfig();
+    const base = Number.isFinite(cfg?.yinyangReturnMagicBase) ? cfg.yinyangReturnMagicBase : 10;
+    const ratio = Number.isFinite(cfg?.yinyangReturnMagicApRatio) ? cfg.yinyangReturnMagicApRatio : 1;
+    const ap = Math.max(0, this.playerStats?.abilityPower ?? 0);
+    const raw = Math.max(0, Math.round(base + ap * ratio));
+    if (raw <= 0) return 0;
+    const dealt = this.applyMitigationToTarget(raw, enemy, this.playerStats, "magic", 1);
+    if (dealt <= 0) return 0;
+    const fusionExtra = this.getQuestFusionExtraDamage(enemy);
+    enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
+    if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
+    this.showDamageNumber(enemy.x, enemy.y, dealt, "magic");
+    if (enemy.isBoss && typeof enemy.setData === "function") enemy.setData("hp", enemy.hp);
+    if (enemy.isBoss) this.updateBossUI(enemy);
+    if (enemy.hp <= 0) this.killEnemy(enemy);
+    else this.maybeExecuteTheCollector(enemy);
+    return dealt;
+  }
 
   nextAttackSequence() {
     this.attackSequence = (this.attackSequence || 0) + 1;
@@ -6455,9 +7180,68 @@ castR() {
     // 非远程模式不发射
     if (this.playerCombatMode !== "ranged") return;
 
-    const rangePixels = statUnitsToPixels(this.playerStats.range);
     const originX = this.weaponSprite ? this.weaponSprite.x : this.player.x;
     const originY = this.weaponSprite ? this.weaponSprite.y : this.player.y;
+    if (this.isYinYangMode()) return;
+
+    if (this.isNeedleMode()) {
+      const pointer = this.input?.activePointer ?? null;
+      const camera = this.cameras?.main ?? null;
+      if (!pointer || !camera) return;
+      const worldPoint = camera.getWorldPoint(pointer.x, pointer.y);
+      const angle = Phaser.Math.Angle.Between(originX, originY, worldPoint.x, worldPoint.y);
+      if (!Number.isFinite(angle)) return;
+
+      const attackSeq = this.nextAttackSequence();
+      const shiftDown = this.keys?.focus?.isDown === true;
+      const extraCount = this.getNeedleExtraCount(shiftDown);
+      const totalCount = 1 + extraCount;
+      const size = this.getNeedleDisplaySize();
+      const spacing = size.width * 0.9;
+      const perpAngle = angle + Math.PI / 2;
+      const bulletSpeed = this.getMechBulletSpeed();
+      const cfg = this.getMechConfig();
+      const extraScale = Number.isFinite(cfg?.needleExtraDamageScale) ? cfg.needleExtraDamageScale : 0.5;
+
+      this.playSfx("playershoot");
+      for (let i = 0; i < totalCount; i += 1) {
+        const offsetIndex = i - (totalCount - 1) / 2;
+        const offset = offsetIndex * spacing;
+        const spawnX = originX + Math.cos(perpAngle) * offset;
+        const spawnY = originY + Math.sin(perpAngle) * offset;
+        const scale = (i === 0) ? 1 : extraScale;
+
+        const bullet = this.physics.add.sprite(spawnX, spawnY, "bullet_needle");
+        bullet.setDepth(8);
+        bullet.setDisplaySize(size.width, size.height);
+        bullet.body.setAllowGravity(false);
+        bullet.body.setSize(size.width, size.height, true);
+        bullet.spawnTime = this.time.now;
+        bullet.attackSeq = attackSeq;
+        bullet.originX = originX;
+        bullet.originY = originY;
+        bullet.damage = Math.round(this.playerStats.attackDamage * scale);
+        bullet.damageType = "physical";
+        bullet.isCrit = false;
+        bullet.onHitScale = scale;
+        bullet.cleaveScale = scale;
+        bullet.disableHoming = true;
+        bullet.ignoresWallCollision = true;
+        bullet.ignoreLifetime = true;
+        bullet.killOnWorldBounds = true;
+        bullet.boundaryPadding = TILE_SIZE;
+        bullet.speed = bulletSpeed;
+
+        this.bullets.add(bullet);
+        this.attachBulletTrailToBullet(bullet);
+
+        this.physics.velocityFromRotation(angle, bulletSpeed, bullet.body.velocity);
+        bullet.setRotation(angle + Math.PI / 2);
+      }
+      return;
+    }
+
+    const rangePixels = statUnitsToPixels(this.playerStats.range);
     const target = this.findNearestEnemy(originX, originY, rangePixels);
     if (!target) return;
 
@@ -6475,14 +7259,15 @@ castR() {
     bullet.isCrit = false;
     bullet.onHitScale = 1;
     bullet.cleaveScale = 1;
-    bullet.ignoresWallCollision = true;
+    bullet.ignoresWallCollision = false;
+    bullet.speed = this.getMechBulletSpeed();
 
     this.bullets.add(bullet);
     this.attachBulletTrailToBullet(bullet);
     this.playSfx("playershoot");
 
     const angle = Phaser.Math.Angle.Between(bullet.x, bullet.y, target.x, target.y);
-    this.physics.velocityFromRotation(angle, BULLET_SPEED, bullet.body.velocity);
+    this.physics.velocityFromRotation(angle, bullet.speed, bullet.body.velocity);
     bullet.setRotation(angle + Math.PI / 2);
     this.spawnRunaanBolts(originX, originY, target, rangePixels, angle, attackSeq);
   }
@@ -7228,8 +8013,17 @@ handleQMeleeSlashOverlap(slash, enemy) {
       this.handleEffectBulletEnemyOverlap(bullet, enemy);
       return;
     }
+    const now = this.time?.now ?? performance.now();
+    if (bullet?.pierce) {
+      const interval = Number.isFinite(bullet.hitIntervalMs) ? bullet.hitIntervalMs : 120;
+      if (!bullet._pierceHitTimes) bullet._pierceHitTimes = new Map();
+      const last = bullet._pierceHitTimes.get(enemy) || 0;
+      if (now - last < interval) return;
+      bullet._pierceHitTimes.set(enemy, now);
+    }
     // 普攻命中音效（远程）
-    this.playSfx("enemyhit");
+    if (bullet?.isYinYangOrb) this.playSfx("orbhit");
+    else this.playSfx("enemyhit");
 
   const entries = [];
 
@@ -7436,7 +8230,11 @@ const totalDamage =
     }
   }
 
-  this.destroyBullet(bullet);
+  if (bullet?.isYinYangOrb && bullet.yinYangState === "returning" && enemy?.active) {
+    this.applyYinYangReturnDamage(enemy);
+  }
+
+  if (!bullet?.pierce) this.destroyBullet(bullet);
 }
 
 
@@ -7736,9 +8534,9 @@ const totalDamage =
     }
   }
 
-  canTriggerSpellblade(now = this.time.now) {
-    const SPELLBLADE_COOLDOWN = 1500; // 1.5秒冷却时间
-    return now - this.lastSpellbladeUsedAt >= SPELLBLADE_COOLDOWN;
+  canTriggerSpellblade(now = (this.time?.now ?? Date.now())) {
+    const SPELLBLADE_COOLDOWN = 0; // zero cooldown but keep the timing hook
+    return now - (this.lastSpellbladeUsedAt || 0) >= SPELLBLADE_COOLDOWN;
   }
 
   // 处理耀光装备的伤害
@@ -7809,6 +8607,7 @@ computeSpellbladeDamageFor(item, enemy) {
 // 消耗“下一击触发耀光”标记并返回结算条目（供命中流程合并）
 consumeSpellbladeIfReady(enemy) {
   if (!this.nextAttackTriggersSpellblade) return null;
+  const now = this.time?.now ?? Date.now();
 
   const itemId = this.playerEquipmentSlots.find(id => this.isSpellbladeItem(id));
   if (!itemId) return null;
@@ -7819,9 +8618,9 @@ consumeSpellbladeIfReady(enemy) {
   // 生成伤害
   const result = this.computeSpellbladeDamageFor(item, enemy);
   if (!result || result.amount <= 0) {
-    // 即便没有伤害，也要消耗标记并进入CD
+    // 即便没有伤害，也要消耗标记
     this.nextAttackTriggersSpellblade = false;
-    this.lastSpellbladeUsedAt = this.time.now;
+    this.lastSpellbladeUsedAt = now;
     return null;
   }
 
@@ -7843,12 +8642,12 @@ consumeSpellbladeIfReady(enemy) {
     }
   }
 
-  // 消耗与进入CD
+  // 消耗标记
   this.nextAttackTriggersSpellblade = false;
-  this.lastSpellbladeUsedAt = this.time.now;
+  this.lastSpellbladeUsedAt = now;
 
   // 返回一个供命中流程合并与独立显示的“耀光”条目
-  return { amount: result.amount, type: result.type, isSpellblade: true };
+  return { ...result, isSpellblade: true };
 }
 
   // 创建冰冻效果的视觉表现
@@ -11122,7 +11921,7 @@ const config = {
     default: "arcade",
     arcade: { gravity: { y: 0 }, debug: false },
   },
-  scene: [PreloadScene, StartScene, GameScene],
+  scene: [PreloadScene, StartScene, MechSelectScene, GameScene],
 };
 
 window.addEventListener("load", () => {

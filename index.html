@@ -494,6 +494,190 @@
   pointer-events: auto;
 }
 
+/* ==== Mech Select Overlay ==== */
+.mech-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 640px;
+  height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 6, 12, 0.88);
+  z-index: 3;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.mech-overlay.visible {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mech-panel {
+  width: 600px;
+  height: 420px;
+  border: 2px solid #fff;
+  background: #0b0a12;
+  padding: 14px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #fff;
+  font-family: "Zpix", monospace;
+}
+
+.mech-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mech-title {
+  font-size: 18px;
+  color: #ffd966;
+  letter-spacing: 2px;
+}
+
+.mech-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 2px;
+}
+
+.mech-hint {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.mech-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 12px;
+}
+
+.mech-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mech-card {
+  border: 2px solid #fff;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.mech-card:hover {
+  transform: translateY(-1px);
+}
+
+.mech-card.active {
+  border-color: #6bd6ff;
+  box-shadow: 0 0 0 2px rgba(107, 214, 255, 0.25);
+}
+
+.mech-card-icon {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mech-card-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.mech-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mech-card-name {
+  font-size: 14px;
+  color: #fff;
+}
+
+.mech-card-meta {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.mech-detail {
+  border: 2px solid #fff;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mech-detail-title {
+  font-size: 16px;
+  color: #ffdd88;
+}
+
+.mech-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mech-detail-section-title {
+  font-size: 12px;
+  color: #6bd6ff;
+  letter-spacing: 1px;
+}
+
+.mech-detail-lines {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #ffffff;
+}
+
+.mech-detail-lines span {
+  display: block;
+}
+
+.mech-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.mech-button {
+  border: 2px solid #fff;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-family: "Zpix", monospace;
+  font-size: 12px;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+
+.mech-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
 .quest-panel {
   width: 560px;
   max-width: 92%;
@@ -595,6 +779,21 @@
 
 .quest-status.completed .quest-status-name {
   color: #9ed36a;
+}
+
+.debug-quest-btn {
+  display: none;
+  margin-top: 6px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(15, 11, 22, 0.85);
+  color: #fff;
+  font-family: "Zpix", monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 3px;
+  pointer-events: auto;
 }
 
 /* 维持面板尺寸，确保在 640×480 内合适居中 */
@@ -1153,6 +1352,59 @@
         </div>
       </div>
 
+      <div class="mech-overlay" id="mech-select-overlay" aria-hidden="true">
+        <div class="mech-panel">
+          <div class="mech-header">
+            <div>
+              <div class="mech-title">机体选择</div>
+              <div class="mech-subtitle">普通攻击模组</div>
+            </div>
+            <div class="mech-hint">选择机体后进入战斗</div>
+          </div>
+          <div class="mech-body">
+            <div class="mech-list" id="mech-list">
+              <div class="mech-card" data-mech-id="talisman">
+                <div class="mech-card-icon">
+                  <img src="assets/bullet/spell.png" alt="诱导护符" />
+                </div>
+                <div class="mech-card-info">
+                  <div class="mech-card-name">诱导护符</div>
+                  <div class="mech-card-meta">锁敌 · 600射程</div>
+                </div>
+              </div>
+              <div class="mech-card" data-mech-id="needle">
+                <div class="mech-card-icon">
+                  <img src="assets/bullet/needle.png" alt="封魔针" />
+                </div>
+                <div class="mech-card-info">
+                  <div class="mech-card-name">封魔针</div>
+                  <div class="mech-card-meta">指向射击 · 穿墙</div>
+                </div>
+              </div>
+              <div class="mech-card" data-mech-id="yinyang">
+                <div class="mech-card-icon">
+                  <img src="assets/weapon/yinyangball.png" alt="阴阳宝玉" />
+                </div>
+                <div class="mech-card-info">
+                  <div class="mech-card-name">阴阳宝玉</div>
+                  <div class="mech-card-meta">抛投 · 反弹</div>
+                </div>
+              </div>
+            </div>
+            <div class="mech-detail">
+              <div class="mech-detail-title" id="mech-detail-title">诱导护符</div>
+              <div class="mech-detail-section">
+                <div class="mech-detail-section-title">普通攻击</div>
+                <div class="mech-detail-lines" id="mech-detail-lines"></div>
+              </div>
+            </div>
+          </div>
+          <div class="mech-footer">
+            <button class="mech-button" id="mech-confirm-btn">进入战斗</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Stats Overlay (HTML, not affected by camera zoom) -->
       <div id="stats-overlay" class="stats-overlay">
         <div class="stats-panel">
@@ -1260,6 +1512,7 @@
 ">
         </div>
         <div id="quest-status" class="quest-status"></div>
+        <button id="debug-quest-complete-btn" class="debug-quest-btn" type="button">M 立即完成任务</button>
       </div>
     </div>
   </div>
