@@ -24,6 +24,7 @@ const CAMERA_ZOOM = 2;
 const CAMERA_ZOOM_MIN = 1;
 const CAMERA_ZOOM_MAX = 3.5;
 const CAMERA_ZOOM_STEP = 0.25;
+const GAME_CURSOR_STYLE = 'url("assets/crosshair/crosshair_32.png") 16 16, crosshair';
 const Q_TALISMAN_SPEED = 100;
 const Q_TALISMAN_BOUNDARY_PADDING = 16;
 // Q施法瞄准指示器参数
@@ -619,6 +620,10 @@ const MELEE_BASE_ORBIT_SPEED_MULTIPLIER = 2; // 近战初始转速×2
 // Focus(Shift) 对阴阳玉轨道的影响
 const FOCUS_ORBIT_RADIUS_MULTIPLIER = 0.6; // 按住Shift时：半径缩小为60%
 const FOCUS_ORBIT_SPEED_MULTIPLIER = 2;    // 按住Shift时：转速×2
+// 阴阳玉远程普攻强化：采样×2，大小×2
+const YINYANG_ORB_BASE_SCALE = 0.5;
+const YINYANG_ORB_RANGED_ATTACK_SCALE_MULTIPLIER = 2;
+const YINYANG_ORB_RANGED_ATTACK_SAMPLE_MULTIPLIER = 2;
 // E技能形态加成：远程+20%攻速；近战将这20%转化为阴阳玉的转速
 const E_RANGED_ATTACK_SPEED_MULTIPLIER = 1.2;
 const BULLET_SPEED = 170;
@@ -1733,6 +1738,9 @@ this.playerWallCollider = null; // 保存玩家-墙体碰撞体
 
   create() {
     this.setupUIBindings();
+    this.applyGameCursor(true);
+    this.events.once("shutdown", () => this.applyGameCursor(false));
+    this.events.once("destroy", () => this.applyGameCursor(false));
     this.initializeEquipmentSystem();
     this.createMap();
     this.createPlayer();
@@ -2023,6 +2031,22 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
     }
 
     this.setupQuestSystem();
+  }
+
+  applyGameCursor(enabled) {
+    const cursorValue = enabled ? GAME_CURSOR_STYLE : "";
+    const targets = [
+      this.game?.canvas,
+      document.getElementById("game"),
+      document.getElementById("shop-overlay"),
+      document.getElementById("quest-overlay"),
+      document.getElementById("stats-overlay"),
+      document.getElementById("mech-select-overlay"),
+    ];
+    targets.forEach((el) => {
+      if (el && el.style) el.style.cursor = cursorValue;
+    });
+    if (this.input?.setDefaultCursor) this.input.setDefaultCursor(cursorValue || "auto");
   }
 
   /* ==== UI 绑定 ==== */
@@ -6781,6 +6805,40 @@ castR() {
     return Math.min(max, baseCount + extra);
   }
 
+  getYinYangBaseHitInterval() {
+    const cfg = this.getMechConfig();
+    return Number.isFinite(cfg?.yinyangPierceIntervalMs) ? cfg.yinyangPierceIntervalMs : 120;
+  }
+
+  setYinYangOrbScale(orb, scale) {
+    if (!orb || typeof orb.setScale !== "function") return;
+    orb.setScale(scale);
+    if (orb.body?.setSize) orb.body.setSize(orb.displayWidth, orb.displayHeight, true);
+  }
+
+  applyYinYangOrbBaseTuning(orb) {
+    if (!orb) return;
+    const baseScale = Number.isFinite(orb.yinYangBaseScale) ? orb.yinYangBaseScale : YINYANG_ORB_BASE_SCALE;
+    const baseInterval = Number.isFinite(orb.yinYangBaseHitIntervalMs)
+      ? orb.yinYangBaseHitIntervalMs
+      : this.getYinYangBaseHitInterval();
+    this.setYinYangOrbScale(orb, baseScale);
+    orb.hitIntervalMs = baseInterval;
+  }
+
+  applyYinYangOrbRangedAttackTuning(orb) {
+    if (!orb) return;
+    const baseScale = Number.isFinite(orb.yinYangBaseScale) ? orb.yinYangBaseScale : YINYANG_ORB_BASE_SCALE;
+    const baseInterval = Number.isFinite(orb.yinYangBaseHitIntervalMs)
+      ? orb.yinYangBaseHitIntervalMs
+      : this.getYinYangBaseHitInterval();
+    const boostedScale = baseScale * YINYANG_ORB_RANGED_ATTACK_SCALE_MULTIPLIER;
+    this.setYinYangOrbScale(orb, boostedScale);
+    if (Number.isFinite(baseInterval) && baseInterval > 0) {
+      orb.hitIntervalMs = Math.max(1, Math.round(baseInterval / YINYANG_ORB_RANGED_ATTACK_SAMPLE_MULTIPLIER));
+    }
+  }
+
   initializeYinYangOrbs() {
     if (!this.isYinYangMode() || !this.bullets) return;
     if (!Array.isArray(this.yinYangOrbs)) this.yinYangOrbs = [];
@@ -6800,13 +6858,14 @@ castR() {
     const target = this.getYinYangMaxCount();
     const current = this.yinYangOrbs.length;
     if (current < target) {
-      const cfg = this.getMechConfig();
+      const baseInterval = this.getYinYangBaseHitInterval();
       for (let i = current; i < target; i += 1) {
         const orb = this.physics.add.sprite(this.player.x, this.player.y, "weapon").setDepth(9);
         orb.body.setAllowGravity(false);
         orb.setDisplaySize(PIXELS_PER_TILE, PIXELS_PER_TILE);
-        orb.setScale(0.5);
-        if (orb.body?.setSize) orb.body.setSize(orb.displayWidth, orb.displayHeight, true);
+        orb.yinYangBaseScale = YINYANG_ORB_BASE_SCALE;
+        orb.yinYangBaseHitIntervalMs = baseInterval;
+        this.setYinYangOrbScale(orb, orb.yinYangBaseScale);
         if (typeof orb.setRoundPixels === "function") orb.setRoundPixels(true);
         orb.disableHoming = true;
         orb.pierce = true;
@@ -6815,7 +6874,7 @@ castR() {
         orb.ignoresWallCollision = true;
         orb.yinYangState = "orbit";
         orb.spawnTime = this.time.now;
-        orb.hitIntervalMs = Number.isFinite(cfg?.yinyangPierceIntervalMs) ? cfg.yinyangPierceIntervalMs : 120;
+        orb.hitIntervalMs = baseInterval;
         orb.onHitScale = 1;
         orb.cleaveScale = 1;
         if (orb.body) orb.body.enable = false;
@@ -6875,6 +6934,7 @@ castR() {
     chosen.yinYangState = "thrown";
     chosen.attackSeq = attackSeq;
     chosen.spawnTime = this.time.now;
+    this.applyYinYangOrbRangedAttackTuning(chosen);
     chosen.originX = chosen.x;
     chosen.originY = chosen.y;
     chosen.damage = this.playerStats.attackDamage;
@@ -6942,6 +7002,7 @@ castR() {
           orb.returnEndAt = 0;
           orb.returnStartAt = 0;
           orb.ignoresWallCollision = false;
+          this.applyYinYangOrbBaseTuning(orb);
           if (orb.body) {
             orb.body.setVelocity(0, 0);
             orb.body.enable = false;
@@ -6970,6 +7031,7 @@ castR() {
       orb.returnStartAt = now;
       orb.returnEndAt = now + duration;
       orb.ignoresWallCollision = true;
+      this.applyYinYangOrbBaseTuning(orb);
       if (orb.body) orb.body.enable = true;
     });
   }
@@ -7132,6 +7194,7 @@ castR() {
     orb.ignoresWallCollision = false;
     orb.spawnTime = this.time.now;
     orb._pierceHitTimes = null;
+    this.applyYinYangOrbBaseTuning(orb);
     if (orb.body) {
       orb.body.setVelocity(0, 0);
       orb.body.enable = false;
