@@ -119,8 +119,10 @@ const DEBUG_BOSS = (() => {
   if (!LOCATION_CONTEXT) return false;
   try {
     const { params, hash } = LOCATION_CONTEXT;
+    const bossParam = (params.get("boss") || "").trim();
+    const isNumericBossRank = /^\d+$/.test(bossParam);
     return (params.get("debug") === "boss")
-      || params.has("boss")
+      || (params.has("boss") && !isNumericBossRank)
       || params.has("bossDebug")
       || (params.get("boss") === "Rin")
       || params.has("rin")
@@ -131,6 +133,31 @@ const DEBUG_BOSS = (() => {
     console.warn("Failed to parse boss debug flag", error); // eslint-disable-line no-console
     return false;
   }
+})();
+
+const parsePositiveRankParam = (params, key) => {
+  if (!params?.has?.(key)) return null;
+  const raw = (params.get(key) || "").trim();
+  if (!/^\d+$/.test(raw)) return null;
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isFinite(value) || value < 0) return null;
+  return Math.floor(value);
+};
+
+const DEBUG_ROOM_TEST = (() => {
+  if (!LOCATION_CONTEXT) return null;
+  try {
+    const { params } = LOCATION_CONTEXT;
+    const fightRank = parsePositiveRankParam(params, "fight");
+    if (fightRank != null) return { type: "fight", rank: fightRank };
+    const eliteRank = parsePositiveRankParam(params, "elite");
+    if (eliteRank != null) return { type: "elite", rank: eliteRank };
+    const bossRank = parsePositiveRankParam(params, "boss");
+    if (bossRank != null) return { type: "boss", rank: bossRank };
+  } catch (error) {
+    console.warn("Failed to parse room test flag", error); // eslint-disable-line no-console
+  }
+  return null;
 })();
 
 const DEBUG_SHOP = (() => {
@@ -326,7 +353,7 @@ const QUEST_DEFINITIONS = Object.freeze([
     id: QUEST_IDS.ETERNAL_NIGHT,
     name: "永夜异变",
     type: "mana",
-    target: 10000,
+    target: 1000,
     initialReward: "女神之泪",
     initialGrant: { itemId: TEAR_OF_THE_GODDESS_ID },
     reward: "当受到攻击时，优先使用蓝量抵消造成的伤害",
@@ -443,6 +470,8 @@ const randomSample = (array, count, rng = shopRandom) => {
   return pool.slice(0, limit);
 };
 
+const shuffleArray = (array, rng = shopRandom) => randomSample(array, array.length, rng);
+
 /* 原始 dummy Boss（保留以便其他关卡可调用） */
 const BOSS_TEST_CONFIG = {
   id: "Dummy",
@@ -555,9 +584,75 @@ const BOSS_REGISTRY = {
 /* ==== 装备数据 ==== */
 /* ==== 回合与数值 ==== */
 const ROUND_DURATION = 60000;
-const RANK_INITIAL = 10;
+const CHEST_ROOM_DURATION = 20000;
+const GROWTH_ROOM_DURATION = 2 * 60000;
+const RANK_INITIAL = 0;
 const ROUND_CONTINUE_RANK_BONUS = 1;
 const PICKUP_ATTRACT_SPEED = 240;
+const DEBUG_ROOM_START_GOLD = 20000;
+
+const WORLD_MAP_ROWS = 5;
+const WORLD_MAP_COLS = 5;
+const WORLD_MAP_START = Object.freeze({ row: WORLD_MAP_ROWS - 1, col: 0 });
+const WORLD_MAP_BOSS = Object.freeze({ row: 0, col: WORLD_MAP_COLS - 1 });
+
+const ROOM_TYPES = Object.freeze({
+  HOME: "home",
+  FIGHT: "fight",
+  GROWTH: "growth",
+  SHOP_EQUIPMENT: "shop_equipment",
+  SHOP_BODY: "shop_body",
+  ELITE: "elite",
+  CHEST: "chest",
+  BOSS: "boss",
+});
+
+const ROOM_LABELS = Object.freeze({
+  [ROOM_TYPES.HOME]: "home",
+  [ROOM_TYPES.FIGHT]: "fight",
+  [ROOM_TYPES.GROWTH]: "growth",
+  [ROOM_TYPES.SHOP_EQUIPMENT]: "shop",
+  [ROOM_TYPES.SHOP_BODY]: "shop",
+  [ROOM_TYPES.ELITE]: "elite",
+  [ROOM_TYPES.CHEST]: "chest",
+  [ROOM_TYPES.BOSS]: "boss",
+});
+
+const ROOM_ICON_PATHS = Object.freeze({
+  home: "assets/minimap/home.png",
+  fight: "assets/minimap/fight.png",
+  growth: "assets/minimap/fightsp.png",
+  shop: "assets/minimap/shop.png",
+  elite: "assets/minimap/elite.png",
+  chest: "assets/minimap/chest.png",
+  boss: "assets/minimap/elite.png",
+  empty: "assets/minimap/empty.png",
+  current: "assets/minimap/current.png",
+  passed: "assets/minimap/passed.png",
+  horizontal: "assets/minimap/horizontal.png",
+  vertical: "assets/minimap/vertical.png",
+});
+
+const WORLD_MAP_ICON_BACKGROUND_RGB = Object.freeze({ r: 0x14, g: 0x10, b: 0x13 });
+const WORLD_MAP_ICON_BACKGROUND_STRIP_PATHS = Object.freeze([
+  ROOM_ICON_PATHS.home,
+  ROOM_ICON_PATHS.fight,
+  ROOM_ICON_PATHS.growth,
+  ROOM_ICON_PATHS.shop,
+  ROOM_ICON_PATHS.chest,
+]);
+
+const WORLD_MAP_ROOM_POOL = Object.freeze([
+  ...Array.from({ length: 10 }, () => ROOM_TYPES.FIGHT),
+  ...Array.from({ length: 2 }, () => ROOM_TYPES.GROWTH),
+  ...Array.from({ length: 5 }, () => ROOM_TYPES.SHOP_EQUIPMENT),
+  ...Array.from({ length: 1 }, () => ROOM_TYPES.SHOP_BODY),
+  ...Array.from({ length: 2 }, () => ROOM_TYPES.ELITE),
+  ...Array.from({ length: 2 }, () => ROOM_TYPES.CHEST),
+]);
+
+const REGULAR_ROOM_TYPES = new Set([ROOM_TYPES.FIGHT, ROOM_TYPES.GROWTH]);
+const FIXED_ENCOUNTER_ROOM_TYPES = new Set([ROOM_TYPES.ELITE, ROOM_TYPES.BOSS]);
 
 const STAT_UNITS_PER_TILE = 64;
 const PIXELS_PER_TILE = TILE_SIZE;
@@ -616,7 +711,7 @@ const setFontSizeByScale = (text, scale) => {
 const WEAPON_ORBIT_RADIUS = 25;
 // 基础转速（远程/默认）。近战以此为基准体现“攻速=转速”，现应将近战初始转速提升为当前的 2 倍。
 const WEAPON_ORBIT_SPEED = 180; // deg/s（基础）
-const MELEE_BASE_ORBIT_SPEED_MULTIPLIER = 2; // 近战初始转速×2
+const MELEE_BASE_ORBIT_SPEED_MULTIPLIER = 1; // 近战初始转速
 // Focus(Shift) 对阴阳玉轨道的影响
 const FOCUS_ORBIT_RADIUS_MULTIPLIER = 0.6; // 按住Shift时：半径缩小为60%
 const FOCUS_ORBIT_SPEED_MULTIPLIER = 2;    // 按住Shift时：转速×2
@@ -633,7 +728,7 @@ const EFFECT_BULLET_INTERVAL_MS = 70;
 const RUNAAN_BOLT_ANGLES_DEG = [0, -15, 15];
 const BULLET_LIFETIME = 4500; // ms
 
-const ENEMY_MAX_COUNT = 100;
+const ENEMY_MAX_COUNT = 800;
 const ENEMY_CONTACT_DAMAGE = 45;
 
 const ENEMY_RARITIES = Object.freeze({
@@ -651,10 +746,10 @@ const ENEMY_RARITY_SEQUENCE = Object.freeze([
 ]);
 
 const ENEMY_RARITY_WEIGHTS = Object.freeze({
-  [ENEMY_RARITIES.BASIC]: 0.80,
-  [ENEMY_RARITIES.MID]: 0.10,
-  [ENEMY_RARITIES.EPIC]: 0.08,
-  [ENEMY_RARITIES.LEGENDARY]: 0.02,
+  [ENEMY_RARITIES.BASIC]: 0.50,
+  [ENEMY_RARITIES.MID]: 0.30,
+  [ENEMY_RARITIES.EPIC]: 0.15,
+  [ENEMY_RARITIES.LEGENDARY]: 0.05,
 });
 
 const ENEMY_SPAWN_RADIUS_MAX = 300;
@@ -668,12 +763,32 @@ const MAP_SHOP_COUNT = 2;
 const MAP_CHEST_COUNT = 10;
 
 const ENEMY_TYPE_CONFIG = Object.freeze({
-  kedama: {
-    kind: "charger",
-    weight: 0.45,
+  ghost: {
+    kind: "ghost",
+    weight: 0.80,
     tiers: {
       [ENEMY_RARITIES.BASIC]: {
         unlockRank: 0,
+        hp: 1,
+        attackDamage: 5,
+        abilityPower: 0,
+        armor: 0,
+        defense: 0,
+        moveSpeed: 50,
+        textureKey: "enemy_ghost_basic",
+        spawnEffectKey: "enemy_spawn_basic",
+        scale: 0.5,
+        hitRadius: 10,
+        dropRange: { min: 0, max: 1 },
+      },
+    },
+  },
+  kedama: {
+    kind: "charger",
+    weight: 0.04,
+    tiers: {
+      [ENEMY_RARITIES.BASIC]: {
+        unlockRank: 2,
         hp: 100,
         attackDamage: 10,
         abilityPower: 0,
@@ -691,7 +806,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 1, max: 1 },
       },
       [ENEMY_RARITIES.MID]: {
-        unlockRank: 11,
+        unlockRank: 5,
         hp: 400,
         attackDamage: 50,
         abilityPower: 0,
@@ -709,7 +824,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 10, max: 10 },
       },
       [ENEMY_RARITIES.EPIC]: {
-        unlockRank: 14,
+        unlockRank: 9,
         hp: 1000,
         attackDamage: 100,
         abilityPower: 0,
@@ -727,9 +842,9 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 50, max: 50 },
       },
       [ENEMY_RARITIES.LEGENDARY]: {
-        unlockRank: 17,
+        unlockRank: 12,
         hp: 3000,
-        attackDamage: 300,
+        attackDamage: 70,
         abilityPower: 0,
         armor: 0,
         defense: 0,
@@ -748,10 +863,10 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
   },
   robotcharger: {
     kind: "charger",
-    weight: 0.45,
+    weight: 0.04,
     tiers: {
       [ENEMY_RARITIES.BASIC]: {
-        unlockRank: 0,
+        unlockRank: 2,
         hp: 200,
         attackDamage: 10,
         abilityPower: 0,
@@ -769,7 +884,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 1, max: 1 },
       },
       [ENEMY_RARITIES.MID]: {
-        unlockRank: 11,
+        unlockRank: 5,
         hp: 400,
         attackDamage: 50,
         abilityPower: 0,
@@ -787,9 +902,9 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 10, max: 10 },
       },
       [ENEMY_RARITIES.EPIC]: {
-        unlockRank: 14,
+        unlockRank: 9,
         hp: 1600,
-        attackDamage: 100,
+        attackDamage: 70,
         abilityPower: 0,
         armor: 0,
         defense: 0,
@@ -805,9 +920,9 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 50, max: 50 },
       },
       [ENEMY_RARITIES.LEGENDARY]: {
-        unlockRank: 17,
+        unlockRank: 12,
         hp: 6400,
-        attackDamage: 150,
+        attackDamage: 100,
         abilityPower: 0,
         armor: 0,
         defense: 0,
@@ -826,10 +941,10 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
   },
   robotcaster: {
     kind: "robotcaster",
-    weight: 0.25,
+    weight: 0.04,
     tiers: {
       [ENEMY_RARITIES.BASIC]: {
-        unlockRank: 12,
+        unlockRank: 5,
         hp: 100,
         attackDamage: 10,
         abilityPower: 10,
@@ -837,8 +952,8 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         defense: 0,
         moveSpeed: 50,
         detectionRadius: 300,
-        shotIntervalMs: 200,
-        bulletSpeed: 30,
+        shotIntervalMs: 1000,
+        bulletSpeed: 60,
         bulletTextureKey: "enemy_bullet_basic",
         nodeCount: 2,
         nodeRadius: 50,
@@ -850,24 +965,24 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 10, max: 20 },
       },
       [ENEMY_RARITIES.MID]: {
-        unlockRank: 13,
+        unlockRank: 8,
         hp: 200,
         attackDamage: 10,
-        abilityPower: 50,
+        abilityPower: 10,
         armor: 0,
         defense: 0,
         moveSpeed: 50,
         detectionRadius: 300,
-        shotIntervalMs: 200,
-        bulletSpeed: 30,
+        shotIntervalMs: 1000,
+        bulletSpeed: 70,
         bulletTextureKey: "enemy_bullet_mid",
         nodeCount: 4,
         nodeRadius: 20,
         nodeRotationSpeed: 0.0015,
         extraGun: {
           textureKey: "enemy_bullet_gun",
-          speed: 200,
-          offsetsDeg: [0],
+          speed: 100,
+          offsetsDeg: [0, -55, 55],
         },
         textureKey: "enemy_robotcaster_mid",
         spawnEffectKey: "enemy_spawn_mid",
@@ -876,24 +991,24 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 50, max: 80 },
       },
       [ENEMY_RARITIES.EPIC]: {
-        unlockRank: 14,
+        unlockRank: 12,
         hp: 400,
         attackDamage: 10,
-        abilityPower: 50,
+        abilityPower: 10,
         armor: 0,
         defense: 0,
         moveSpeed: 50,
         detectionRadius: 300,
-        shotIntervalMs: 200,
-        bulletSpeed: 30,
+        shotIntervalMs: 1000,
+        bulletSpeed: 80,
         bulletTextureKey: "enemy_bullet_epic",
         nodeCount: 8,
         nodeRadius: 30,
         nodeRotationSpeed: 0.003,
         extraGun: {
           textureKey: "enemy_bullet_gun",
-          speed: 220,
-          offsetsDeg: [0],
+          speed: 100,
+          offsetsDeg: [0, -55, 55],
         },
         textureKey: "enemy_robotcaster_epic",
         spawnEffectKey: "enemy_spawn_epic",
@@ -902,24 +1017,24 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 80, max: 120 },
       },
       [ENEMY_RARITIES.LEGENDARY]: {
-        unlockRank: 21,
+        unlockRank: 15,
         hp: 400,
         attackDamage: 10,
-        abilityPower: 50,
+        abilityPower: 10,
         armor: 0,
         defense: 0,
         moveSpeed: 50,
         detectionRadius: 300,
-        shotIntervalMs: 200,
-        bulletSpeed: 50,
+        shotIntervalMs: 1000,
+        bulletSpeed: 100,
         bulletTextureKey: "enemy_bullet_legendary",
         nodeCount: 10,
         nodeRadius: 100,
         nodeRotationSpeed: 0.004,
         extraGun: {
           textureKey: "enemy_bullet_gun",
-          speed: 260,
-          offsetsDeg: [0, -15, 15],
+          speed: 100,
+          offsetsDeg: [0, -55, 55],
         },
         textureKey: "enemy_robotcaster_legendary",
         spawnEffectKey: "enemy_spawn_legendary",
@@ -931,14 +1046,14 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
   },
   yousei: {
     kind: "caster",
-    weight: 0.08,
+    weight: 0.04,
     tiers: {
       [ENEMY_RARITIES.BASIC]: {
-        unlockRank: 12,
+        unlockRank: 5,
         hp: 100,
         attackDamage: 10,
-        abilityPower: 30,
-        armor: 10,
+        abilityPower: 10,
+        armor: 0,
         defense: 0,
         moveSpeed: 80,
         detectionRadius: 150,
@@ -946,7 +1061,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         attackDurationMs: 4000,
         shotIntervalMs: 200,
         spreadDeg: 45,
-        bulletSpeed: 100,
+        bulletSpeed: 50,
         bulletTextureKey: "enemy_bullet_basic",
         textureKey: "enemy_yousei_basic",
         spawnEffectKey: "enemy_spawn_basic",
@@ -955,7 +1070,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 10, max: 20 },
       },
       [ENEMY_RARITIES.MID]: {
-        unlockRank: 13,
+        unlockRank: 8,
         hp: 100,
         attackDamage: 10,
         abilityPower: 30,
@@ -967,7 +1082,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         attackDurationMs: 4000,
         shotIntervalMs: 100,
         spreadDeg: 30,
-        bulletSpeed: 120,
+        bulletSpeed: 60,
         bulletTextureKey: "enemy_bullet_mid",
         textureKey: "enemy_yousei_mid",
         spawnEffectKey: "enemy_spawn_mid",
@@ -976,7 +1091,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 50, max: 80 },
       },
       [ENEMY_RARITIES.EPIC]: {
-        unlockRank: 14,
+        unlockRank: 12,
         hp: 100,
         attackDamage: 10,
         abilityPower: 50,
@@ -988,7 +1103,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         attackDurationMs: 4000,
         shotIntervalMs: 50,
         spreadDeg: 25,
-        bulletSpeed: 150,
+        bulletSpeed: 70,
         bulletTextureKey: "enemy_bullet_epic",
         textureKey: "enemy_yousei_epic",
         spawnEffectKey: "enemy_spawn_epic",
@@ -997,7 +1112,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 80, max: 100 },
       },
       [ENEMY_RARITIES.LEGENDARY]: {
-        unlockRank: 21,
+        unlockRank: 15,
         hp: 100,
         attackDamage: 10,
         abilityPower: 75,
@@ -1009,7 +1124,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         attackDurationMs: 4000,
         shotIntervalMs: 10,
         spreadDeg: 50,
-        bulletSpeed: 100,
+        bulletSpeed: 60,
         bulletTextureKey: "enemy_bullet_legendary",
         textureKey: "enemy_yousei_legendary",
         spawnEffectKey: "enemy_spawn_legendary",
@@ -1021,10 +1136,10 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
   },
   orb: {
     kind: "turret",
-    weight: 0.02,
+    weight: 0.04,
     tiers: {
       [ENEMY_RARITIES.BASIC]: {
-        unlockRank: 11,
+        unlockRank: 4,
         hp: 50,
         attackDamage: 0,
         abilityPower: 50,
@@ -1035,8 +1150,8 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_basic",
         scale: 1,
         hitRadius: 13,
-        attackIntervalMs: 4000,
-        ringBulletCount: 8,
+        attackIntervalMs: 1000,
+        ringBulletCount: 4,
         ringBulletSpeed: 40,
         ringBulletTextureKey: "enemy_bullet_basic",
         proximityRadius: 100,
@@ -1045,7 +1160,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 5, max: 15 },
       },
       [ENEMY_RARITIES.MID]: {
-        unlockRank: 13,
+        unlockRank: 7,
         hp: 200,
         attackDamage: 0,
         abilityPower: 50,
@@ -1056,8 +1171,8 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_mid",
         scale: 1.5,
         hitRadius: 14,
-        attackIntervalMs: 4000,
-        ringBulletCount: 20,
+        attackIntervalMs: 1000,
+        ringBulletCount: 8,
         ringBulletSpeed: 60,
         ringBulletTextureKey: "enemy_bullet_mid",
         proximityRadius: 100,
@@ -1066,7 +1181,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 15, max: 25 },
       },
       [ENEMY_RARITIES.EPIC]: {
-        unlockRank: 15,
+        unlockRank: 11,
         hp: 250,
         attackDamage: 0,
         abilityPower: 50,
@@ -1077,8 +1192,8 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_epic",
         scale: 1.8,
         hitRadius: 16,
-        attackIntervalMs: 4000,
-        ringBulletCount: 60,
+        attackIntervalMs: 1000,
+        ringBulletCount: 10,
         ringBulletSpeed: 40,
         ringBulletTextureKey: "enemy_bullet_epic",
         proximityRadius: 100,
@@ -1092,7 +1207,7 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         dropRange: { min: 25, max: 50 },
       },
       [ENEMY_RARITIES.LEGENDARY]: {
-        unlockRank: 22,
+        unlockRank: 14,
         hp: 380,
         attackDamage: 0,
         abilityPower: 50,
@@ -1103,9 +1218,9 @@ const ENEMY_TYPE_CONFIG = Object.freeze({
         spawnEffectKey: "enemy_spawn_legendary",
         scale: 2,
         hitRadius: 17,
-        attackIntervalMs: 2000,
-        ringBulletCount: 60,
-        ringBulletSpeed: 20,
+        attackIntervalMs: 500,
+        ringBulletCount: 20,
+        ringBulletSpeed: 50,
         ringBulletTextureKey: "enemy_bullet_legendary",
         proximityRadius: 100,
         extraRing: { count: 30, speed: 30, textureKey: "enemy_bullet_gun" },
@@ -1168,7 +1283,7 @@ const MECH_CONFIGS = Object.freeze({
         "基础射速：1.5",
         "基础弹速：200",
         "射程：600",
-        "操作方式：自动锁敌，不可穿墙。（和当前普攻模式一致）",
+        "操作方式：自动锁敌",
         "Shift：显示判定点，并额外提升20%攻击速度",
       ],
     },
@@ -1188,8 +1303,8 @@ const MECH_CONFIGS = Object.freeze({
         "基础射速：2.0",
         "基础弹速：200",
         "射程：无限",
-        "操作方式：向鼠标指针方向自动射击，可穿墙（碰到地图边缘或敌人消失）",
-        "Shift：显示判定点，并根据额外攻击力提升射出的封魔针，每100攻击额外射出一个，最多6个，造成50%的伤害。（额外的封魔针横向排列，并且可以独立触发特效和暴击）",
+        "操作方式：向鼠标指针方向自动射击",
+        "Shift：显示判定点，并根据额外攻击力提升射出的封魔针，每100攻击额外射出一个，最多6个，造成50%的伤害。（额外的封魔针可以独立触发特效和暴击）",
       ],
     },
   },
@@ -1214,8 +1329,8 @@ const MECH_CONFIGS = Object.freeze({
         "基础射速：NaN",
         "基础弹速：200",
         "射程：无限",
-        "操作方式：攻击速度%转化为弹速%。点击后将旋转在角色四周的阴阳玉向鼠标方向抛出，阴阳玉遇到墙体反弹并对路径上的敌人造成穿透伤害。初始最多场上可存在的阴阳玉为1，每100法强额外增加1，最多8个。",
-        "Shift：立刻无视墙体判定在1秒内收回阴阳玉，在1秒内回到自机位置，同时对路径上所有敌人额外造成10+100%AP的魔法伤害。",
+        "操作方式：攻击速度%转化为弹速%。阴阳玉遇到墙体反弹并对路径上的敌人造成穿透伤害。场上可存在的阴阳玉为1，每100法强额外增加1。",
+        "Shift：立刻无视墙体判定在1秒内收回阴阳玉造成10+100%AP的魔法伤害。",
       ],
     },
   },
@@ -1246,6 +1361,7 @@ class PreloadScene extends Phaser.Scene {
     this.load.image("effect_explosion", "assets/effect/explosion.png");
     this.load.image("enemy", "assets/enemy/test_robot.png");
     this.load.image("point", "assets/item/point.png");
+    this.load.image("enemy_ghost_basic", "assets/enemy/Charger/ghost.png");
     this.load.image("enemy_kedama_basic", "assets/enemy/Charger/kedama_basic.png");
     this.load.image("enemy_kedama_mid", "assets/enemy/Charger/kedama_mid.png");
     this.load.image("enemy_kedama_epic", "assets/enemy/Charger/kedama_epic.png");
@@ -1490,10 +1606,9 @@ class GameScene extends Phaser.Scene {
     this.debugMode = DEBUG_SCENARIO;
     this.debugBossMode = DEBUG_BOSS;
     this.debugShopMode = DEBUG_SHOP;
-    // 关卡：从1开始，Boss关卡每20关
+    this.debugRoomTest = DEBUG_ROOM_TEST;
     this.isBossStage = false;
-    // 默认从第1关开始；debug 模式也从第1关
-    this.level = 1; // 关卡必须是整数
+    this.level = 1;
     this.playerStats = { ...PLAYER_BASE_STATS };
     this.currentHp = this.playerStats.maxHp;
     this.currentMana = this.playerStats.maxMana;
@@ -1508,19 +1623,11 @@ class GameScene extends Phaser.Scene {
     this._needleDisplaySize = null;
     this.rangeVisible = false;
     this.currentZoom = CAMERA_ZOOM;
-    this.rank = this.debugMode ? DEBUG_INITIAL_RANK : 
-                this.debugShopMode ? 50 : 
-                RANK_INITIAL;
-
-    // 当使用 ?boss（或等价的 boss 调试开关）时：将初始关卡与初始 rank 设为 20
-    if (this.debugBossMode) {
-      this.level = 20;
-      this.rank = 20;
-    }
-    // 初始化：根据关卡确定是否为 Boss 关（第10关和每20关）
-    this.isBossStage = (this.level === 10) || (this.level % 20 === 0);
+    this.rank = this.debugRoomTest?.rank
+      ?? (this.debugMode ? DEBUG_INITIAL_RANK : this.debugShopMode ? 50 : RANK_INITIAL);
+    this.level = this.rank;
     this.lastDamageTimestamp = 0;
-    this.roundTimeLeft = ROUND_DURATION;
+    this.roundTimeLeft = 0;
     this.roundComplete = false;
     this.roundAwaitingDecision = false;
     this.roundOverlayElements = [];
@@ -1538,6 +1645,7 @@ class GameScene extends Phaser.Scene {
     this.shopUi = null;
     this.shopUiHandlers = [];
     this.shopDynamicHandlers = [];
+    this.pendingDebugRoomStart = null;
     this.movementDirectionOrder = [];
     this.movementKeyHandlers = [];
     this.bulletTrailGroup = null;
@@ -1560,6 +1668,21 @@ class GameScene extends Phaser.Scene {
       lastMaxHp: PLAYER_BASE_STATS.maxHp,
     };
     this.isQuestSelectionActive = false;
+    this.isWorldMapActive = false;
+    this.isRewardSelectionActive = false;
+    this.rewardState = null;
+    this.worldMapState = null;
+    this.currentRoom = {
+      type: ROOM_TYPES.HOME,
+      timerDurationMs: 0,
+      hasTimer: false,
+      usesRankSpawns: false,
+      rewardTier: null,
+      clearCondition: null,
+      shopReason: null,
+      completeOnShopClose: false,
+      layout: null,
+    };
     // —— Q技能瞄准状态 —— //
     this.qAiming = false;           // 是否在按住Q进行瞄准
     this.qAimGraphics = null;       // Q的施法范围图形
@@ -1736,7 +1859,393 @@ this.playerWallCollider = null; // 保存玩家-墙体碰撞体
     this.bossBullets = null; // Boss子弹（含核弹/黄弹/蓝弹/危害微粒等）
   }
 
+  ensureRuntimeOverlayRoots() {
+    const root = document.querySelector(".root");
+    if (!root) return;
+    this.ensureRuntimeOverlayStyles();
+
+    if (!document.getElementById("worldmap-overlay")) {
+      const overlay = document.createElement("div");
+      overlay.id = "worldmap-overlay";
+      overlay.className = "worldmap-overlay";
+      overlay.innerHTML = `
+        <div class="worldmap-panel">
+          <div class="worldmap-title">World Map</div>
+          <div class="worldmap-message" id="worldmap-message"></div>
+          <div class="worldmap-grid" id="worldmap-grid"></div>
+        </div>
+      `;
+      root.appendChild(overlay);
+    }
+
+    if (!document.getElementById("reward-overlay")) {
+      const overlay = document.createElement("div");
+      overlay.id = "reward-overlay";
+      overlay.className = "reward-overlay";
+      overlay.innerHTML = `
+        <div class="reward-panel">
+          <div class="reward-title" id="reward-title">Choose Reward</div>
+          <div class="reward-subtitle" id="reward-subtitle"></div>
+          <div class="reward-message" id="reward-message"></div>
+          <div class="reward-items" id="reward-items"></div>
+        </div>
+      `;
+      root.appendChild(overlay);
+    }
+  }
+
+  primeWorldMapIconCache() {
+    if (this.worldMapIconCachePrimed) return;
+    this.worldMapIconCachePrimed = true;
+    if (!this.worldMapIconSrcCache) this.worldMapIconSrcCache = new Map();
+    WORLD_MAP_ICON_BACKGROUND_STRIP_PATHS.forEach((src) => {
+      this.stripWorldMapIconBackground(src);
+    });
+  }
+
+  stripWorldMapIconBackground(src) {
+    if (!src) return;
+    if (!this.worldMapIconSrcCache) this.worldMapIconSrcCache = new Map();
+    if (this.worldMapIconSrcCache.has(src)) return;
+    this.worldMapIconSrcCache.set(src, src);
+
+    const image = new Image();
+    image.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = image.naturalWidth || image.width;
+        canvas.height = image.naturalHeight || image.height;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return;
+        ctx.drawImage(image, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          if (
+            data[i + 3] > 0
+            && data[i] === WORLD_MAP_ICON_BACKGROUND_RGB.r
+            && data[i + 1] === WORLD_MAP_ICON_BACKGROUND_RGB.g
+            && data[i + 2] === WORLD_MAP_ICON_BACKGROUND_RGB.b
+          ) {
+            data[i + 3] = 0;
+          }
+        }
+        ctx.putImageData(imageData, 0, 0);
+        this.worldMapIconSrcCache.set(src, canvas.toDataURL("image/png"));
+        if (this.ui?.worldMapOverlay?.classList?.contains("visible")) this.renderWorldMapOverlay();
+      } catch (_) {
+        this.worldMapIconSrcCache.set(src, src);
+      }
+    };
+    image.onerror = () => {
+      this.worldMapIconSrcCache.set(src, src);
+    };
+    image.src = src;
+  }
+
+  ensureRuntimeOverlayStyles() {
+    if (document.getElementById("runtime-overlay-style")) return;
+    const style = document.createElement("style");
+    style.id = "runtime-overlay-style";
+    style.textContent = `
+      .worldmap-overlay,
+      .reward-overlay {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 640px;
+        height: 480px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(8, 6, 12, 0.88);
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .worldmap-overlay {
+        z-index: 2000;
+      }
+
+      .reward-overlay {
+        z-index: 2001;
+      }
+
+      .worldmap-overlay.visible,
+      .reward-overlay.visible {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .worldmap-panel {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        padding: 22px 24px;
+        color: #fff;
+        font-family: "Zpix", monospace;
+        box-sizing: border-box;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(77, 114, 178, 0.14), rgba(10, 8, 16, 0) 52%),
+          linear-gradient(180deg, rgba(14, 11, 22, 0.92), rgba(7, 5, 11, 0.96));
+      }
+
+      .reward-panel {
+        width: 560px;
+        max-width: 92%;
+        max-height: calc(480px - 40px);
+        background: linear-gradient(180deg, #1a1423, #0f0b16);
+        border: 2px solid #fff;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+        padding: 18px 20px 20px 20px;
+        color: #fff;
+        font-family: "Zpix", monospace;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow: auto;
+        box-sizing: border-box;
+      }
+
+      .worldmap-title,
+      .reward-title {
+        font-size: 20px;
+        letter-spacing: 2px;
+        text-align: center;
+        color: #ffd966;
+        text-shadow: 0 0 12px rgba(255, 217, 102, 0.18);
+      }
+
+      .worldmap-title {
+        position: absolute;
+        left: 50%;
+        top: 14px;
+        transform: translateX(-50%);
+        font-size: 16px;
+        letter-spacing: 3px;
+        width: max-content;
+      }
+
+      .worldmap-message,
+      .reward-subtitle,
+      .reward-message {
+        text-align: center;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.78);
+        min-height: 18px;
+      }
+
+      .worldmap-message {
+        position: absolute;
+        left: 50%;
+        top: 40px;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 420px;
+        min-height: 16px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.68);
+      }
+
+      .worldmap-grid {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: grid;
+        grid-template-columns: repeat(5, 54px);
+        grid-auto-rows: 52px;
+        justify-content: center;
+        align-content: center;
+        gap: 3px 5px;
+        margin: 0 auto;
+        padding: 0;
+      }
+
+      .worldmap-cell {
+        position: relative;
+        border: none;
+        outline: none;
+        box-shadow: none;
+        background: transparent;
+        color: #fff;
+        width: 54px;
+        height: 52px;
+        min-height: 52px;
+        padding: 0;
+        display: grid;
+        grid-template-rows: 36px 10px;
+        justify-items: center;
+        align-content: center;
+        row-gap: 4px;
+        font-family: "Zpix", monospace;
+        cursor: default;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        transition: transform 0.15s ease, filter 0.15s ease, opacity 0.15s ease;
+      }
+
+      .worldmap-cell:focus,
+      .worldmap-cell:focus-visible,
+      .worldmap-cell:active {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+      }
+
+      .worldmap-cell.is-selectable {
+        cursor: pointer;
+      }
+
+      .worldmap-cell.is-selectable:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08);
+      }
+
+      .worldmap-cell.is-selectable .worldmap-room {
+        filter: drop-shadow(0 0 8px rgba(130, 190, 255, 0.16));
+      }
+
+      .worldmap-cell.is-disabled {
+        opacity: 0.34;
+        cursor: default;
+        pointer-events: none;
+      }
+
+      .worldmap-room {
+        position: relative;
+        width: 35px;
+        height: 35px;
+        overflow: visible;
+      }
+
+      .worldmap-room-layer {
+        position: absolute;
+        image-rendering: pixelated;
+      }
+
+      .worldmap-room-layer.icon {
+        left: 50%;
+        top: 50%;
+        width: 20px;
+        height: 20px;
+        transform: translate(-50%, -50%);
+        z-index: 1;
+      }
+
+      .worldmap-room-layer.frame {
+        left: 50%;
+        top: 50%;
+        width: 20px;
+        height: 20px;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+      }
+
+      .worldmap-room-layer.connector-horizontal {
+        left: 50%;
+        top: 50%;
+        width: 12px;
+        height: 5px;
+        transform: translate(9px, -50%);
+        z-index: 0;
+      }
+
+      .worldmap-room-layer.connector-vertical {
+        left: 50%;
+        top: 50%;
+        width: 5px;
+        height: 12px;
+        transform: translate(-50%, 9px);
+        z-index: 0;
+      }
+
+      .worldmap-cell-label {
+        grid-row: 2;
+        font-size: 8px;
+        color: rgba(255, 255, 255, 0.94);
+        text-transform: lowercase;
+        letter-spacing: 0.4px;
+        line-height: 1;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+        white-space: nowrap;
+        transform: translateY(1px);
+      }
+
+      .worldmap-cell-meta {
+        display: none;
+      }
+
+      .reward-items {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+
+      .reward-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 220px;
+      }
+
+      .reward-card-icon {
+        width: 64px;
+        height: 64px;
+        border: 1px solid #ffffff88;
+        image-rendering: pixelated;
+        background: rgba(0, 0, 0, 0.2);
+        object-fit: contain;
+      }
+
+      .reward-card-name {
+        font-size: 16px;
+        letter-spacing: 1px;
+        color: #ffd966;
+      }
+
+      .reward-card-intro,
+      .reward-card-line {
+        font-size: 12px;
+        line-height: 1.4;
+        color: rgba(255, 255, 255, 0.82);
+      }
+
+      .reward-card-action {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: auto;
+      }
+
+      .reward-button {
+        background: #32274a;
+        border: 1px solid #ffffffaa;
+        color: #fff;
+        font-family: "Zpix", monospace;
+        font-size: 12px;
+        padding: 6px 12px;
+        cursor: pointer;
+      }
+
+      .reward-button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   create() {
+    this.ensureRuntimeOverlayRoots();
+    this.primeWorldMapIconCache();
     this.setupUIBindings();
     this.applyGameCursor(true);
     this.events.once("shutdown", () => this.applyGameCursor(false));
@@ -1755,9 +2264,6 @@ this.playerWallCollider = null; // 保存玩家-墙体碰撞体
     this.updateStatPanel();
     this.updateResourceBars();
     this.initializeShopSystem();
-
-    // 地图随机放置：商店与宝箱
-    this.spawnMapPlaces();
 
     /* ==== 新增：Boss弹幕分组与碰撞 ==== */
     this.bossBullets = this.physics.add.group();
@@ -1801,7 +2307,7 @@ this.playerWallCollider = null; // 保存玩家-墙体碰撞体
 
     const now = this.time.now;
     this.lastDamageTimestamp = now;
-    this.roundTimeLeft = ROUND_DURATION;
+    this.roundTimeLeft = 0;
     this.roundComplete = false;
     this.roundAwaitingDecision = false;
     this.updateOverlayScale();
@@ -1962,18 +2468,28 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
   if (corpse && corpse.active) this.killRinCorpse(corpse, false);
 });
 
+    if (!this.debugBossMode) {
+      this.ensureAmbientMusicPlaying();
+    }
+
+    if (this.debugRoomTest) {
+      this.playerPoints = Math.max(this.playerPoints, DEBUG_ROOM_START_GOLD);
+      this.pendingDebugRoomStart = { ...this.debugRoomTest };
+      this.updateHUD();
+      this.updateShopGoldLabel();
+      this.openShop("debugPrep");
+      return;
+    }
+
     if (this.debugShopMode) {
       this.playerPoints = Math.max(this.playerPoints, SHOP_DEBUG_START_GOLD);
       this.updateHUD();
       this.updateShopGoldLabel();
       this.openShop("debug");
+      return;
     }
 
-    if (!this.isBossStage) {
-      this.ensureAmbientMusicPlaying();
-    }
-
-    // Debug Boss 模式：停止一切音乐 -> 生成Utsuho -> 再播放Boss曲
+    // Legacy boss debug mode: 保留原入口，但不影响新的 ?boss={rank} 调试房
     if (this.debugBossMode) {
       this.stopAmbientMusic({ destroy: true });
       try { this.sound.stopAll(); } catch (_) {}
@@ -2028,6 +2544,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
         this.clearBossUI();
         if (this.bossMusic) { this.bossMusic.stop(); this.bossMusic.destroy(); this.bossMusic = null; }
       });
+      return;
     }
 
     this.setupQuestSystem();
@@ -2040,6 +2557,8 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       document.getElementById("game"),
       document.getElementById("shop-overlay"),
       document.getElementById("quest-overlay"),
+      document.getElementById("worldmap-overlay"),
+      document.getElementById("reward-overlay"),
       document.getElementById("stats-overlay"),
       document.getElementById("mech-select-overlay"),
     ];
@@ -2086,6 +2605,14 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       questOverlay: document.getElementById("quest-overlay"),
       questItems: document.getElementById("quest-items"),
       questTitle: document.getElementById("quest-title"),
+      worldMapOverlay: document.getElementById("worldmap-overlay"),
+      worldMapGrid: document.getElementById("worldmap-grid"),
+      worldMapMessage: document.getElementById("worldmap-message"),
+      rewardOverlay: document.getElementById("reward-overlay"),
+      rewardTitle: document.getElementById("reward-title"),
+      rewardSubtitle: document.getElementById("reward-subtitle"),
+      rewardItems: document.getElementById("reward-items"),
+      rewardMessage: document.getElementById("reward-message"),
       questStatus: document.getElementById("quest-status"),
       debugQuestButton: document.getElementById("debug-quest-complete-btn"),
     };
@@ -2195,6 +2722,8 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
         this.ui.debugQuestButton.removeEventListener("click", this.debugQuestButtonHandler);
       }
       this.debugQuestButtonHandler = null;
+      try { this.ui?.worldMapOverlay?.classList?.remove("visible"); } catch (_) {}
+      try { this.ui?.rewardOverlay?.classList?.remove("visible"); } catch (_) {}
     };
     this.events.once("shutdown", cleanupDebugQuestButton);
     this.events.once("destroy", cleanupDebugQuestButton);
@@ -2263,7 +2792,8 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
   setupQuestSystem() {
     if (this.debugBossMode) return;
     if (!this.questState || this.questState.selectedId) return;
-    if (Math.floor(this.level || 1) !== 1) return;
+    const currentLevel = Number.isFinite(this.level) ? Math.floor(this.level) : RANK_INITIAL;
+    if (currentLevel !== RANK_INITIAL) return;
     this.questState.options = this.pickQuestOptions(3);
     this.showQuestSelectionOverlay();
   }
@@ -2369,6 +2899,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
     this.hideQuestSelectionOverlay();
     this.updateQuestStatusUI();
     this.updateHUD();
+    this.startWorldMapRun();
   }
 
   isQuestRewardActive(id) {
@@ -2451,6 +2982,825 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
     this.questState.completed = true;
     if (def.needsRecalc) this.recalculateEquipmentEffects();
     this.updateQuestStatusUI();
+  }
+
+  setRankValue(nextRank) {
+    const rawValue = Number.isFinite(nextRank) ? nextRank : RANK_INITIAL;
+    const value = Math.max(0, Math.floor(rawValue));
+    this.rank = value;
+    this.level = value;
+  }
+
+  addRankStep(step = 1) {
+    const delta = Math.max(0, Math.floor(step || 0));
+    if (delta <= 0) return;
+    const currentRank = Number.isFinite(this.rank) ? this.rank : RANK_INITIAL;
+    this.setRankValue(currentRank + delta);
+  }
+
+  createWorldMapRoom(type, row, col, extra = {}) {
+    return {
+      id: `${row},${col}`,
+      row,
+      col,
+      type,
+      visited: false,
+      cleared: false,
+      ...extra,
+    };
+  }
+
+  buildWorldMapState() {
+    const grid = Array.from({ length: WORLD_MAP_ROWS }, (_, row) => (
+      Array.from({ length: WORLD_MAP_COLS }, (_, col) => this.createWorldMapRoom(ROOM_TYPES.FIGHT, row, col))
+    ));
+
+    grid[WORLD_MAP_START.row][WORLD_MAP_START.col] = this.createWorldMapRoom(
+      ROOM_TYPES.HOME,
+      WORLD_MAP_START.row,
+      WORLD_MAP_START.col,
+      { visited: true, cleared: true },
+    );
+    grid[WORLD_MAP_BOSS.row][WORLD_MAP_BOSS.col] = this.createWorldMapRoom(
+      ROOM_TYPES.BOSS,
+      WORLD_MAP_BOSS.row,
+      WORLD_MAP_BOSS.col,
+    );
+
+    const bossNeighbors = [
+      { row: WORLD_MAP_BOSS.row + 1, col: WORLD_MAP_BOSS.col },
+      { row: WORLD_MAP_BOSS.row, col: WORLD_MAP_BOSS.col - 1 },
+    ].filter(({ row, col }) => row >= 0 && row < WORLD_MAP_ROWS && col >= 0 && col < WORLD_MAP_COLS);
+    const reservedShop = randomElement(bossNeighbors) || bossNeighbors[0];
+    if (reservedShop) {
+      grid[reservedShop.row][reservedShop.col] = this.createWorldMapRoom(
+        ROOM_TYPES.SHOP_EQUIPMENT,
+        reservedShop.row,
+        reservedShop.col,
+      );
+    }
+
+    const pool = shuffleArray(WORLD_MAP_ROOM_POOL);
+    const remainingCells = [];
+    for (let row = 0; row < WORLD_MAP_ROWS; row += 1) {
+      for (let col = 0; col < WORLD_MAP_COLS; col += 1) {
+        const isStart = row === WORLD_MAP_START.row && col === WORLD_MAP_START.col;
+        const isBoss = row === WORLD_MAP_BOSS.row && col === WORLD_MAP_BOSS.col;
+        const isReserved = reservedShop && row === reservedShop.row && col === reservedShop.col;
+        if (!isStart && !isBoss && !isReserved) remainingCells.push({ row, col });
+      }
+    }
+
+    remainingCells.forEach(({ row, col }, index) => {
+      const type = pool[index] || ROOM_TYPES.FIGHT;
+      grid[row][col] = this.createWorldMapRoom(type, row, col);
+    });
+
+    return {
+      grid,
+      currentRow: WORLD_MAP_START.row,
+      currentCol: WORLD_MAP_START.col,
+      connections: new Set(),
+    };
+  }
+
+  getWorldMapRoom(row, col) {
+    return this.worldMapState?.grid?.[row]?.[col] || null;
+  }
+
+  getCurrentWorldMapRoom() {
+    if (!this.worldMapState) return null;
+    return this.getWorldMapRoom(this.worldMapState.currentRow, this.worldMapState.currentCol);
+  }
+
+  getWorldMapEdgeKey(a, b) {
+    if (!a || !b) return "";
+    const left = `${a.row},${a.col}`;
+    const right = `${b.row},${b.col}`;
+    return left < right ? `${left}|${right}` : `${right}|${left}`;
+  }
+
+  isAdjacentWorldMapCell(row, col) {
+    if (!this.worldMapState) return false;
+    const dr = Math.abs(row - this.worldMapState.currentRow);
+    const dc = Math.abs(col - this.worldMapState.currentCol);
+    return dr + dc === 1;
+  }
+
+  pauseForWorldMap() {
+    if (this.isWorldMapActive) return;
+    this.isWorldMapActive = true;
+    this.physics.pause();
+    this.time.timeScale = 0;
+    if (this.battleBgm?.isPlaying) this.battleBgm.pause();
+    if (this.nonBattleBgm?.isPlaying) this.nonBattleBgm.pause();
+    if (this.attackTimer) this.attackTimer.paused = true;
+    if (this.spawnTimer) this.spawnTimer.paused = true;
+  }
+
+  resumeAfterWorldMap() {
+    if (!this.isWorldMapActive) return;
+    this.isWorldMapActive = false;
+    this.time.timeScale = 1;
+    this.physics.resume();
+    [this.battleBgm, this.nonBattleBgm].forEach((track) => {
+      if (!track) return;
+      if (track.isPaused) track.resume();
+      else if (!track.isPlaying) track.play();
+    });
+    if (this.attackTimer) this.attackTimer.paused = false;
+    if (this.spawnTimer) this.spawnTimer.paused = false;
+  }
+
+  openWorldMapOverlay(message = "") {
+    const overlay = this.ui?.worldMapOverlay;
+    if (!overlay) return;
+    if (this.ui?.worldMapMessage) this.ui.worldMapMessage.textContent = message;
+    this.renderWorldMapOverlay();
+    overlay.classList.add("visible");
+    this.pauseForWorldMap();
+  }
+
+  closeWorldMapOverlay() {
+    if (this.ui?.worldMapOverlay) this.ui.worldMapOverlay.classList.remove("visible");
+    this.resumeAfterWorldMap();
+  }
+
+  getWorldMapRoomIconPath(room) {
+    if (!room) return null;
+    let src = null;
+    if (room.type === ROOM_TYPES.HOME) src = ROOM_ICON_PATHS.home;
+    else if (room.cleared) src = ROOM_ICON_PATHS.empty;
+    else {
+      switch (room.type) {
+        case ROOM_TYPES.GROWTH:
+          src = ROOM_ICON_PATHS.growth;
+          break;
+        case ROOM_TYPES.SHOP_EQUIPMENT:
+        case ROOM_TYPES.SHOP_BODY:
+          src = ROOM_ICON_PATHS.shop;
+          break;
+        case ROOM_TYPES.ELITE:
+          src = ROOM_ICON_PATHS.elite;
+          break;
+        case ROOM_TYPES.CHEST:
+          src = ROOM_ICON_PATHS.chest;
+          break;
+        case ROOM_TYPES.BOSS:
+          src = ROOM_ICON_PATHS.boss;
+          break;
+        case ROOM_TYPES.FIGHT:
+        default:
+          src = ROOM_ICON_PATHS.fight;
+          break;
+      }
+    }
+    return this.worldMapIconSrcCache?.get(src) || src;
+  }
+
+  renderWorldMapOverlay() {
+    const host = this.ui?.worldMapGrid;
+    if (!host || !this.worldMapState) return;
+    host.innerHTML = "";
+    const currentRow = this.worldMapState.currentRow;
+    const currentCol = this.worldMapState.currentCol;
+
+    for (let row = 0; row < WORLD_MAP_ROWS; row += 1) {
+      for (let col = 0; col < WORLD_MAP_COLS; col += 1) {
+        const room = this.getWorldMapRoom(row, col);
+        const cell = document.createElement("div");
+        cell.className = "worldmap-cell";
+        const isCurrent = row === currentRow && col === currentCol;
+        const selectable = this.isAdjacentWorldMapCell(row, col);
+        if (isCurrent) cell.classList.add("is-current");
+        if (selectable && !isCurrent) cell.classList.add("is-selectable");
+        if (room?.cleared) cell.classList.add("is-cleared");
+        if (!selectable || isCurrent) cell.classList.add("is-disabled");
+        cell.setAttribute("role", "button");
+        cell.setAttribute("aria-disabled", (!selectable || isCurrent) ? "true" : "false");
+        cell.tabIndex = (selectable && !isCurrent) ? 0 : -1;
+
+        const roomEl = document.createElement("div");
+        roomEl.className = "worldmap-room";
+
+        const rightRoom = this.getWorldMapRoom(row, col + 1);
+        if (rightRoom && this.worldMapState.connections.has(this.getWorldMapEdgeKey(room, rightRoom))) {
+          const connector = document.createElement("img");
+          connector.className = "worldmap-room-layer connector-horizontal";
+          connector.src = ROOM_ICON_PATHS.horizontal;
+          connector.alt = "";
+          roomEl.appendChild(connector);
+        }
+        const downRoom = this.getWorldMapRoom(row + 1, col);
+        if (downRoom && this.worldMapState.connections.has(this.getWorldMapEdgeKey(room, downRoom))) {
+          const connector = document.createElement("img");
+          connector.className = "worldmap-room-layer connector-vertical";
+          connector.src = ROOM_ICON_PATHS.vertical;
+          connector.alt = "";
+          roomEl.appendChild(connector);
+        }
+
+        const displayLabel = room?.cleared && room?.type !== ROOM_TYPES.HOME ? "empty" : (ROOM_LABELS[room?.type] || "room");
+        const iconPath = this.getWorldMapRoomIconPath(room);
+        if (iconPath) {
+          const icon = document.createElement("img");
+          icon.className = "worldmap-room-layer icon";
+          icon.src = iconPath;
+          icon.alt = displayLabel;
+          roomEl.appendChild(icon);
+        }
+
+        if (isCurrent) {
+          const frame = document.createElement("img");
+          frame.className = "worldmap-room-layer frame";
+          frame.src = ROOM_ICON_PATHS.current;
+          frame.alt = "";
+          roomEl.appendChild(frame);
+        }
+
+        const label = document.createElement("div");
+        label.className = "worldmap-cell-label";
+        label.textContent = displayLabel;
+
+        const meta = document.createElement("div");
+        meta.className = "worldmap-cell-meta";
+        if (isCurrent) meta.textContent = "current";
+        else if (selectable && room?.cleared) meta.textContent = "move";
+        else if (selectable) meta.textContent = "enter";
+
+        cell.appendChild(roomEl);
+        cell.appendChild(label);
+        cell.appendChild(meta);
+        if (selectable && !isCurrent) {
+          cell.addEventListener("click", () => this.handleWorldMapCellClick(row, col));
+          cell.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              this.handleWorldMapCellClick(row, col);
+            }
+          });
+        }
+        host.appendChild(cell);
+      }
+    }
+  }
+
+  handleWorldMapCellClick(row, col) {
+    if (!this.worldMapState) return;
+    if (!this.isAdjacentWorldMapCell(row, col)) return;
+    if (row === this.worldMapState.currentRow && col === this.worldMapState.currentCol) return;
+
+    const previous = this.getCurrentWorldMapRoom();
+    const nextRoom = this.getWorldMapRoom(row, col);
+    if (!nextRoom) return;
+
+    this.worldMapState.connections.add(this.getWorldMapEdgeKey(previous, nextRoom));
+    this.worldMapState.currentRow = row;
+    this.worldMapState.currentCol = col;
+    this.addRankStep(1);
+    this.updateHUD();
+
+    if (nextRoom.cleared || nextRoom.type === ROOM_TYPES.HOME) {
+      nextRoom.visited = true;
+      this.renderWorldMapOverlay();
+      if (this.ui?.worldMapMessage) {
+        this.ui.worldMapMessage.textContent = "已进入已探索区域，请继续选择下一步。";
+      }
+      return;
+    }
+
+    this.closeWorldMapOverlay();
+    this.startWorldMapRoom(nextRoom);
+  }
+
+  startWorldMapRun() {
+    if (!this.worldMapState) this.worldMapState = this.buildWorldMapState();
+    this.roundTimeLeft = 0;
+    if (this.currentRoom) this.currentRoom.hasTimer = false;
+    this.updateHUD();
+    this.openWorldMapOverlay("选择一个相邻区域前进。");
+  }
+
+  clearRoomEntitiesForTransition() {
+    if (this.spawnTimer) {
+      this.spawnTimer.remove();
+      this.spawnTimer = null;
+    }
+    this.clearEnemies();
+    this.clearAllBullets();
+    if (this.rinCorpses?.getChildren) this.rinCorpses.getChildren().forEach((corpse) => corpse?.destroy?.());
+    if (this.loot?.getChildren) this.loot.getChildren().forEach((point) => point?.destroy?.());
+    if (this.places) this.places.clear(true, true);
+    this.shopPlaces = [];
+    if (this.boss) {
+      try { this.boss.destroy(); } catch (_) {}
+      this.boss = null;
+    }
+    this.bossKind = null;
+    this.clearBossUI();
+    this.clearBossHeader();
+    if (this.bossMusic) {
+      try { this.bossMusic.stop(); this.bossMusic.destroy(); } catch (_) {}
+      this.bossMusic = null;
+    }
+    this.clearBossBullets?.();
+  }
+
+  prepareRoomState(roomConfig) {
+    this.clearRoomEntitiesForTransition();
+    this.currentRoom = {
+      type: roomConfig.type,
+      mapRoom: roomConfig.mapRoom || null,
+      timerDurationMs: roomConfig.timerDurationMs || 0,
+      hasTimer: !!roomConfig.hasTimer,
+      usesRankSpawns: !!roomConfig.usesRankSpawns,
+      rewardTier: roomConfig.rewardTier || null,
+      clearCondition: roomConfig.clearCondition || null,
+      shopReason: roomConfig.shopReason || null,
+      completeOnShopClose: !!roomConfig.completeOnShopClose,
+      layout: roomConfig.layout || null,
+      debugRoom: !!roomConfig.debugRoom,
+      completed: false,
+      eliteVariant: roomConfig.eliteVariant || null,
+    };
+    this.isBossStage = roomConfig.type === ROOM_TYPES.BOSS
+      || (roomConfig.type === ROOM_TYPES.ELITE && roomConfig.clearCondition === "bossKill");
+    this.roundTimeLeft = this.currentRoom.hasTimer ? this.currentRoom.timerDurationMs : 0;
+    this.roundComplete = false;
+    this.roundAwaitingDecision = false;
+    this.applyRoomLayout(this.currentRoom.layout);
+    this.movePlayerToActiveRoomCenter();
+    this.player?.body?.setVelocity?.(0, 0);
+    this.ensurePlayerOnValidPosition();
+  }
+
+  movePlayerToActiveRoomCenter() {
+    if (!this.player) return;
+    const center = this.getRoomCenterPosition();
+    this.player.setPosition(center.x, center.y);
+  }
+
+  getRoomTileBounds(bounds = this.activeRoomBounds) {
+    if (bounds) return bounds;
+    return {
+      minTileX: 0,
+      minTileY: 0,
+      maxTileX: MAP_TILES - 1,
+      maxTileY: MAP_TILES - 1,
+    };
+  }
+
+  getRoomPixelBounds(bounds = this.activeRoomBounds) {
+    const roomBounds = this.getRoomTileBounds(bounds);
+    const minX = roomBounds.minTileX * TILE_SIZE;
+    const minY = roomBounds.minTileY * TILE_SIZE;
+    const width = (roomBounds.maxTileX - roomBounds.minTileX + 1) * TILE_SIZE;
+    const height = (roomBounds.maxTileY - roomBounds.minTileY + 1) * TILE_SIZE;
+    return {
+      minX,
+      minY,
+      maxX: minX + width,
+      maxY: minY + height,
+      width,
+      height,
+    };
+  }
+
+  getRoomCenterPosition(bounds = this.activeRoomBounds) {
+    const room = this.getRoomPixelBounds(bounds);
+    return {
+      x: room.minX + room.width / 2,
+      y: room.minY + room.height / 2,
+    };
+  }
+
+  getActiveRoomInteriorPixelBounds(padding = TILE_SIZE) {
+    const room = this.getRoomPixelBounds();
+    return {
+      minX: room.minX + padding,
+      minY: room.minY + padding,
+      maxX: room.maxX - padding,
+      maxY: room.maxY - padding,
+    };
+  }
+
+  syncActiveRoomSceneBounds() {
+    const room = this.getRoomPixelBounds();
+    this.physics?.world?.setBounds?.(room.minX, room.minY, room.width, room.height);
+
+    if (this.floor) this.floor.destroy();
+    this.floor = this.add.tileSprite(
+      room.minX + room.width / 2,
+      room.minY + room.height / 2,
+      room.width,
+      room.height,
+      "floor",
+    ).setOrigin(0.5);
+    this.floor.setDepth(0);
+
+    const camera = this.cameras?.main;
+    if (camera) camera.setBounds(room.minX, room.minY, room.width, room.height);
+  }
+
+  startTimedSpawnRoom(config) {
+    this.prepareRoomState(config);
+    if (config.extraChestCount > 0) this.spawnRandomChests(config.extraChestCount);
+    if (config.extraShardShopCount > 0) this.spawnRandomShops(config.extraShardShopCount);
+    this.scheduleSpawnTimer();
+    this.ensureAmbientMusicPlaying();
+    this.updateHUD();
+  }
+
+  startWorldMapRoom(room) {
+    if (!room) return;
+    if (room.type === ROOM_TYPES.SHOP_EQUIPMENT) {
+      this.prepareRoomState({
+        type: room.type,
+        mapRoom: room,
+        layout: { kind: "boundary", roomWidth: 25, roomHeight: 25 },
+        shopReason: "mapShop",
+        completeOnShopClose: true,
+      });
+      this.openShop("mapShop");
+      return;
+    }
+    if (room.type === ROOM_TYPES.SHOP_BODY) {
+      this.prepareRoomState({
+        type: room.type,
+        mapRoom: room,
+        layout: { kind: "boundary", roomWidth: 25, roomHeight: 25 },
+        shopReason: "inRun",
+        completeOnShopClose: true,
+      });
+      this.openShop("inRun");
+      return;
+    }
+    if (room.type === ROOM_TYPES.FIGHT) {
+      this.startTimedSpawnRoom({
+        type: room.type,
+        mapRoom: room,
+        layout: { kind: "segments", roomWidth: 25, roomHeight: 25, segmentCount: 5, segmentLength: 6 },
+        hasTimer: true,
+        timerDurationMs: ROUND_DURATION,
+        usesRankSpawns: true,
+        rewardTier: ITEM_TIERS.BASIC,
+        clearCondition: "timer",
+      });
+      return;
+    }
+    if (room.type === ROOM_TYPES.GROWTH) {
+      this.startTimedSpawnRoom({
+        type: room.type,
+        mapRoom: room,
+        layout: { kind: "legacy" },
+        hasTimer: true,
+        timerDurationMs: GROWTH_ROOM_DURATION,
+        usesRankSpawns: true,
+        rewardTier: ITEM_TIERS.BASIC,
+        clearCondition: "timer",
+        extraChestCount: 10,
+        extraShardShopCount: 1,
+      });
+      return;
+    }
+    if (room.type === ROOM_TYPES.CHEST) {
+      this.prepareRoomState({
+        type: room.type,
+        mapRoom: room,
+        layout: { kind: "boundary", roomWidth: 19, roomHeight: 19 },
+        hasTimer: true,
+        timerDurationMs: CHEST_ROOM_DURATION,
+        clearCondition: "timer",
+      });
+      this.spawnRandomChests(10);
+      this.ensureAmbientMusicPlaying();
+      this.updateHUD();
+      return;
+    }
+    if (room.type === ROOM_TYPES.ELITE) {
+      this.startEliteRoom(room);
+      return;
+    }
+    if (room.type === ROOM_TYPES.BOSS) {
+      this.startBossRoom(room);
+    }
+  }
+
+  getSpawnableTypeKeysForTier(tierKey, { includeGhost = false } = {}) {
+    return Object.keys(ENEMY_TYPE_CONFIG).filter((typeKey) => {
+      if (!includeGhost && typeKey === "ghost") return false;
+      return !!ENEMY_TYPE_CONFIG[typeKey]?.tiers?.[tierKey];
+    });
+  }
+
+  findFallbackOpenPosition(options = {}) {
+    const bounds = this.activeRoomBounds || {
+      minTileX: 1,
+      minTileY: 1,
+      maxTileX: MAP_TILES - 2,
+      maxTileY: MAP_TILES - 2,
+    };
+    const roomCenter = this.getRoomCenterPosition();
+    const playerX = this.player?.x ?? roomCenter.x;
+    const playerY = this.player?.y ?? roomCenter.y;
+    const minPlayerDistance = Number.isFinite(options?.minPlayerDistance)
+      ? Math.max(0, options.minPlayerDistance)
+      : (this.currentRoom?.type === ROOM_TYPES.ELITE ? 200 : 0);
+    let bestPos = null;
+    let bestDistance = -1;
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      const tileX = Phaser.Math.Between(bounds.minTileX + 1, bounds.maxTileX - 1);
+      const tileY = Phaser.Math.Between(bounds.minTileY + 1, bounds.maxTileY - 1);
+      const pos = this.tileToWorldCenter(tileX, tileY);
+      if (!this.isPositionWalkable(pos.x, pos.y)) continue;
+      const distance = Phaser.Math.Distance.Between(pos.x, pos.y, playerX, playerY);
+      if (distance >= minPlayerDistance) return pos;
+      if (distance > bestDistance) {
+        bestDistance = distance;
+        bestPos = pos;
+      }
+    }
+    if (bestPos) return bestPos;
+    return this.tileToWorldCenter(
+      Math.floor((bounds.minTileX + bounds.maxTileX) / 2),
+      Math.floor((bounds.minTileY + bounds.maxTileY) / 2),
+    );
+  }
+
+  spawnEliteConfiguredEnemy(typeKey, tierKey, extra = {}) {
+    const typeConfig = ENEMY_TYPE_CONFIG[typeKey];
+    const tierConfig = typeConfig?.tiers?.[tierKey];
+    if (!typeConfig || !tierConfig) return null;
+    const def = { typeKey, typeConfig, tierKey, tierConfig };
+    const pos = this.findEnemySpawnPosition(def, { minPlayerDistance: 200 })
+      || this.findFallbackOpenPosition({ minPlayerDistance: 200 });
+    const enemy = this.spawnEnemyInstantly(typeKey, tierKey, pos);
+    if (!enemy) return null;
+    Object.assign(enemy, extra);
+    return enemy;
+  }
+
+  advanceEliteWaveEncounter() {
+    const waveState = this.currentRoom?.eliteWaveState;
+    if (!waveState || this.currentRoom?.clearCondition !== "eliteWaveClear" || this.currentRoom?.completed) return;
+    if (this.hasRemainingEncounterEnemies()) return;
+    if (waveState.spawnedWaves >= waveState.totalWaves) {
+      this.completeCurrentRoom();
+      return;
+    }
+
+    waveState.spawnedWaves += 1;
+    for (let i = 0; i < waveState.waveSize; i += 1) {
+      const typeKey = randomElement(waveState.typeKeys) || "ghost";
+      this.spawnEliteConfiguredEnemy(typeKey, ENEMY_RARITIES.BASIC);
+    }
+    this.updateHUD();
+  }
+
+  startEliteRoom(room = null, options = {}) {
+    const variant = Phaser.Math.Between(1, 4);
+    this.prepareRoomState({
+      type: ROOM_TYPES.ELITE,
+      mapRoom: room,
+      layout: { kind: "boundary", roomWidth: 50, roomHeight: 50 },
+      rewardTier: ITEM_TIERS.MID,
+      clearCondition: variant === 4 ? "bossKill" : "eliminateAll",
+      eliteVariant: variant,
+      debugRoom: !!options.debugRoom,
+    });
+
+    if (variant === 1) {
+      const typeKeys = randomSample(this.getSpawnableTypeKeysForTier(ENEMY_RARITIES.EPIC), 3, shopRandom);
+      typeKeys.forEach((typeKey) => {
+        this.spawnEliteConfiguredEnemy(typeKey, ENEMY_RARITIES.EPIC, {
+          eliteSpawnOnDeath: { typeKey, tierKey: ENEMY_RARITIES.MID, count: 3 },
+        });
+      });
+      this.ensureAmbientMusicPlaying();
+    } else if (variant === 2) {
+      const typeKeys = randomSample(this.getSpawnableTypeKeysForTier(ENEMY_RARITIES.LEGENDARY), 3, shopRandom);
+      typeKeys.forEach((typeKey) => this.spawnEliteConfiguredEnemy(typeKey, ENEMY_RARITIES.LEGENDARY));
+      this.ensureAmbientMusicPlaying();
+    } else if (variant === 3) {
+      const basicTypeKeys = this.getSpawnableTypeKeysForTier(ENEMY_RARITIES.BASIC, { includeGhost: true });
+      this.currentRoom.eliteWaveState = {
+        typeKeys: basicTypeKeys,
+        waveSize: 50,
+        totalWaves: 10,
+        spawnedWaves: 0,
+      };
+      this.currentRoom.clearCondition = "eliteWaveClear";
+      this.advanceEliteWaveEncounter();
+      this.ensureAmbientMusicPlaying();
+    } else {
+      this.stopAmbientMusic();
+      this.spawnBoss(BOSS_RIN_CONFIG);
+      this.createBossUI(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
+      this.showBossHeader(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
+      this.bossMusic = this.sound.add(BOSS_RIN_CONFIG.musicKey, { loop: true, volume: 1.0 });
+      this.bossMusic.play();
+    }
+    this.updateHUD();
+  }
+
+  startBossRoom(room = null, options = {}) {
+    this.prepareRoomState({
+      type: ROOM_TYPES.BOSS,
+      mapRoom: room,
+      layout: { kind: "boundary", roomWidth: MAP_TILES, roomHeight: MAP_TILES },
+      clearCondition: "bossKill",
+      debugRoom: !!options.debugRoom,
+    });
+    this.stopAmbientMusic();
+    this.spawnBossById("Utsuho", { x: WORLD_SIZE / 2, y: Math.floor(WORLD_SIZE * 0.25) });
+    if (!this.bossMusic) {
+      this.bossMusic = this.sound.add(BOSS_UTSUHO_CONFIG.musicKey, { loop: true, volume: 1.5 });
+    }
+    if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
+    this.updateHUD();
+  }
+
+  startDebugRoomTest(roomTest) {
+    if (!roomTest) return;
+    this.setRankValue(roomTest.rank);
+    this.updateHUD();
+    if (roomTest.type === ROOM_TYPES.BOSS || roomTest.type === "boss") {
+      this.startBossRoom(null, { debugRoom: true });
+      return;
+    }
+    if (roomTest.type === ROOM_TYPES.ELITE || roomTest.type === "elite") {
+      this.startEliteRoom(null, { debugRoom: true });
+      return;
+    }
+    this.startTimedSpawnRoom({
+      type: ROOM_TYPES.FIGHT,
+      mapRoom: null,
+      layout: { kind: "segments", roomWidth: 25, roomHeight: 25, segmentCount: 5, segmentLength: 6 },
+      hasTimer: true,
+      timerDurationMs: ROUND_DURATION,
+      usesRankSpawns: true,
+      rewardTier: ITEM_TIERS.BASIC,
+      clearCondition: "timer",
+      debugRoom: true,
+    });
+  }
+
+  openRewardSelection(tier, onComplete) {
+    const overlay = this.ui?.rewardOverlay;
+    const itemsHost = this.ui?.rewardItems;
+    if (!overlay || !itemsHost) {
+      if (typeof onComplete === "function") onComplete();
+      return;
+    }
+
+    const sourcePool = (ITEMS_BY_TIER[tier] || []).filter((item) => item && item.id !== HEALTH_POTION_ID && item.id !== REFILLABLE_POTION_ID);
+    const picks = randomSample(sourcePool, 3, shopRandom);
+    if (picks.length === 0) {
+      if (typeof onComplete === "function") onComplete();
+      return;
+    }
+    this.rewardState = { picks, onComplete };
+    this.isRewardSelectionActive = true;
+    itemsHost.innerHTML = "";
+    if (this.ui?.rewardTitle) this.ui.rewardTitle.textContent = tier === ITEM_TIERS.MID ? "Choose Mid Reward" : "Choose Basic Reward";
+    if (this.ui?.rewardSubtitle) this.ui.rewardSubtitle.textContent = "从三个奖励中选择一个。";
+    if (this.ui?.rewardMessage) this.ui.rewardMessage.textContent = "";
+
+    const emptySlotIndex = this.playerEquipmentSlots.findIndex((id) => id == null);
+    picks.forEach((item) => {
+      const card = document.createElement("div");
+      card.className = "reward-card";
+
+      const icon = document.createElement("img");
+      icon.className = "reward-card-icon";
+      icon.src = item.icon;
+      icon.alt = item.name;
+      card.appendChild(icon);
+
+      const name = document.createElement("div");
+      name.className = "reward-card-name";
+      name.textContent = item.name;
+      card.appendChild(name);
+
+      if (item.intro) {
+        const intro = document.createElement("div");
+        intro.className = "reward-card-intro";
+        intro.textContent = item.intro;
+        card.appendChild(intro);
+      }
+
+      (item.description || []).slice(0, 3).forEach((line) => {
+        const detail = document.createElement("div");
+        detail.className = "reward-card-line";
+        detail.textContent = line;
+        card.appendChild(detail);
+      });
+
+      const action = document.createElement("div");
+      action.className = "reward-card-action";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "reward-button";
+      button.textContent = "选择";
+      button.disabled = emptySlotIndex < 0;
+      button.addEventListener("click", () => this.handleRewardSelection(item.id));
+      action.appendChild(button);
+      card.appendChild(action);
+      itemsHost.appendChild(card);
+    });
+
+    if (emptySlotIndex < 0 && this.ui?.rewardMessage) {
+      this.ui.rewardMessage.textContent = "装备栏已满，本次奖励无法领取。";
+      const continueCard = document.createElement("div");
+      continueCard.className = "reward-card";
+      const continueBtn = document.createElement("button");
+      continueBtn.type = "button";
+      continueBtn.className = "reward-button";
+      continueBtn.textContent = "继续";
+      continueBtn.disabled = false;
+      continueBtn.addEventListener("click", () => this.handleRewardSelection(null));
+      continueCard.appendChild(continueBtn);
+      itemsHost.appendChild(continueCard);
+    }
+
+    overlay.classList.add("visible");
+    this.physics.pause();
+    this.time.timeScale = 0;
+    if (this.attackTimer) this.attackTimer.paused = true;
+    if (this.spawnTimer) this.spawnTimer.paused = true;
+  }
+
+  closeRewardSelection() {
+    if (this.ui?.rewardOverlay) this.ui.rewardOverlay.classList.remove("visible");
+    this.isRewardSelectionActive = false;
+    this.rewardState = null;
+    this.time.timeScale = 1;
+    this.physics.resume();
+    if (this.attackTimer) this.attackTimer.paused = false;
+    if (this.spawnTimer) this.spawnTimer.paused = false;
+  }
+
+  handleRewardSelection(itemId) {
+    const emptySlotIndex = this.playerEquipmentSlots.findIndex((id) => id == null);
+    if (emptySlotIndex >= 0 && itemId) {
+      this.equipItem(emptySlotIndex, itemId);
+    }
+    const callback = this.rewardState?.onComplete;
+    this.closeRewardSelection();
+    if (typeof callback === "function") callback();
+  }
+
+  finishRoomAndReturn() {
+    if (this.currentRoom?.debugRoom || !this.worldMapState) {
+      this.endRunVictory();
+      return;
+    }
+    this.openWorldMapOverlay("选择一个相邻区域继续前进。");
+  }
+
+  completeCurrentRoom(override = {}) {
+    if (this.currentRoom?.completed) return;
+    this.currentRoom.completed = true;
+    if (this.spawnTimer) {
+      this.spawnTimer.remove();
+      this.spawnTimer = null;
+    }
+    this.clearEnemies();
+    this.clearAllBullets();
+    if (this.rinCorpses?.getChildren) this.rinCorpses.getChildren().forEach((corpse) => corpse?.destroy?.());
+    if (this.loot?.getChildren) this.loot.getChildren().forEach((point) => point?.destroy?.());
+    if (this.places) this.places.clear(true, true);
+    this.shopPlaces = [];
+    this.roundTimeLeft = 0;
+    if (this.currentRoom) {
+      this.currentRoom.hasTimer = false;
+      this.currentRoom.usesRankSpawns = false;
+    }
+
+    const mapRoom = override.mapRoom || this.currentRoom?.mapRoom || null;
+    if (mapRoom) {
+      mapRoom.visited = true;
+      mapRoom.cleared = true;
+    }
+    this.updateHUD();
+
+    const rewardTier = override.rewardTier ?? this.currentRoom?.rewardTier ?? null;
+    const isBossClear = (override.type || this.currentRoom?.type) === ROOM_TYPES.BOSS;
+    if (isBossClear) {
+      this.endRunVictory();
+      return;
+    }
+
+    if (rewardTier) {
+      this.openRewardSelection(rewardTier, () => this.finishRoomAndReturn());
+      return;
+    }
+    this.finishRoomAndReturn();
+  }
+
+  hasRemainingEncounterEnemies() {
+    const enemies = this.enemies?.getChildren?.() || [];
+    return enemies.some((enemy) => enemy?.active);
   }
 
   recordQuestHeal(amount) {
@@ -2688,6 +4038,32 @@ updateChargerAI(enemy, now, delta) {
     }
     default: enemy.aiState = "idle"; return;
   }
+}
+
+updateGhostAI(enemy, now) {
+  const slowFactor = (enemy.slowUntil && now < enemy.slowUntil) ? (1 - (enemy.slowPct || 0)) : 1;
+  const moveSpeed = Math.max(0, (enemy.moveSpeed ?? 50) * slowFactor);
+  const navTarget = this.resolveEnemyNavigationTarget(enemy, now);
+  const nav = enemy.nav;
+  const hasNudge = nav && nav.nudgeUntil && now < nav.nudgeUntil;
+  if (hasNudge) {
+    const ang = nav.nudgeAngle ?? 0;
+    const spd = nav.nudgeSpeed && nav.nudgeSpeed > 0 ? nav.nudgeSpeed : Math.max(ENEMY_STUCK_NUDGE_SPEED_MIN, moveSpeed);
+    enemy.body.setVelocity(Math.cos(ang) * spd, Math.sin(ang) * spd);
+  } else if (navTarget) {
+    const dx = navTarget.x - enemy.x;
+    const dy = navTarget.y - enemy.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > 1) {
+      const k = moveSpeed / Math.max(dist, 1);
+      enemy.body.setVelocity(dx * k, dy * k);
+    } else {
+      enemy.body.setVelocity(0, 0);
+    }
+  } else {
+    this.physics.moveToObject(enemy, this.player, moveSpeed);
+  }
+  this.handleEnemyStuckState(enemy, moveSpeed, Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y), now);
 }
 
   handleRobotChargerWallImpact(enemy) {
@@ -3856,11 +5232,143 @@ updateSpellbladeOverlays() {
 
   /* ==== 地图 ==== */
   createMap() {
-    this.physics.world.setBounds(0, 0, WORLD_SIZE, WORLD_SIZE);
-    this.floor = this.add.tileSprite(WORLD_SIZE/2, WORLD_SIZE/2, WORLD_SIZE, WORLD_SIZE, "floor").setOrigin(0.5);
     this.wallGroup = this.physics.add.staticGroup();
     this.wallTiles = [];
-    this.generateRandomSegmentsMap();
+    this.applyRoomLayout({ kind: "boundary", roomWidth: 25, roomHeight: 25 });
+  }
+
+  applyRoomLayout(layout = null) {
+    const target = layout || { kind: "boundary", roomWidth: 25, roomHeight: 25 };
+    if (target.kind === "legacy") {
+      this.generateRandomSegmentsMap();
+      this.activeRoomBounds = {
+        minTileX: 0,
+        minTileY: 0,
+        maxTileX: MAP_TILES - 1,
+        maxTileY: MAP_TILES - 1,
+      };
+      this.syncActiveRoomSceneBounds();
+      return;
+    }
+    this.generateConfiguredRoomMap(target);
+    this.syncActiveRoomSceneBounds();
+  }
+
+  generateConfiguredRoomMap(config = {}) {
+    if (this.wallGroup) this.wallGroup.clear(true, true);
+    if (!this.wallTiles) this.wallTiles = [];
+    this.wallTiles.forEach((tile) => tile?.destroy?.());
+    this.wallTiles.length = 0;
+
+    const width = MAP_TILES;
+    const height = MAP_TILES;
+    const roomWidth = Phaser.Math.Clamp(Math.floor(config.roomWidth || MAP_TILES), 3, MAP_TILES);
+    const roomHeight = Phaser.Math.Clamp(Math.floor(config.roomHeight || MAP_TILES), 3, MAP_TILES);
+    const offsetX = Math.floor((width - roomWidth) / 2);
+    const offsetY = Math.floor((height - roomHeight) / 2);
+    const minTileX = offsetX;
+    const minTileY = offsetY;
+    const maxTileX = offsetX + roomWidth - 1;
+    const maxTileY = offsetY + roomHeight - 1;
+    this.activeRoomBounds = { minTileX, minTileY, maxTileX, maxTileY };
+
+    const halfTile = TILE_SIZE / 2;
+    const isWall = Array.from({ length: height }, () => Array(width).fill(true));
+    const inRoom = (x, y) => x >= minTileX && x <= maxTileX && y >= minTileY && y <= maxTileY;
+    const inBounds = (x, y) => x >= 0 && y >= 0 && x < width && y < height;
+    const markFloor = (x, y) => { if (inRoom(x, y)) isWall[y][x] = false; };
+
+    for (let y = minTileY; y <= maxTileY; y += 1) {
+      for (let x = minTileX; x <= maxTileX; x += 1) {
+        markFloor(x, y);
+      }
+    }
+    for (let x = minTileX; x <= maxTileX; x += 1) {
+      isWall[minTileY][x] = true;
+      isWall[maxTileY][x] = true;
+    }
+    for (let y = minTileY; y <= maxTileY; y += 1) {
+      isWall[y][minTileX] = true;
+      isWall[y][maxTileX] = true;
+    }
+
+    const centerTileX = Math.floor((minTileX + maxTileX) / 2);
+    const centerTileY = Math.floor((minTileY + maxTileY) / 2);
+    const blockedRadius = 2;
+    for (let dy = -blockedRadius; dy <= blockedRadius; dy += 1) {
+      for (let dx = -blockedRadius; dx <= blockedRadius; dx += 1) {
+        const tx = Phaser.Math.Clamp(centerTileX + dx, minTileX + 1, maxTileX - 1);
+        const ty = Phaser.Math.Clamp(centerTileY + dy, minTileY + 1, maxTileY - 1);
+        isWall[ty][tx] = false;
+      }
+    }
+
+    const segmentCount = Math.max(0, Math.floor(config.segmentCount || 0));
+    const segmentLength = Math.max(2, Math.floor(config.segmentLength || 0));
+    const isConnected = () => {
+      if (isWall[centerTileY][centerTileX]) return false;
+      const visited = Array.from({ length: height }, () => Array(width).fill(false));
+      const queue = [{ x: centerTileX, y: centerTileY }];
+      let head = 0;
+      visited[centerTileY][centerTileX] = true;
+      while (head < queue.length) {
+        const { x, y } = queue[head++];
+        [
+          { x: x + 1, y },
+          { x: x - 1, y },
+          { x, y: y + 1 },
+          { x, y: y - 1 },
+        ].forEach((next) => {
+          if (!inBounds(next.x, next.y) || !inRoom(next.x, next.y)) return;
+          if (visited[next.y][next.x] || isWall[next.y][next.x]) return;
+          visited[next.y][next.x] = true;
+          queue.push(next);
+        });
+      }
+
+      for (let y = minTileY + 1; y < maxTileY; y += 1) {
+        for (let x = minTileX + 1; x < maxTileX; x += 1) {
+          if (!isWall[y][x] && !visited[y][x]) return false;
+        }
+      }
+      return true;
+    };
+
+    const tryPlaceSegment = (tiles) => {
+      if (tiles.some(({ x, y }) => !inRoom(x, y) || isWall[y][x])) return false;
+      if (tiles.some(({ x, y }) => Math.abs(x - centerTileX) <= blockedRadius && Math.abs(y - centerTileY) <= blockedRadius)) {
+        return false;
+      }
+      tiles.forEach(({ x, y }) => { isWall[y][x] = true; });
+      if (!isConnected()) {
+        tiles.forEach(({ x, y }) => { isWall[y][x] = false; });
+        return false;
+      }
+      return true;
+    };
+
+    let placedSegments = 0;
+    let attempts = 0;
+    while (placedSegments < segmentCount && attempts < segmentCount * 200) {
+      attempts += 1;
+      const vertical = Math.random() < 0.5;
+      const sx = Phaser.Math.Between(minTileX + 1, vertical ? maxTileX - 1 : maxTileX - segmentLength);
+      const sy = Phaser.Math.Between(minTileY + 1, vertical ? maxTileY - segmentLength : maxTileY - 1);
+      const tiles = [];
+      for (let i = 0; i < segmentLength; i += 1) {
+        tiles.push({ x: sx + (vertical ? 0 : i), y: sy + (vertical ? i : 0) });
+      }
+      if (tryPlaceSegment(tiles)) placedSegments += 1;
+    }
+
+    this.wallGrid = isWall.map((row) => row.slice());
+    for (let y = minTileY; y <= maxTileY; y += 1) {
+      for (let x = minTileX; x <= maxTileX; x += 1) {
+        if (!isWall[y][x]) continue;
+        this.addWall(x * TILE_SIZE + halfTile, y * TILE_SIZE + halfTile);
+      }
+    }
+    this.buildWallCollidersFromGrid(this.wallGrid, width, height, this.activeRoomBounds);
   }
 
   generateRandomSegmentsMap(preservePlayer = false) {
@@ -3873,6 +5381,12 @@ updateSpellbladeOverlays() {
     const halfTile = TILE_SIZE / 2;
     const width = MAP_TILES;
     const height = MAP_TILES;
+    this.activeRoomBounds = {
+      minTileX: 0,
+      minTileY: 0,
+      maxTileX: width - 1,
+      maxTileY: height - 1,
+    };
     const isWall = Array.from({ length: height }, () => Array(width).fill(false));
     const inBounds = (x, y) => x >= 0 && y >= 0 && x < width && y < height;
     const startX = Math.floor(width / 2);
@@ -3900,7 +5414,7 @@ updateSpellbladeOverlays() {
           }
         }
       }
-      this.buildWallCollidersFromGrid(this.wallGrid, width, height);
+      this.buildWallCollidersFromGrid(this.wallGrid, width, height, this.activeRoomBounds);
       return; // ← 关键：中间不放墙
     }
     const isConnected = () => {
@@ -3988,7 +5502,7 @@ updateSpellbladeOverlays() {
       }
     }
 
-    this.buildWallCollidersFromGrid(this.wallGrid, width, height);
+    this.buildWallCollidersFromGrid(this.wallGrid, width, height, this.activeRoomBounds);
   }
 
   addWall(x, y, scale = 1) {
@@ -4000,22 +5514,27 @@ updateSpellbladeOverlays() {
     return wall;
   }
 
-  buildWallCollidersFromGrid(isWall, width, height) {
+  buildWallCollidersFromGrid(isWall, width, height, bounds = null) {
     if (!this.wallGroup) return;
+    const roomBounds = this.getRoomTileBounds(bounds);
+    const minTileX = Phaser.Math.Clamp(roomBounds.minTileX, 0, Math.max(0, width - 1));
+    const minTileY = Phaser.Math.Clamp(roomBounds.minTileY, 0, Math.max(0, height - 1));
+    const maxTileX = Phaser.Math.Clamp(roomBounds.maxTileX, minTileX, Math.max(0, width - 1));
+    const maxTileY = Phaser.Math.Clamp(roomBounds.maxTileY, minTileY, Math.max(0, height - 1));
     const visited = Array.from({ length: height }, () => Array(width).fill(false));
-    for (let y = 0; y < height; y += 1) {
-      for (let x = 0; x < width; x += 1) {
+    for (let y = minTileY; y <= maxTileY; y += 1) {
+      for (let x = minTileX; x <= maxTileX; x += 1) {
         if (!isWall[y][x] || visited[y][x]) continue;
 
         let rectWidth = 1;
-        while (x + rectWidth < width) {
+        while (x + rectWidth <= maxTileX) {
           if (!isWall[y][x + rectWidth] || visited[y][x + rectWidth]) break;
           rectWidth += 1;
         }
 
         let rectHeight = 1;
         let canGrow = true;
-        while (y + rectHeight < height && canGrow) {
+        while (y + rectHeight <= maxTileY && canGrow) {
           for (let dx = 0; dx < rectWidth; dx += 1) {
             if (!isWall[y + rectHeight][x + dx] || visited[y + rectHeight][x + dx]) {
               canGrow = false;
@@ -4319,8 +5838,9 @@ updateSpellbladeOverlays() {
 
   /* ==== 玩家与动画 ==== */
   createPlayer() {
+    const center = this.getRoomCenterPosition();
     this.player = this.physics.add
-      .sprite(WORLD_SIZE/2, WORLD_SIZE/2, this.playerIdleFrames.down)
+      .sprite(center.x, center.y, this.playerIdleFrames.down)
       .setDepth(10);
     this.player.body.setAllowGravity(false);
     this.player.setCollideWorldBounds(true);
@@ -4579,7 +6099,8 @@ updateSpellbladeOverlays() {
   /* ==== 相机 ==== */
   setupCamera() {
     const camera = this.cameras.main;
-    camera.setBounds(0, 0, WORLD_SIZE, WORLD_SIZE);
+    const room = this.getRoomPixelBounds();
+    camera.setBounds(room.minX, room.minY, room.width, room.height);
     camera.startFollow(this.player, false, 1, 1);
     camera.setZoom(this.currentZoom);
     camera.roundPixels = false;
@@ -4688,7 +6209,7 @@ updateSpellbladeOverlays() {
     if (!event || event.code !== "Escape") return;
     if (event.repeat) { event.preventDefault(); return; }
     // Do not toggle pause when any interactive overlay is active
-    if (this.isQuestSelectionActive || this.isGameOver || this.isShopOpen?.() || this.roundAwaitingDecision || (this.roundComplete && !this.isPaused)) return;
+    if (this.isQuestSelectionActive || this.isWorldMapActive || this.isRewardSelectionActive || this.isGameOver || this.isShopOpen?.() || this.roundAwaitingDecision || (this.roundComplete && !this.isPaused)) return;
     event.preventDefault();
     if (this.isPaused) this.resumeGame();
     else this.pauseGame();
@@ -4699,6 +6220,8 @@ updateSpellbladeOverlays() {
     // Paused explicitly, or at end/win/fail overlays, or shop/decision UIs
     if (this.isPaused) return true;
     if (this.isQuestSelectionActive) return true;
+    if (this.isWorldMapActive) return true;
+    if (this.isRewardSelectionActive) return true;
     if (this.isGameOver) return true;
     if (this.isShopOpen && this.isShopOpen()) return true;
     if (this.roundAwaitingDecision) return true;
@@ -4859,49 +6382,29 @@ this.events.once("destroy", offPointer);
   /* ==== 计时器 ==== */
   setupTimers() {
     this.rebuildAttackTimer();
-    this.scheduleSpawnTimer();
   }
   scheduleSpawnTimer() {
-    // Debug Boss：仅调试用，后续由专属逻辑处理
-    if (this.debugBossMode) {
-      if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
-      return;
-    }
-    // 正式 Boss 关（第10关与每20关）：不刷怪，直接生成 Boss
-    if (this.isBossStage) {
-      if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
-      this.stopAmbientMusic();
-      if (!this.boss) {
-        if (this.level === 10) {
-          this.spawnBoss(BOSS_RIN_CONFIG);
-          this.createBossUI(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
-          this.showBossHeader(BOSS_RIN_CONFIG.name, BOSS_RIN_CONFIG.title);
-          if (!this.bossMusic) { this.bossMusic = this.sound.add(BOSS_RIN_CONFIG.musicKey, { loop: true, volume: 1.0 }); }
-          if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
-        } else {
-          this.spawnBossById("Utsuho", { x: WORLD_SIZE/2, y: Math.floor(WORLD_SIZE * 0.25) });
-          if (!this.bossMusic) { this.bossMusic = this.sound.add(BOSS_UTSUHO_CONFIG.musicKey, { loop: true, volume: 1.5 }); }
-          if (this.bossMusic && !this.bossMusic.isPlaying) this.bossMusic.play();
-        }
-      }
-      return;
-    }
-    if (this.roundComplete || this.roundAwaitingDecision) {
+    if (this.roundComplete || this.roundAwaitingDecision || !this.currentRoom?.usesRankSpawns) {
       if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
       return;
     }
     if (this.spawnTimer) this.spawnTimer.remove();
     const rankValue = Math.max(Number.isFinite(this.rank) ? this.rank : 0, 0);
-    const growthTerm = 1 + 0.2 * (rankValue - 10);
-    const speedFactor = Math.max(0.1, growthTerm);
-    //const intervalSeconds = Math.max(0.01, 1 / Math.sqrt(speedFactor));
-    // 基础间隔：随 rank 提高而缩短；第10关后再额外加快4倍（即间隔减为原来的1/4）
-    let intervalSeconds = Math.max(0.01, 10 / rankValue);
-    if (Math.floor(this.level || 0) > 10) {
-      intervalSeconds = Math.max(0.0025, intervalSeconds / 4);
-    }
-    const delay = intervalSeconds * 1000;
-    this.spawnTimer = this.time.addEvent({ delay, loop: true, callback: () => this.spawnEnemy() });
+    const highRank = rankValue >= 10;
+    const delay = highRank
+      ? Math.max(50, Math.round((0.8 * 1000) / Math.max(1, rankValue)))
+      : Math.max(50, Math.round((2 * 1000) / Math.max(1, rankValue + 1)));
+    const spawnBatch = 1;
+    this.spawnTimer = this.time.addEvent({
+      delay,
+      loop: true,
+      callback: () => {
+        for (let i = 0; i < spawnBatch; i += 1) {
+          if (this.enemies?.getChildren?.().length >= ENEMY_MAX_COUNT) break;
+          this.spawnEnemy();
+        }
+      },
+    });
   }
 
   /* ==== HUD ==== */
@@ -4968,11 +6471,13 @@ this.events.once("destroy", offPointer);
   findClearPosition(radius = 16, opts = {}) {
     const avoidPlayer = opts?.avoidPlayer !== false;
     const maxAttempts = 60;
-    const px = this.player?.x ?? WORLD_SIZE / 2;
-    const py = this.player?.y ?? WORLD_SIZE / 2;
+    const roomCenter = this.getRoomCenterPosition();
+    const interior = this.getActiveRoomInteriorPixelBounds();
+    const px = this.player?.x ?? roomCenter.x;
+    const py = this.player?.y ?? roomCenter.y;
     for (let i = 0; i < maxAttempts; i += 1) {
-      const x = Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE);
-      const y = Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE);
+      const x = Phaser.Math.Between(Math.floor(interior.minX), Math.floor(interior.maxX));
+      const y = Phaser.Math.Between(Math.floor(interior.minY), Math.floor(interior.maxY));
       // 避开墙
       if (!this.isWithinWorldBounds(x, y)) continue;
       if (!this.isPositionWalkable(x, y)) continue;
@@ -4998,7 +6503,7 @@ this.events.once("destroy", offPointer);
   findPlayerSpawnPosition(radius = PLAYER_HITBOX_RADIUS) {
     const spawn = this.findClearPosition(radius, { avoidPlayer: false });
     if (spawn) return spawn;
-    return { x: WORLD_SIZE / 2, y: WORLD_SIZE / 2 };
+    return this.getRoomCenterPosition();
   }
 
   ensurePlayerOnValidPosition({ randomizeSpawn = false } = {}) {
@@ -5575,6 +7080,9 @@ isPlayerInvulnerable() {
     // 分派到三类 AI
     const delta = this.game.loop.delta; // ms
     switch (enemy.enemyKind) {
+      case "ghost":
+        this.updateGhostAI(enemy, now, delta);
+        break;
       case "charger":
         if (!enemy.aiState) enemy.aiState = "idle";
         this.updateChargerAI(enemy, now, delta);
@@ -5767,7 +7275,7 @@ isPlayerInvulnerable() {
   }
 
   updateRoundTimer(delta) {
-    if (this.roundComplete || this.debugBossMode || this.isBossStage || this.isShopOpen()) return;
+    if (this.roundComplete || !this.currentRoom?.hasTimer || this.isShopOpen()) return;
     this.roundTimeLeft = Math.max(0, this.roundTimeLeft - delta);
     if (this.roundTimeLeft <= 0) this.handleRoundComplete();
   }
@@ -5776,20 +7284,15 @@ isPlayerInvulnerable() {
   handleRoundComplete() {
     if (this.roundComplete) return;
     this.roundComplete = true;
-    this.roundAwaitingDecision = true;
-    if (this.spawnTimer) { this.spawnTimer.remove(); this.spawnTimer = null; }
-    // 清空当前波次的怪物与所有类型的子弹
-    this.clearEnemies();
-    this.clearAllBullets();
-    // 达到总关卡上限（20关）后直接通关
-    const currentLevel = Math.max(1, Math.floor(this.level || 1));
-    if (currentLevel >= 20) {
-      this.endRunVictory();
-      return;
-    }
-    this.openShop("roundEnd");
+    this.completeCurrentRoom();
   }
-  clearEnemies() { this.enemies.getChildren().forEach((e)=> e.destroy()); }
+  clearEnemies() {
+    this.enemies.getChildren().forEach((enemy) => {
+      this.destroyEnemyHealthBar(enemy);
+      enemy?.ringSprite?.destroy?.();
+      enemy?.destroy?.();
+    });
+  }
   clearBullets() { this.bullets.getChildren().forEach((b)=> this.destroyBullet(b)); }
   // 统一清空：普通子弹 + Boss弹幕 + 其他投射物
   clearAllBullets() {
@@ -5982,8 +7485,7 @@ isPlayerInvulnerable() {
   }
 
   updateHUD() {
-      // Boss模式下不显示倒计时
-      if (this.debugBossMode || this.isBossStage) {
+      if (!this.currentRoom?.hasTimer) {
           if (this.ui.timerValue) this.ui.timerValue.textContent = "--:--";
       } else {
           const timeLeft = Math.max(0, this.roundTimeLeft);
@@ -5994,8 +7496,10 @@ isPlayerInvulnerable() {
       }
       
       if (this.ui.killValue) this.ui.killValue.textContent = `${this.killCount}`;
-      // 关卡为整数展示
-      if (this.ui.rankValue) this.ui.rankValue.textContent = `${Math.max(1, Math.floor(this.level || 1))}`;
+      if (this.ui.rankValue) {
+        const displayRank = Number.isFinite(this.rank) ? Math.max(0, Math.floor(this.rank)) : RANK_INITIAL;
+        this.ui.rankValue.textContent = `${displayRank}`;
+      }
       if (this.ui.pointValue) this.ui.pointValue.textContent = `${this.playerPoints}`;
       this.updateSkillCooldownUI();
       this.updateSpellbladeOverlays();
@@ -6070,10 +7574,8 @@ isPlayerInvulnerable() {
 
     overlay.style.display = 'block';
 
-    // Update level progress arrow
-    const maxLevel = 20;
-    const curLevel = Math.max(1, Math.min(maxLevel, Math.floor(this.level || 1)));
-    const frac = (maxLevel > 1) ? (curLevel - 1) / (maxLevel - 1) : 0; // 0..1 aligned with 20 ticks
+    // Update rank label
+    const curRank = Number.isFinite(this.rank) ? Math.max(0, Math.floor(this.rank)) : RANK_INITIAL;
     const arrow = this.ui?.levelArrow;
     const label = this.ui?.levelLabel;
     const progressEl = this.ui?.levelProgress;
@@ -6081,10 +7583,10 @@ isPlayerInvulnerable() {
     if (arrow && ticksHost && progressEl) {
       const hostLeft = ticksHost.offsetLeft || 0;
       const hostWidth = ticksHost.clientWidth || 0;
-      const px = hostLeft + hostWidth * frac;
+      const px = hostLeft + hostWidth * 0.5;
       arrow.style.left = `${px}px`;
     }
-    if (label) label.textContent = `${curLevel}/${maxLevel}`;
+    if (label) label.textContent = `Rank ${curRank}`;
 
     // Wire buttons (restart/exit)
     const restartBtn = this.ui?.statsRestartBtn;
@@ -6305,7 +7807,6 @@ showHealNumber(x, y, amount) {
 applyMagicDamageToPlayer(amount, sourceStats = null) {
   if (this.isPlayerInvulnerable()) return;
 
-  const hpBefore = this.currentHp;
   const actual = this.applyMitigationToTarget(
     Math.round(amount),
     { armor: this.playerStats.armor ?? 0, def: this.playerStats.defense ?? 0 },
@@ -6317,20 +7818,20 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
     this.showDamageNumber(this.player.x, this.player.y - 12, shielded.hpDamage, "magic", true);
     this.currentHp = Math.max(this.currentHp - shielded.hpDamage, 0);
   }
-  // 关卡10：敌方伤害额外造成 10%当前生命值 + rank 的同属性伤害（法术）
-  if (Math.floor(this.level || 0) > 10) {
-    const bonusRaw = Math.max(0, Math.round(hpBefore * 0.10) + Math.round(this.rank || 0));
+  if (Math.floor(this.rank || 0) >= 10) {
+    const maxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
+    const bonusRaw = Math.max(0, Math.round(maxHp * 0.05 * 0.1 * this.rank));
     if (bonusRaw > 0) {
       const bonus = this.applyMitigationToTarget(
         bonusRaw,
-        { armor: this.playerStats.armor ?? 0, def: this.playerStats.defense ?? 0 },
+        this.playerStats,
         sourceStats,
-        "magic",
+        "physical",
       );
       if (bonus > 0) {
         const bonusShielded = this.applyManaShieldDamage(bonus);
         if (bonusShielded.hpDamage > 0) {
-          this.showDamageNumber(this.player.x, this.player.y - 12, bonusShielded.hpDamage, "magic", true);
+          this.showDamageNumber(this.player.x, this.player.y - 12, bonusShielded.hpDamage, "physical", true);
           this.currentHp = Math.max(this.currentHp - bonusShielded.hpDamage, 0);
         }
       }
@@ -6946,6 +8447,7 @@ castR() {
       if (chosen.body.checkCollision) chosen.body.checkCollision.none = false;
     }
     const speed = this.getMechBulletSpeed();
+    chosen.yinYangThrownSpeed = speed;
     this.physics.velocityFromRotation(angle, speed, chosen.body.velocity);
     this.playSfx("playershoot");
   }
@@ -7002,6 +8504,7 @@ castR() {
           orb.returnEndAt = 0;
           orb.returnStartAt = 0;
           orb.ignoresWallCollision = false;
+          orb.yinYangThrownSpeed = 0;
           this.applyYinYangOrbBaseTuning(orb);
           if (orb.body) {
             orb.body.setVelocity(0, 0);
@@ -7009,7 +8512,11 @@ castR() {
           }
           return;
         }
-        const speed = remaining > 0 ? dist / (remaining / 1000) : dist;
+        const minimumReturnSpeed = Math.max(
+          Number.isFinite(orb.yinYangThrownSpeed) ? orb.yinYangThrownSpeed : 0,
+          this.getMechBulletSpeed(),
+        );
+        const speed = Math.max(remaining > 0 ? dist / (remaining / 1000) : dist, minimumReturnSpeed);
         const angle = Math.atan2(dy, dx);
         if (orb.body) {
           orb.body.enable = true;
@@ -7192,6 +8699,7 @@ castR() {
     if (!orb) return;
     orb.yinYangState = "orbit";
     orb.ignoresWallCollision = false;
+    orb.yinYangThrownSpeed = 0;
     orb.spawnTime = this.time.now;
     orb._pierceHitTimes = null;
     this.applyYinYangOrbBaseTuning(orb);
@@ -7290,6 +8798,7 @@ castR() {
         bullet.cleaveScale = scale;
         bullet.disableHoming = true;
         bullet.ignoresWallCollision = true;
+        bullet.pierce = true;
         bullet.ignoreLifetime = true;
         bullet.killOnWorldBounds = true;
         bullet.boundaryPadding = TILE_SIZE;
@@ -7322,7 +8831,7 @@ castR() {
     bullet.isCrit = false;
     bullet.onHitScale = 1;
     bullet.cleaveScale = 1;
-    bullet.ignoresWallCollision = false;
+    bullet.ignoresWallCollision = true;
     bullet.speed = this.getMechBulletSpeed();
 
     this.bullets.add(bullet);
@@ -7553,7 +9062,7 @@ castR() {
   }
 
   spawnEnemy() {
-    if (this.debugBossMode || this.isBossStage) return;
+    if (this.debugBossMode || !this.currentRoom?.usesRankSpawns) return;
     if (this.roundComplete || this.roundAwaitingDecision) return;
     if (this.enemies.getChildren().length >= ENEMY_MAX_COUNT) return;
 
@@ -7568,35 +9077,55 @@ castR() {
 
   pickEnemySpawnDefinition() {
     const rankValue = Math.max(Number.isFinite(this.rank) ? this.rank : 0, 0);
-    const typeEntries = [];
+    const ghostConfig = ENEMY_TYPE_CONFIG.ghost;
+    const ghostTierConfig = ghostConfig?.tiers?.[ENEMY_RARITIES.BASIC];
+    const ghostUnlocked = !!ghostTierConfig && rankValue >= (ghostTierConfig.unlockRank ?? 0);
+    if (ghostUnlocked && Math.random() < 0.8) {
+      return {
+        typeKey: "ghost",
+        typeConfig: ghostConfig,
+        tierKey: ENEMY_RARITIES.BASIC,
+        tierConfig: ghostTierConfig,
+      };
+    }
+
+    const entriesByTier = new Map();
+    Object.values(ENEMY_RARITIES).forEach((tier) => entriesByTier.set(tier, []));
     Object.entries(ENEMY_TYPE_CONFIG).forEach(([typeKey, typeConfig]) => {
-      const tierEntries = [];
+      if (typeKey === "ghost") return;
       Object.entries(typeConfig.tiers).forEach(([tierKey, tierConfig]) => {
         const minRank = Number.isFinite(tierConfig.unlockRank) ? tierConfig.unlockRank : 0;
         const maxRank = Number.isFinite(tierConfig.maxRank) ? tierConfig.maxRank : Number.POSITIVE_INFINITY;
-        if (rankValue < minRank) return;
-        if (rankValue > maxRank) return;
-        const weight = Number.isFinite(ENEMY_RARITY_WEIGHTS[tierKey]) ? ENEMY_RARITY_WEIGHTS[tierKey] : 0;
-        if (weight < 0) return;
-        tierEntries.push({ key: tierKey, config: tierConfig, weight });
+        if (rankValue < minRank || rankValue > maxRank) return;
+        const bucket = entriesByTier.get(tierKey);
+        if (!bucket) return;
+        bucket.push({ typeKey, typeConfig, tierKey, tierConfig });
       });
-      if (tierEntries.length === 0) return;
-      const typeWeight = Number.isFinite(typeConfig.weight) ? Math.max(typeConfig.weight, 0) : 0;
-      typeEntries.push({ key: typeKey, config: typeConfig, tiers: tierEntries, weight: typeWeight });
     });
-    if (typeEntries.length === 0) return null;
 
-    const typeEntry = this.pickWeightedEntry(typeEntries);
-    if (!typeEntry) return null;
-    const tierEntry = this.pickWeightedEntry(typeEntry.tiers);
+    const tierEntries = [];
+    entriesByTier.forEach((bucket, tierKey) => {
+      if (!bucket || bucket.length === 0) return;
+      tierEntries.push({
+        key: tierKey,
+        entries: bucket,
+        weight: ENEMY_RARITY_WEIGHTS[tierKey] || 0,
+      });
+    });
+    if (tierEntries.length === 0) {
+      return ghostUnlocked
+        ? {
+            typeKey: "ghost",
+            typeConfig: ghostConfig,
+            tierKey: ENEMY_RARITIES.BASIC,
+            tierConfig: ghostTierConfig,
+          }
+        : null;
+    }
+
+    const tierEntry = this.pickWeightedEntry(tierEntries);
     if (!tierEntry) return null;
-
-    return {
-      typeKey: typeEntry.key,
-      typeConfig: typeEntry.config,
-      tierKey: tierEntry.key,
-      tierConfig: tierEntry.config,
-    };
+    return randomElement(tierEntry.entries) || null;
   }
 
   pickWeightedEntry(entries) {
@@ -7620,20 +9149,31 @@ castR() {
     return entries[entries.length - 1] ?? null;
   }
 
-  findEnemySpawnPosition(spawnDef) {
+  findEnemySpawnPosition(spawnDef, options = {}) {
     const tierConfig = spawnDef?.tierConfig ?? null;
-    const playerX = this.player?.x ?? WORLD_SIZE / 2;
-    const playerY = this.player?.y ?? WORLD_SIZE / 2;
-    const maxRadius = Math.max(ENEMY_SPAWN_RADIUS_MIN, Math.min(ENEMY_SPAWN_RADIUS_MAX, WORLD_SIZE));
+    const roomCenter = this.getRoomCenterPosition();
+    const interior = this.getActiveRoomInteriorPixelBounds();
+    const room = this.getRoomPixelBounds();
+    const interiorSpan = Math.max(
+      ENEMY_SPAWN_RADIUS_MIN,
+      Math.min(room.width, room.height) - TILE_SIZE * 2,
+    );
+    const playerX = this.player?.x ?? roomCenter.x;
+    const playerY = this.player?.y ?? roomCenter.y;
+    const minPlayerDistance = Number.isFinite(options?.minPlayerDistance)
+      ? Math.max(0, options.minPlayerDistance)
+      : (this.currentRoom?.type === ROOM_TYPES.ELITE ? 200 : 0);
+    const maxRadius = Math.max(ENEMY_SPAWN_RADIUS_MIN, Math.min(ENEMY_SPAWN_RADIUS_MAX, interiorSpan));
     const minRadius = Math.min(ENEMY_SPAWN_RADIUS_MIN, maxRadius);
     const radiusBuffer = (tierConfig?.hitRadius ?? 14) + 4;
 
     for (let attempt = 0; attempt < ENEMY_SPAWN_ATTEMPTS; attempt += 1) {
       const distance = Phaser.Math.FloatBetween(minRadius, maxRadius);
       const angle = Phaser.Math.FloatBetween(0, Phaser.Math.PI2);
-      const posX = Phaser.Math.Clamp(playerX + Math.cos(angle) * distance, TILE_SIZE, WORLD_SIZE - TILE_SIZE);
-      const posY = Phaser.Math.Clamp(playerY + Math.sin(angle) * distance, TILE_SIZE, WORLD_SIZE - TILE_SIZE);
+      const posX = Phaser.Math.Clamp(playerX + Math.cos(angle) * distance, interior.minX, interior.maxX);
+      const posY = Phaser.Math.Clamp(playerY + Math.sin(angle) * distance, interior.minY, interior.maxY);
       if (!this.isWithinWorldBounds(posX, posY)) continue;
+      if (Phaser.Math.Distance.Between(posX, posY, playerX, playerY) < minPlayerDistance) continue;
       if (!this.isPositionWalkable(posX, posY)) continue;
       if (this.isPositionOccupied(posX, posY, radiusBuffer)) continue;
       return { x: posX, y: posY };
@@ -7642,7 +9182,8 @@ castR() {
   }
 
   isWithinWorldBounds(x, y) {
-    return x >= TILE_SIZE && y >= TILE_SIZE && x <= WORLD_SIZE - TILE_SIZE && y <= WORLD_SIZE - TILE_SIZE;
+    const bounds = this.getActiveRoomInteriorPixelBounds();
+    return x >= bounds.minX && y >= bounds.minY && x <= bounds.maxX && y <= bounds.maxY;
   }
 
   isPositionWalkable(x, y) {
@@ -7745,21 +9286,6 @@ castR() {
 
     enemy.maxHp = tierConfig.hp ?? 100;
     enemy.hp = enemy.maxHp;
-    // 第十关后：所有怪物（非Boss）属性按 (1 + rank/10) 乘算
-    if (Math.floor(this.level || 0) > 10) {
-      const rf = Math.max(0, Number.isFinite(this.rank) ? this.rank : 0) / 10;
-      const factor = 1 + rf;
-      if (factor > 0) {
-        // HP
-        enemy.maxHp = Math.max(1, Math.round(enemy.maxHp));
-        enemy.hp = enemy.maxHp;
-        // 攻击力/法强
-        if (Number.isFinite(enemy.attackDamage)) enemy.attackDamage = Math.round(enemy.attackDamage * factor);
-        if (Number.isFinite(enemy.abilityPower)) enemy.abilityPower = Math.round(enemy.abilityPower * factor);
-        // 接触伤害沿用攻击力
-        if (Number.isFinite(enemy.contactDamage)) enemy.contactDamage = Math.round(enemy.contactDamage * factor);
-      }
-    }
     enemy.attackDamage = tierConfig.attackDamage ?? 0;
     enemy.contactDamage = tierConfig.attackDamage ?? 0;
     enemy.abilityPower = tierConfig.abilityPower ?? 0;
@@ -7798,6 +9324,14 @@ castR() {
     enemy.ringSprite = null;
     enemy.kunaiActive = false;
     enemy.proximityActive = false;
+
+    if (this.currentRoom?.usesRankSpawns && this.rank >= 10) {
+      const bonusHpPct = Math.max(0, this.rank - 10) / 100;
+      if (bonusHpPct > 0) {
+        enemy.maxHp = Math.max(1, Math.round(enemy.maxHp * (1 + bonusHpPct)));
+        enemy.hp = enemy.maxHp;
+      }
+    }
 
     if (enemy.enemyKind === "turret") {
       enemy.body.setVelocity(0, 0);
@@ -7839,7 +9373,7 @@ castR() {
       }
     }
 
-    if (enemy.enemyKind === "charger") {
+    if (enemy.enemyKind === "charger" || enemy.enemyKind === "ghost") {
       enemy.aiState = "idle";
     }
 
@@ -7856,8 +9390,9 @@ castR() {
     const typeConfig = ENEMY_TYPE_CONFIG[typeKey];
     const tierConfig = typeConfig?.tiers?.[tierKey];
     if (!tierConfig) return null;
-    const spawnX = Phaser.Math.Clamp(position.x, TILE_SIZE, WORLD_SIZE - TILE_SIZE);
-    const spawnY = Phaser.Math.Clamp(position.y, TILE_SIZE, WORLD_SIZE - TILE_SIZE);
+    const interior = this.getActiveRoomInteriorPixelBounds();
+    const spawnX = Phaser.Math.Clamp(position.x, interior.minX, interior.maxX);
+    const spawnY = Phaser.Math.Clamp(position.y, interior.minY, interior.maxY);
     const spawnPos = { x: spawnX, y: spawnY };
     return this.createEnemyFromDefinition(
       { typeKey, tierKey, typeConfig, tierConfig },
@@ -8792,16 +10327,15 @@ consumeSpellbladeIfReady(enemy) {
     // Ignore all damage processing while gameplay is suspended
     if (this.isGameplaySuspended && this.isGameplaySuspended()) return;
     if (this.isPlayerInvulnerable()) return;
-    const hpBefore = this.currentHp;
     const actual = this.applyMitigationToTarget(Math.round(amount), this.playerStats, sourceStats, "physical");
     const shielded = this.applyManaShieldDamage(actual);
     if (shielded.hpDamage > 0) {
       this.showDamageNumber(this.player.x, this.player.y - 12, shielded.hpDamage, "physical", true);
       this.currentHp = Math.max(this.currentHp - shielded.hpDamage, 0);
     }
-    // 关卡10：敌方伤害额外造成 10%当前生命值 + rank 的同属性伤害
-    if (Math.floor(this.level || 0) > 10) {
-      const bonusRaw = Math.max(0, Math.round(hpBefore * 0.10) + Math.round(this.rank || 0));
+    if (Math.floor(this.rank || 0) >= 10) {
+      const maxHp = this.playerStats?.maxHp ?? PLAYER_BASE_STATS.maxHp;
+      const bonusRaw = Math.max(0, Math.round(maxHp * 0.05 * 0.1 * this.rank));
       if (bonusRaw > 0) {
         const bonus = this.applyMitigationToTarget(bonusRaw, this.playerStats, sourceStats, "physical");
         if (bonus > 0) {
@@ -8890,12 +10424,22 @@ consumeSpellbladeIfReady(enemy) {
             const typeConfig = ENEMY_TYPE_CONFIG[typeKey]; const tierConfig = typeConfig?.tiers?.[tierKey];
             if (typeConfig && tierConfig) {
               const pos = this.findEnemySpawnPosition({ typeKey, tierKey, typeConfig, tierConfig })
-                        || { x: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE), y: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE) };
+                        || this.findFallbackOpenPosition();
               this.spawnEnemyWithEffect({ typeKey, tierKey, typeConfig, tierConfig }, pos);
               ai.m3_spawned += 1;
             }
           }
         } catch (_) {}
+      }
+    }
+
+    if (enemy.eliteSpawnOnDeath) {
+      const spawnInfo = enemy.eliteSpawnOnDeath;
+      for (let i = 0; i < Math.max(0, spawnInfo.count || 0); i += 1) {
+        const nextExtra = spawnInfo.tierKey === ENEMY_RARITIES.MID
+          ? { eliteSpawnOnDeath: { typeKey: spawnInfo.typeKey, tierKey: ENEMY_RARITIES.BASIC, count: 1 } }
+          : {};
+        this.spawnEliteConfiguredEnemy(spawnInfo.typeKey, spawnInfo.tierKey, nextExtra);
       }
     }
     // 修改：Utsuho死亡贴图；小怪保持原贴图并做淡出效果
@@ -8964,10 +10508,11 @@ consumeSpellbladeIfReady(enemy) {
       this.bossKind = null;
       // 清空所有Boss弹幕
       this.clearBossBullets();
-      // Boss关卡：击杀Boss视为关卡完成 -> 打开商店（替代倒计时条件）
-      if (this.isBossStage) {
-        this.isBossStage = false;
-        this.handleRoundComplete();
+      this.isBossStage = false;
+      if (this.currentRoom?.type === ROOM_TYPES.BOSS) {
+        this.completeCurrentRoom({ type: ROOM_TYPES.BOSS });
+      } else if (this.currentRoom?.type === ROOM_TYPES.ELITE) {
+        this.completeCurrentRoom({ rewardTier: ITEM_TIERS.MID });
       }
     }
 
@@ -8984,7 +10529,7 @@ consumeSpellbladeIfReady(enemy) {
     if (enemy.isChest) {
       this.handleChestDeathRewards(enemy);
     } else {
-      this.maybeDropPoint(enemy.x, enemy.y);
+      this.maybeDropPoint(enemy);
     }
   if (enemy.ringSprite) {
   enemy.ringSprite.destroy();
@@ -8993,6 +10538,14 @@ consumeSpellbladeIfReady(enemy) {
 if (enemy.isBoss) {
   this.time.delayedCall(260, () => enemy.destroy());
 }
+
+    if (!enemy.isBoss && this.currentRoom?.clearCondition === "eliminateAll") {
+      this.time.delayedCall(50, () => {
+        if (!this.hasRemainingEncounterEnemies()) this.completeCurrentRoom();
+      });
+    } else if (!enemy.isBoss && this.currentRoom?.clearCondition === "eliteWaveClear") {
+      this.time.delayedCall(50, () => this.advanceEliteWaveEncounter());
+    }
 
   }
 
@@ -9044,16 +10597,14 @@ maybeDropPoint(enemyOrX, maybeY) {
   // 1) 掉落200点（掉落物）40%
   // 2) 生成20个basic毛玉 10%
   // 3) 随机一个basic装备（栏满不发）20%
-  // 4) 刷新5个随机legendary敌人 5%
   handleChestDeathRewards(enemy) {
-    // 概率：40% / 10% / 20% / 5%，其余不触发额外奖励
+    // 概率：40% / 10% / 20%，其余不触发额外奖励
     // 使用加权随机选择事件；新增：给予玩家5个生命药水（权重20）
     const events = [
       { id: 1, weight: 40 },   // 掉落200点
       { id: 2, weight: 10 },   // 生成20个basic毛玉
       { id: 7, weight: 20 },   // 新增：给予5个生命药水
       { id: 4, weight: 20 },   // 随机一个basic装备
-      { id: 5, weight: 5 },    // 刷新5个随机legendary敌人（总权重5%）
     ];
     const totalW = events.reduce((sum, e) => sum + e.weight, 0);
     let roll = Math.random() * totalW;
@@ -9077,7 +10628,7 @@ maybeDropPoint(enemyOrX, maybeY) {
           tierConfig: ENEMY_TYPE_CONFIG.kedama.tiers[ENEMY_RARITIES.BASIC],
         };
         for (let i = 0; i < 20; i += 1) {
-          const pos = this.findEnemySpawnPosition(def) || { x: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE), y: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE) };
+          const pos = this.findEnemySpawnPosition(def) || this.findFallbackOpenPosition();
           this.spawnEnemyWithEffect(def, pos);
         }
         break;
@@ -9094,20 +10645,6 @@ maybeDropPoint(enemyOrX, maybeY) {
       }
       case 7: { // 新增：给予玩家5个生命药水
         this.giveHealthPotions(5);
-        break;
-      }
-      case 5: { // 刷新5个随机legendary敌人
-        const typeKeys = Object.keys(ENEMY_TYPE_CONFIG);
-        for (let i = 0; i < 5; i += 1) {
-          const typeKey = typeKeys[Phaser.Math.Between(0, typeKeys.length - 1)];
-          const typeConfig = ENEMY_TYPE_CONFIG[typeKey];
-          const tierConfig = typeConfig.tiers?.[ENEMY_RARITIES.LEGENDARY];
-          if (tierConfig) {
-            const def = { typeKey, typeConfig, tierKey: ENEMY_RARITIES.LEGENDARY, tierConfig };
-            const pos = this.findEnemySpawnPosition(def) || { x: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE), y: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE) };
-            this.spawnEnemyWithEffect(def, pos);
-          }
-        }
         break;
       }
       default:
@@ -9350,8 +10887,9 @@ castDash() {
   const dy = Math.sin(dirRad) * this.skillConfig.DASH.distance;
 
   // Tween 位移
-  const tx = Phaser.Math.Clamp(this.player.x + dx, TILE_SIZE, WORLD_SIZE - TILE_SIZE);
-  const ty = Phaser.Math.Clamp(this.player.y + dy, TILE_SIZE, WORLD_SIZE - TILE_SIZE);
+  const dashBounds = this.getActiveRoomInteriorPixelBounds();
+  const tx = Phaser.Math.Clamp(this.player.x + dx, dashBounds.minX, dashBounds.maxX);
+  const ty = Phaser.Math.Clamp(this.player.y + dy, dashBounds.minY, dashBounds.maxY);
   const p = this.add.image(this.player.x, this.player.y, "dash_particle").setDepth(10).setAlpha(0.9);
   this.tweens.add({ targets:p, alpha:0, duration:260, onComplete:()=>p.destroy() });
 
@@ -9732,7 +11270,7 @@ castDash() {
 
   isShopSelectionStage() {
     const reason = this.shopState?.reason;
-    return (reason === "roundEnd" || reason === "debug") && !this.shopState?.shopType;
+    return (reason === "roundEnd" || reason === "debug" || reason === "mapShop" || reason === "debugPrep") && !this.shopState?.shopType;
   }
 
   updateShopTitle() {
@@ -9776,7 +11314,7 @@ castDash() {
     this.clearShopMessage();
 
     if (this.shopUi.exitBtn) {
-      this.shopUi.exitBtn.style.display = reason === "roundEnd" ? "" : "none";
+      this.shopUi.exitBtn.style.display = (reason === "roundEnd" || reason === "debugPrep") ? "" : "none";
     }
 
     this.shopUi.overlay.classList.add("visible");
@@ -9797,17 +11335,18 @@ castDash() {
 
   handleShopClose(continueRun) {
     if (!this.isShopOpen()) return;
+    const reason = this.shopState.reason;
     this.closeShopOverlay();
     this.clearShopDynamicHandlers();
     this.shopState.offers = [];
     this.shopState.shopType = null;
     this.clearShopMessage();
 
-    if (this.shopState.reason === "roundEnd") {
+    if (reason === "roundEnd") {
       this.roundAwaitingDecision = false;
       this.resumeGameplayAfterShop();
       this.continueAfterRound(Boolean(continueRun));
-    } else if (this.shopState.reason === "debug") {
+    } else if (reason === "debug") {
       if (continueRun) {
         this.roundComplete = false;
         this.roundAwaitingDecision = false;
@@ -9817,6 +11356,19 @@ castDash() {
         this.resumeGameplayAfterShop();
         this.scene.start("StartScene");
       }
+    } else if (reason === "debugPrep") {
+      this.resumeGameplayAfterShop();
+      if (continueRun) {
+        const pending = this.pendingDebugRoomStart;
+        this.pendingDebugRoomStart = null;
+        this.startDebugRoomTest(pending);
+      } else {
+        this.scene.start("StartScene");
+      }
+    } else if (reason === "mapShop" || (reason === "inRun" && this.currentRoom?.completeOnShopClose)) {
+      this.resumeGameplayAfterShop();
+      if (continueRun) this.completeCurrentRoom();
+      else this.scene.start("StartScene");
     } else {
       this.resumeGameplayAfterShop();
     }
@@ -9849,7 +11401,7 @@ castDash() {
   handleShopBackToSelection() {
     if (!this.isShopOpen()) return;
     const reason = this.shopState?.reason;
-    if (reason !== "roundEnd" && reason !== "debug") return;
+    if (reason !== "roundEnd" && reason !== "debug" && reason !== "mapShop" && reason !== "debugPrep") return;
     this.shopState.shopType = null;
     this.shopState.offers = [];
     this.updateShopTitle();
@@ -9861,7 +11413,7 @@ castDash() {
   enterShopType(type) {
     if (!this.isShopOpen()) return;
     const reason = this.shopState?.reason;
-    if (reason !== "roundEnd" && reason !== "debug") return;
+    if (reason !== "roundEnd" && reason !== "debug" && reason !== "mapShop" && reason !== "debugPrep") return;
     if (!Object.values(SHOP_TYPES).includes(type)) return;
     this.shopState.shopType = type;
     this.updateShopTitle();
@@ -9886,7 +11438,7 @@ castDash() {
       }
     }
     if (this.shopUi?.backBtn) {
-      const canBack = (this.shopState?.reason === "roundEnd" || this.shopState?.reason === "debug") && !selecting;
+      const canBack = (this.shopState?.reason === "roundEnd" || this.shopState?.reason === "debug" || this.shopState?.reason === "mapShop" || this.shopState?.reason === "debugPrep") && !selecting;
       this.shopUi.backBtn.style.display = canBack ? "" : "none";
     }
   }
@@ -9929,7 +11481,7 @@ castDash() {
   }
 
   generateShopOffers() {
-    // inRun：碎片商店；roundEnd/debug：依据选择的商店类型生成
+    // inRun：碎片商店；selection-stage：依据选择的商店类型生成
     if (this.shopState?.reason === "inRun") {
       const offers = [];
       const unlocked = this.getUnlockedShardRarities();
@@ -9954,7 +11506,7 @@ castDash() {
       this.shopState.offers = [];
       return;
     }
-    if (this.shopState?.reason === "roundEnd" || this.shopState?.reason === "debug") {
+    if (this.shopState?.reason === "roundEnd" || this.shopState?.reason === "debug" || this.shopState?.reason === "mapShop" || this.shopState?.reason === "debugPrep") {
       if (this.shopState.shopType === SHOP_TYPES.POTION) {
         this.generatePotionShopOffers();
         return;
@@ -10906,6 +12458,7 @@ castDash() {
     boss.attackCooldownUntil = this.time.now + 1000;
 
     this.boss = boss;
+    this.bossKind = boss.bossKind;
     // Initialize boss-specific AI if known
     if (cfg.id === "Rin") this.initRinAI(boss);
     if (cfg.id === "Utsuho") this.initUtsuhoAI?.(boss);
@@ -10954,29 +12507,6 @@ castDash() {
       this.boss = boss;
       this.bossKind = "Utsuho";
       this.createBossUI(BOSS_UTSUHO_CONFIG.name, BOSS_UTSUHO_CONFIG.title);
-
-      // 按当前关卡与rank进行Boss属性倍率（非Boss关生成时才在此处处理）
-      if (!this.isBossStage) {
-        const cycles = Math.max(1, Math.floor((this.level || 1) / 20));
-        let hpFactor = Math.pow(2, Math.max(0, cycles - 1));
-        if (Math.floor(this.level || 0) > 10) {
-          const rf = Math.max(0, Number.isFinite(this.rank) ? this.rank : 0) / 10;
-          if (rf > 0) hpFactor *= (1 + rf);
-        }
-        if (hpFactor > 0) {
-          const baseMaxHp = BOSS_UTSUHO_CONFIG.maxHp;
-          boss.maxHp = Math.max(1, Math.round(baseMaxHp * hpFactor));
-          boss.hp = boss.maxHp;
-          boss.setData("hp", boss.hp);
-          boss.setData("maxHp", boss.maxHp);
-        }
-        // 第十关后：Boss接触伤害也乘以 (1 + rank/10)
-        if (Math.floor(this.level || 0) > 10) {
-          const rf = Math.max(0, Number.isFinite(this.rank) ? this.rank : 0) / 10;
-          const factor = 1 + rf;
-          boss.contactDamage = Math.max(0, Math.round(boss.contactDamage * factor));
-        }
-      }
       // 新增：显示固定标题
       this.showBossHeader(BOSS_UTSUHO_CONFIG.name, BOSS_UTSUHO_CONFIG.title);
 
@@ -11729,12 +13259,6 @@ updateBossUI(target) {
     if (Number.isFinite(percentMaxHpDamage) && percentMaxHpDamage > 0) {
       b.percentMaxHpDamage = percentMaxHpDamage;
     }
-    // 第十关后：如果子弹来源为 Boss，则乘以 (1 + rank/10)
-    if (opts?.owner?.isBoss && Math.floor(this.level || 0) > 10) {
-      const rf = Math.max(0, Number.isFinite(this.rank) ? this.rank : 0) / 10;
-      const factor = 1 + rf;
-      if (factor > 0) b.magicDamage = Math.max(0, Math.round(b.magicDamage * factor));
-    }
     if (owner) b.owner = owner;
     this.bossBullets.add(b);
     if (withTrail) {
@@ -11911,7 +13435,7 @@ updateBossUI(target) {
         const toSpawn = Math.max(0, Math.min(initial, ai.m3_totalToSpawn - ai.m3_spawned));
         for (let i = 0; i < toSpawn; i += 1) {
           const pos = this.findEnemySpawnPosition({ typeKey, tierKey, typeConfig, tierConfig })
-                    || { x: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE), y: Phaser.Math.Between(TILE_SIZE, WORLD_SIZE - TILE_SIZE) };
+                    || this.findFallbackOpenPosition();
           this.spawnEnemyWithEffect({ typeKey, tierKey, typeConfig, tierConfig }, pos);
           ai.m3_spawned += 1;
         }

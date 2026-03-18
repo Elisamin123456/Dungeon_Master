@@ -601,7 +601,7 @@ const RAW_ITEMS = [
     cost: 1300,
     stats: { hpFlat: 300 },
     buildsFrom: [BASIC.rubyCrystal, BASIC.rubyCrystal],
-    effects: { auraDamage: 20, auraIntervalMs: 500, auraRadius: 25 },
+    effects: { auraDamage: 20, auraIntervalMs: 500, auraRadius: 50 },
     description: [
       "生命值 +300",
       "被动：每 0.5 秒对半径 25 内的敌人造成 20 点魔法伤害。",
@@ -1137,7 +1137,7 @@ const RAW_ITEMS = [
     cost: 2900,
     stats: { hpFlat: 500, abilityHaste: 15 },
     buildsFrom: [MID.bamisCinder, MID.kindlegem],
-    effects: { auraDamage: 30, auraDamageHpRatio: 0.008, auraIntervalMs: 500, auraRadius: 50 },
+    effects: { auraDamage: 30, auraDamageHpRatio: 0.008, auraIntervalMs: 500, auraRadius: 100 },
     description: [
       "生命值 +500",
       "技能急速 +15",
