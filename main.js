@@ -27,6 +27,9 @@ const CAMERA_ZOOM_STEP = 0.25;
 const GAME_CURSOR_STYLE = 'url("assets/crosshair/crosshair_32.png") 16 16, crosshair';
 const Q_TALISMAN_SPEED = 100;
 const Q_TALISMAN_BOUNDARY_PADDING = 16;
+const BOSS_INTRO_DAMAGE_REDUCTION_WINDOW_MS = 60 * 1000;
+const BOSS_INTRO_DAMAGE_REDUCTION_PCT = 0.75;
+const BOSS_INTRO_DAMAGE_CAP = 100;
 // Q施法瞄准指示器参数
 const Q_AIM_CONE_ANGLE_DEG = 30;            // 前方扇形角度
 const Q_AIM_RADIUS = 8 * TILE_SIZE;         // 扇形半径（以格为单位换算像素）
@@ -38,7 +41,11 @@ const NASHORS_TOOTH_ID = "nashorsTooth";
 const GUINSOOS_RAGEBLADE_ID = "guinsosRageblade";
 const HEARTSTEEL_ID = "heartsteel";
 const DARK_SEAL_ID = "darkSeal";
-const THORNMAIL_ID = "thornmail";
+const DIVINE_SUNDERER_ID = "divineSunderer";
+const LICH_BANE_ID = "lichBane";
+const MANAMUNE_ID = "manamune";
+const FROSTFIRE_GAUNTLET_ID = "frostfireGauntlet";
+const FROZEN_HEART_ID = "frozenHeart";
 const LOST_CHAPTER_ID = "lostChapter";
 const TEAR_OF_THE_GODDESS_ID = "tearOfTheGoddess";
 const VAMPIRIC_SCEPTER_ID = "vampiricScepter";
@@ -175,7 +182,7 @@ const DEBUG_SHOP = (() => {
 })();
 
 const SHOP_ITEM_COUNT = 3;
-const SHOP_REFRESH_COST = 10; // 初始刷新费用（动态刷新将基于此值）
+const SHOP_REFRESH_COST = 0;
 const SHOP_DEBUG_START_GOLD = 100000;
 
 // ===== 碎片商店：数据与常量 =====
@@ -274,8 +281,7 @@ Object.values(EQUIPMENT_DATA).forEach((item) => {
 const SHOP_TEXT = Object.freeze({
   title: "属性碎片商店",
   goldPrefix: "金币：",
-  // 刷新按钮文案在运行时动态更新，这里只作占位
-  refresh: `刷新 (-${SHOP_REFRESH_COST})`,
+  refresh: "刷新",
   continueRun: "继续",
   exitRun: "结束探险",
   backToSelect: "返回选择",
@@ -649,6 +655,11 @@ const WORLD_MAP_ROOM_POOL = Object.freeze([
   ...Array.from({ length: 1 }, () => ROOM_TYPES.SHOP_BODY),
   ...Array.from({ length: 2 }, () => ROOM_TYPES.ELITE),
   ...Array.from({ length: 2 }, () => ROOM_TYPES.CHEST),
+]);
+const HOME_NEIGHBOR_ROOM_TYPES = Object.freeze([
+  ROOM_TYPES.FIGHT,
+  ROOM_TYPES.CHEST,
+  ROOM_TYPES.GROWTH,
 ]);
 
 const REGULAR_ROOM_TYPES = new Set([ROOM_TYPES.FIGHT, ROOM_TYPES.GROWTH]);
@@ -1274,17 +1285,17 @@ const MECH_CONFIGS = Object.freeze({
     id: MECH_IDS.TALISMAN,
     name: "诱导护符",
     attackMode: MECH_ATTACK_MODES.TALISMAN,
-    baseAttackSpeed: 1.5,
+    baseAttackSpeed: 2.0,
     baseBulletSpeed: 200,
     baseRange: 600,
-    shiftAttackSpeedBonus: 0.2,
+    shiftAttackSpeedBonus: 0.5,
     ui: {
       lines: [
-        "基础射速：1.5",
+        "基础射速：2.0",
         "基础弹速：200",
         "射程：600",
         "操作方式：自动锁敌",
-        "Shift：显示判定点，并额外提升20%攻击速度",
+        "Shift：显示判定点，并额外提升50%攻击速度",
       ],
     },
   },
@@ -1698,7 +1709,7 @@ class GameScene extends Phaser.Scene {
     this.playerAnimationKeys = { down: "player-down", left: "player-left", right: "player-left", up: "player-up" };
     this.playerIdleFrames = { down: "reimu_11", left: "reimu_21", right: "reimu_21", up: "reimu_31" };
     this.playerEquipmentSlots = new Array(EQUIPMENT_SLOT_COUNT).fill(null);
-    this.playerEquipmentStats = { physicalLifeSteal: 0 };
+    this.playerEquipmentStats = { physicalLifeSteal: 0, thornsHealArmorRatio: 0 };
     this.playerOnHitEffects = [];
     this.heartsteelStacks = 0;
     this.heartsteelBonusHp = 0;
@@ -1706,7 +1717,7 @@ class GameScene extends Phaser.Scene {
     this.heartsteelOwnerSlotIndex = null; // 心之钢叠层拥有者槽位（用于判定后出不继承）
     // —— 杀人书（层数与进度） —— //
     this.darkSealStacks = 0;            // 当前杀人书层数
-    this.darkSealKillProgress = 0;      // 小兵击杀计数（每100换1层）
+    this.darkSealKillProgress = 0;      // 击杀进度（按装备配置换算层数）
     this.darkSealOwnerSlotIndex = null; // 杀人书叠层拥有者槽位
     // —— 女神泪/炽天使 层数（释放技能叠层） —— //
     this.manaStackCount = 0;            // 当前已叠的“层数”（每层+manaPerCast 最大到cap）
@@ -1757,6 +1768,10 @@ class GameScene extends Phaser.Scene {
     this.playerSpeedBuffMultiplier = 1;
     this.playerSpeedBuffExpiresAt = 0;
     this.lastSpellbladeUsedAt = 0;  // 追踪耀光触发时间（CD理念仍保留，但设为0）
+    this.spellbladeChargesRemaining = 0;
+    this.spellbladeExpiresAt = 0;
+    this.frostfireArmorBuffPct = 0;
+    this.frostfireArmorBuffExpiresAt = 0;
     this.lastPotionUsedAt = 0;      // 药水使用CD时间戳
     this.equipmentCooldowns = {};    // 追踪所有装备CD: { slotIndex: { expiresAt: number, duration: number } }
     this.equipmentTriggers = {};     // 追踪装备触发状态: { slotIndex: { active: boolean, expiresAt: number } }
@@ -2278,7 +2293,10 @@ this.playerWallCollider = null; // 保存玩家-墙体碰撞体
         const extra = Math.round(maxHp * bullet.percentMaxHpDamage);
         if (extra > 0) dmg += extra; // 同时造成额外伤害
       }
-      if (dmg > 0) this.applyMagicDamageToPlayer(dmg);
+      if (dmg > 0) {
+        this.applyMagicDamageToPlayer(dmg);
+        this.applyFrozenHeartMark(bullet.owner);
+      }
       this.destroyBossBullet(bullet);
     });
     // 敌/Boss子弹与墙体发生碰撞：默认销毁；但核弹不参与碰撞（可穿墙、不消失）
@@ -2418,6 +2436,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
     const fusionExtra = this.getQuestFusionExtraDamage(enemy);
     enemy.hp = Math.max(0, (enemy.hp ?? 0) - totalDamage);
     if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
+    if (totalDamage > 0) this.applyFrozenHeartMark(enemy);
     if (enemy.isBoss && typeof enemy.setData === "function") enemy.setData("hp", enemy.hp);
     if (enemy.isBoss) this.updateBossUI(enemy);
     this.queueOnHitEffectBullets({
@@ -2440,6 +2459,7 @@ this.weaponHitbox.setCircle(8, this.weaponHitbox.width/2-8, this.weaponHitbox.he
     }
     // 讯刃：普攻命中返还
     this.applyNavoriQuickbladesOnHitRefund();
+    this.applyAutoAttackManaRestore();
 
     // 物理吸血（只对物理总额）
     const ls = this.playerEquipmentStats.physicalLifeSteal ?? 0;
@@ -2902,6 +2922,14 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
     this.startWorldMapRun();
   }
 
+  shouldHideQuestStatus() {
+    if (this.isShopOpen?.()) return true;
+    if (this.isQuestSelectionActive || this.isWorldMapActive || this.isRewardSelectionActive) return true;
+    const mechOverlay = document.getElementById("mech-select-overlay");
+    if (mechOverlay?.classList?.contains("visible")) return true;
+    return false;
+  }
+
   isQuestRewardActive(id) {
     return !!(this.questState?.completed && this.questState?.selectedId === id);
   }
@@ -2949,7 +2977,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
     const statusEl = this.ui?.questStatus;
     if (!statusEl) return;
     const def = this.getQuestDefinition(this.questState?.selectedId);
-    if (!def) {
+    if (!def || this.shouldHideQuestStatus()) {
       statusEl.style.display = "none";
       statusEl.classList.remove("completed");
       if (this.ui?.debugQuestButton) this.ui.debugQuestButton.style.display = "none";
@@ -3040,6 +3068,17 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       );
     }
 
+    const homeNeighbors = [
+      { row: WORLD_MAP_START.row - 1, col: WORLD_MAP_START.col },
+      { row: WORLD_MAP_START.row, col: WORLD_MAP_START.col + 1 },
+      { row: WORLD_MAP_START.row - 1, col: WORLD_MAP_START.col + 1 },
+    ].filter(({ row, col }) => row >= 0 && row < WORLD_MAP_ROWS && col >= 0 && col < WORLD_MAP_COLS);
+    const homeNeighborTypes = shuffleArray(HOME_NEIGHBOR_ROOM_TYPES);
+    homeNeighbors.forEach(({ row, col }, index) => {
+      const type = homeNeighborTypes[index] || ROOM_TYPES.FIGHT;
+      grid[row][col] = this.createWorldMapRoom(type, row, col);
+    });
+
     const pool = shuffleArray(WORLD_MAP_ROOM_POOL);
     const remainingCells = [];
     for (let row = 0; row < WORLD_MAP_ROWS; row += 1) {
@@ -3047,7 +3086,8 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
         const isStart = row === WORLD_MAP_START.row && col === WORLD_MAP_START.col;
         const isBoss = row === WORLD_MAP_BOSS.row && col === WORLD_MAP_BOSS.col;
         const isReserved = reservedShop && row === reservedShop.row && col === reservedShop.col;
-        if (!isStart && !isBoss && !isReserved) remainingCells.push({ row, col });
+        const isHomeNeighbor = homeNeighbors.some((pos) => pos.row === row && pos.col === col);
+        if (!isStart && !isBoss && !isReserved && !isHomeNeighbor) remainingCells.push({ row, col });
       }
     }
 
@@ -3645,28 +3685,23 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
     });
   }
 
-  openRewardSelection(tier, onComplete) {
+  renderRewardSelection() {
     const overlay = this.ui?.rewardOverlay;
     const itemsHost = this.ui?.rewardItems;
-    if (!overlay || !itemsHost) {
-      if (typeof onComplete === "function") onComplete();
-      return;
-    }
+    if (!overlay || !itemsHost || !this.rewardState) return;
 
-    const sourcePool = (ITEMS_BY_TIER[tier] || []).filter((item) => item && item.id !== HEALTH_POTION_ID && item.id !== REFILLABLE_POTION_ID);
-    const picks = randomSample(sourcePool, 3, shopRandom);
-    if (picks.length === 0) {
-      if (typeof onComplete === "function") onComplete();
-      return;
-    }
-    this.rewardState = { picks, onComplete };
-    this.isRewardSelectionActive = true;
+    const picks = Array.isArray(this.rewardState.picks) ? this.rewardState.picks : [];
     itemsHost.innerHTML = "";
-    if (this.ui?.rewardTitle) this.ui.rewardTitle.textContent = tier === ITEM_TIERS.MID ? "Choose Mid Reward" : "Choose Basic Reward";
+    if (this.ui?.rewardTitle) {
+      this.ui.rewardTitle.textContent = this.rewardState.tier === ITEM_TIERS.MID ? "Choose Mid Reward" : "Choose Basic Reward";
+    }
     if (this.ui?.rewardSubtitle) this.ui.rewardSubtitle.textContent = "从三个奖励中选择一个。";
-    if (this.ui?.rewardMessage) this.ui.rewardMessage.textContent = "";
 
     const emptySlotIndex = this.playerEquipmentSlots.findIndex((id) => id == null);
+    if (this.ui?.rewardMessage) {
+      this.ui.rewardMessage.textContent = emptySlotIndex < 0 ? "装备栏已满，本次奖励无法领取。" : "";
+    }
+
     picks.forEach((item) => {
       const card = document.createElement("div");
       card.className = "reward-card";
@@ -3709,8 +3744,7 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       itemsHost.appendChild(card);
     });
 
-    if (emptySlotIndex < 0 && this.ui?.rewardMessage) {
-      this.ui.rewardMessage.textContent = "装备栏已满，本次奖励无法领取。";
+    if (emptySlotIndex < 0) {
       const continueCard = document.createElement("div");
       continueCard.className = "reward-card";
       const continueBtn = document.createElement("button");
@@ -3722,6 +3756,25 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
       continueCard.appendChild(continueBtn);
       itemsHost.appendChild(continueCard);
     }
+  }
+
+  openRewardSelection(tier, onComplete) {
+    const overlay = this.ui?.rewardOverlay;
+    const itemsHost = this.ui?.rewardItems;
+    if (!overlay || !itemsHost) {
+      if (typeof onComplete === "function") onComplete();
+      return;
+    }
+
+    const sourcePool = (ITEMS_BY_TIER[tier] || []).filter((item) => item && item.id !== HEALTH_POTION_ID && item.id !== REFILLABLE_POTION_ID);
+    const picks = randomSample(sourcePool, 3, shopRandom);
+    if (picks.length === 0) {
+      if (typeof onComplete === "function") onComplete();
+      return;
+    }
+    this.rewardState = { picks, onComplete, tier };
+    this.isRewardSelectionActive = true;
+    this.renderRewardSelection();
 
     overlay.classList.add("visible");
     this.physics.pause();
@@ -3742,6 +3795,10 @@ this.physics.add.overlap(this.weaponHitbox, this.rinCorpses, (_hit, corpse)=>{
 
   handleRewardSelection(itemId) {
     const emptySlotIndex = this.playerEquipmentSlots.findIndex((id) => id == null);
+    if (itemId && emptySlotIndex < 0) {
+      this.renderRewardSelection();
+      return;
+    }
     if (emptySlotIndex >= 0 && itemId) {
       this.equipItem(emptySlotIndex, itemId);
     }
@@ -3967,7 +4024,7 @@ updateChargerAI(enemy, now, delta) {
   }
 
   const toPlayer = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
-  const slowFactor = (enemy.slowUntil && now < enemy.slowUntil) ? (1 - (enemy.slowPct || 0)) : 1;
+  const slowFactor = this.getEnemyMoveSlowFactor(enemy, now);
 
   // 状态机：idle -> windup -> dashing -> idle
   switch (enemy.aiState) {
@@ -4041,7 +4098,7 @@ updateChargerAI(enemy, now, delta) {
 }
 
 updateGhostAI(enemy, now) {
-  const slowFactor = (enemy.slowUntil && now < enemy.slowUntil) ? (1 - (enemy.slowPct || 0)) : 1;
+  const slowFactor = this.getEnemyMoveSlowFactor(enemy, now);
   const moveSpeed = Math.max(0, (enemy.moveSpeed ?? 50) * slowFactor);
   const navTarget = this.resolveEnemyNavigationTarget(enemy, now);
   const nav = enemy.nav;
@@ -4116,9 +4173,10 @@ updateGhostAI(enemy, now) {
 updateCasterAI(enemy, now, _delta) {
   const dist = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
   const inRange = dist <= (enemy.detectionRadius ?? 1200);
+  const speedFactor = this.getEnemyMoveSlowFactor(enemy, now);
   if (!inRange) {
     // 未触发就普通追击
-    const speed = enemy.moveSpeed ?? 80;
+    const speed = (enemy.moveSpeed ?? 80) * speedFactor;
     const navTarget = this.resolveEnemyNavigationTarget(enemy, now);
     if (navTarget) {
       const dx = navTarget.x - enemy.x; const dy = navTarget.y - enemy.y;
@@ -4147,7 +4205,7 @@ updateCasterAI(enemy, now, _delta) {
 
   if (enemy.cyclePhase === "move") {
     // 追着自机移动
-    const speed = enemy.moveSpeed ?? 80;
+    const speed = (enemy.moveSpeed ?? 80) * speedFactor;
     const navTarget = this.resolveEnemyNavigationTarget(enemy, now);
     if (navTarget) {
       const dx = navTarget.x - enemy.x; const dy = navTarget.y - enemy.y;
@@ -4185,7 +4243,7 @@ updateCasterAI(enemy, now, _delta) {
     if (!enemy || !enemy.active || !this.player) return;
     const dist = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
     const inRange = dist <= (enemy.detectionRadius ?? 1200);
-    const speed = enemy.moveSpeed ?? 50;
+    const speed = (enemy.moveSpeed ?? 50) * this.getEnemyMoveSlowFactor(enemy, now);
     const navTarget = this.resolveEnemyNavigationTarget(enemy, now);
     if (navTarget) {
       const dx = navTarget.x - enemy.x; const dy = navTarget.y - enemy.y;
@@ -4428,6 +4486,106 @@ updateTurretAI(enemy, now, _delta) {
     if (!itemId) return null;
     return EQUIPMENT_DATA[itemId] ?? null;
   }
+
+  refundCurrentCooldownsByPct(refundPct) {
+    const pct = Math.max(0, refundPct || 0);
+    if (pct <= 0) return;
+    const now = this.time.now;
+    Object.keys(this.skillReadyAt || {}).forEach((key) => {
+      const readyAt = this.skillReadyAt[key] || 0;
+      if (readyAt > now) {
+        const remaining = readyAt - now;
+        const reduce = Math.round(remaining * pct);
+        this.skillReadyAt[key] = Math.max(now, readyAt - reduce);
+      }
+    });
+    this.updateSkillCooldownUI?.();
+  }
+
+  applyAutoAttackManaRestore() {
+    if (!this.hasItemEquipped(MANAMUNE_ID)) return;
+    const eff = EQUIPMENT_DATA[MANAMUNE_ID]?.effects || {};
+    const restorePct = Number.isFinite(eff.onHitTotalManaRestorePct) ? Math.max(0, eff.onHitTotalManaRestorePct) : 0;
+    if (restorePct <= 0) return;
+    const maxMana = this.playerStats?.maxMana ?? PLAYER_BASE_STATS.maxMana ?? PLAYER_MANA_MAX;
+    if (maxMana <= 0) return;
+    const before = Math.max(0, this.currentMana || 0);
+    const restore = Math.max(0, Math.round(maxMana * restorePct));
+    if (restore <= 0) return;
+    const next = Math.min(maxMana, before + restore);
+    const applied = Math.max(0, next - before);
+    if (applied <= 0) return;
+    this.currentMana = next;
+    this.recordQuestManaGain(applied);
+    this.updateResourceBars?.();
+  }
+
+  applyFrozenHeartMark(enemy) {
+    if (!enemy || !enemy.active) return;
+    if (!this.hasItemEquipped(FROZEN_HEART_ID)) return;
+    enemy.frozenHeartMarked = true;
+  }
+
+  getEnemyMoveSlowFactor(enemy, now = this.time.now) {
+    let factor = 1;
+    if (enemy?.slowUntil && now < enemy.slowUntil) {
+      factor *= Math.max(0, 1 - (enemy.slowPct || 0));
+    }
+    if (enemy?.frozenHeartMarked && this.hasItemEquipped(FROZEN_HEART_ID)) {
+      const eff = EQUIPMENT_DATA[FROZEN_HEART_ID]?.effects || {};
+      const slowPct = Number.isFinite(eff.frozenHeartEnemySlowPct) ? Math.max(0, eff.frozenHeartEnemySlowPct) : 0;
+      factor *= Math.max(0, 1 - slowPct);
+    }
+    return Math.max(0, factor);
+  }
+
+  getFrozenHeartBulletSlowMultiplier() {
+    if (!this.hasItemEquipped(FROZEN_HEART_ID)) return 1;
+    const eff = EQUIPMENT_DATA[FROZEN_HEART_ID]?.effects || {};
+    const slowPct = Number.isFinite(eff.frozenHeartBulletSlowPct) ? Math.max(0, eff.frozenHeartBulletSlowPct) : 0;
+    return Math.max(0, 1 - slowPct);
+  }
+
+  applyPlayerThornsToAttacker(sourceStats) {
+    if (!sourceStats || typeof sourceStats !== "object" || !sourceStats.active) return;
+    const thBase = Math.max(0, this.playerEquipmentStats?.thornsBase || 0);
+    const thRatio = Math.max(0, this.playerEquipmentStats?.thornsArmorRatio || 0);
+    const healArmorRatio = Math.max(0, this.playerEquipmentStats?.thornsHealArmorRatio || 0);
+    if (thBase <= 0 && thRatio <= 0 && healArmorRatio <= 0) return;
+
+    const armor = Math.max(0, this.playerStats?.armor || 0);
+    const raw = Math.round(thBase + armor * thRatio);
+    if (raw > 0) {
+      const dealt = this.applyMitigationToTarget(raw, sourceStats, this.playerStats, "magic", 1);
+      if (dealt > 0) {
+        const fusionExtra = this.getQuestFusionExtraDamage(sourceStats);
+        sourceStats.hp = Math.max(0, (sourceStats.hp || 0) - dealt);
+        if (fusionExtra > 0) this.applyQuestTrueDamage(sourceStats, fusionExtra);
+        this.showDamageNumber(sourceStats.x, sourceStats.y, dealt, "magic");
+        if (sourceStats.isBoss && typeof sourceStats.setData === "function") {
+          sourceStats.setData("hp", sourceStats.hp);
+          this.updateBossUI(sourceStats);
+        }
+        if (sourceStats.hp <= 0) this.killEnemy(sourceStats);
+      }
+    }
+
+    const healAmount = Math.max(0, Math.round(armor * healArmorRatio));
+    if (healAmount > 0) {
+      this.applyPlayerHealing(healAmount, { offsetY: -22 });
+    }
+  }
+
+  applyFrostfireArmorBuff(hitCount) {
+    if (!this.hasItemEquipped(FROSTFIRE_GAUNTLET_ID)) return;
+    const eff = EQUIPMENT_DATA[FROSTFIRE_GAUNTLET_ID]?.effects || {};
+    const perHitPct = Number.isFinite(eff.frostfireArmorPerHitPct) ? Math.max(0, eff.frostfireArmorPerHitPct) : 0;
+    const durationMs = Number.isFinite(eff.frostfireArmorBuffDurationMs) ? Math.max(0, eff.frostfireArmorBuffDurationMs) : 0;
+    if (perHitPct <= 0 || durationMs <= 0 || hitCount <= 0) return;
+    this.frostfireArmorBuffPct = Math.max(0, hitCount * perHitPct);
+    this.frostfireArmorBuffExpiresAt = (this.time.now || 0) + durationMs;
+    this.recalculateEquipmentEffects();
+  }
   
 isSpellbladeItem(itemId) {
   if (!itemId) return false;
@@ -4638,7 +4796,7 @@ updateSpellbladeOverlays() {
   }
 
   recalculateEquipmentEffects() {
-    this.playerEquipmentStats = { physicalLifeSteal: 0 };
+    this.playerEquipmentStats = { physicalLifeSteal: 0, thornsHealArmorRatio: 0 };
     this.playerOnHitEffects = [];
     this.hasRunaan = false;
     this.runaanConfig = null;
@@ -4692,6 +4850,11 @@ updateSpellbladeOverlays() {
     let omniVampPct = 0;              // omnivamp (e.g., Riftmaker)
     let apFromHpPctSum = 0;           // % of Max HP converted to AP (Riftmaker)
     let apMultiplierSum = 0;          // total AP multiplier (e.g., Deathcap)
+    let armorFromCurrentArmorPct = 0;
+    let lingfengAttackDamageFromMoveSpeed = 0;
+    let lingfengAttackSpeedPctPerMoveSpeed = 0;
+    let hasFrostfireGauntlet = false;
+    let hasSpellbladeItem = false;
     let hasGuinsoo = false;
     let heartsteelGainPerKill = 0;
     let heartsteelCount = 0;
@@ -4699,6 +4862,7 @@ updateSpellbladeOverlays() {
     // 反甲：反伤数值
     let thornsBase = 0;
     let thornsArmorRatio = 0;
+    let thornsHealArmorRatio = 0;
     // 女神泪/炽天使：叠层参数
     let manaPerCast = 0;     // 取最大
     let manaCapBonus = 0;    // 取最大
@@ -4716,6 +4880,7 @@ updateSpellbladeOverlays() {
       const itemId = this.playerEquipmentSlots[i];
       const item = this.getEquipmentDefinition(itemId);
       if (!item) continue;
+      if (this.isSpellbladeItem(item.id)) hasSpellbladeItem = true;
 
       const stats = item.stats ?? {};
 
@@ -4810,6 +4975,7 @@ updateSpellbladeOverlays() {
       // 反伤（反甲/荆棘之甲）
       if (Number.isFinite(effects.thornsBase)) thornsBase += Math.max(0, effects.thornsBase);
       if (Number.isFinite(effects.thornsArmorRatio)) thornsArmorRatio += Math.max(0, effects.thornsArmorRatio);
+      if (Number.isFinite(effects.thornsHealArmorRatio)) thornsHealArmorRatio += Math.max(0, effects.thornsHealArmorRatio);
       // 女神泪/炽天使叠层参数
       if (Number.isFinite(effects.manaPerCast)) manaPerCast = Math.max(manaPerCast, Math.max(0, effects.manaPerCast));
       if (Number.isFinite(effects.manaCapBonus)) manaCapBonus = Math.max(manaCapBonus, Math.max(0, effects.manaCapBonus));
@@ -4827,6 +4993,15 @@ updateSpellbladeOverlays() {
       if (Number.isFinite(effects.apFromHpPct)) apFromHpPctSum += Math.max(0, effects.apFromHpPct);
       // Total AP multiplier (e.g., Rabadon's Deathcap)
       if (Number.isFinite(effects.apMultiplier)) apMultiplierSum += Math.max(0, effects.apMultiplier);
+      if (Number.isFinite(effects.armorFromCurrentArmorPct)) {
+        armorFromCurrentArmorPct += Math.max(0, effects.armorFromCurrentArmorPct);
+      }
+      if (Number.isFinite(effects.attackDamageFromMoveSpeed)) {
+        lingfengAttackDamageFromMoveSpeed += Math.max(0, effects.attackDamageFromMoveSpeed);
+      }
+      if (Number.isFinite(effects.attackSpeedPctPerMoveSpeed)) {
+        lingfengAttackSpeedPctPerMoveSpeed += Math.max(0, effects.attackSpeedPctPerMoveSpeed);
+      }
       if (effects.auraDamage != null || effects.auraDamageHpRatio != null) {
         const auraDamage = Number.isFinite(effects.auraDamage) ? effects.auraDamage : 0;
         const auraRatio = Number.isFinite(effects.auraDamageHpRatio) ? effects.auraDamageHpRatio : 0;
@@ -4857,6 +5032,7 @@ updateSpellbladeOverlays() {
         this.playerOnHitEffects.push((context) => this.handleBrokenKingsBladeOnHit(context));
         appliedUniques.add(item.id);
       }
+      if (item.id === FROSTFIRE_GAUNTLET_ID) hasFrostfireGauntlet = true;
       if (item.id === GUINSOOS_RAGEBLADE_ID) hasGuinsoo = true;
       if (item.id === HEARTSTEEL_ID) { heartsteelCount += 1; heartsteelSlots.push(i); }
       if (item.id === HEALTH_POTION_ID) { hpPotionSlots.push(i); }
@@ -4903,14 +5079,10 @@ updateSpellbladeOverlays() {
 
     if (questShintoActive) addASPct += 1;
 
+    const attackSpeedBaseValue = Math.max(0.1, Number(base.attackSpeed ?? PLAYER_BASE_STATS.attackSpeed));
     base.attackDamage = Math.max(1, Math.round(base.attackDamage + addAD));
-    base.attackSpeed = Math.max(0.1, Number((base.attackSpeed * (1 + addASPct)).toFixed(3)));
     base.abilityPower = Math.max(0, Math.round((base.abilityPower ?? 0) + addAP));
     base.armor = Math.max(0, Math.round((base.armor ?? 0) + addAR));
-    if (questShintoActive) {
-      const armorFromAS = Math.max(0, Math.round(base.attackSpeed || 0));
-      base.armor = Math.max(0, Math.round((base.armor ?? 0) + armorFromAS));
-    }
     base.defense = Math.max(0, Math.round((base.defense ?? 0) + addDEF));
     const baseMaxHpValue = base.maxHp ?? PLAYER_BASE_STATS.maxHp;
     const heartsteelBonusHp = heartsteelGainPerKill > 0 ? this.heartsteelBonusHp : 0;
@@ -4952,6 +5124,25 @@ updateSpellbladeOverlays() {
     const baseMoveSpeed = base.moveSpeed ?? PLAYER_BASE_SPEED;
     const computedMoveSpeed = (baseMoveSpeed + moveSpeedFlat + bailouFlat) * (1 + moveSpeedPct);
     base.moveSpeed = Math.max(0, Number(computedMoveSpeed.toFixed(3)));
+
+    if (lingfengAttackDamageFromMoveSpeed > 0 || lingfengAttackSpeedPctPerMoveSpeed > 0) {
+      const currentMoveSpeed = Math.max(0, base.moveSpeed || 0);
+      if (lingfengAttackDamageFromMoveSpeed > 0) {
+        base.attackDamage = Math.max(
+          1,
+          Math.round(base.attackDamage + currentMoveSpeed * lingfengAttackDamageFromMoveSpeed),
+        );
+      }
+      if (lingfengAttackSpeedPctPerMoveSpeed > 0) {
+        addASPct += currentMoveSpeed * lingfengAttackSpeedPctPerMoveSpeed;
+      }
+    }
+
+    base.attackSpeed = Math.max(0.1, Number((attackSpeedBaseValue * (1 + addASPct)).toFixed(3)));
+    if (questShintoActive) {
+      const armorFromAS = Math.max(0, Math.round(base.attackSpeed || 0));
+      base.armor = Math.max(0, Math.round((base.armor ?? 0) + armorFromAS));
+    }
 
     abilityHaste = Math.max(0, abilityHaste);
     base.abilityHaste = abilityHaste;
@@ -4999,6 +5190,14 @@ updateSpellbladeOverlays() {
       base.armor = Math.max(0, Math.round((base.armor ?? 0) + apArmor));
     }
 
+    const dynamicArmorPct = Math.max(
+      0,
+      armorFromCurrentArmorPct + Math.max(0, this.frostfireArmorBuffPct || 0),
+    );
+    if (dynamicArmorPct > 0) {
+      base.armor = Math.max(0, Math.round((base.armor ?? 0) * (1 + dynamicArmorPct)));
+    }
+
     this.playerStats = base;
     if (this.isYinYangMode && this.isYinYangMode()) {
       this.syncYinYangOrbCount();
@@ -5014,6 +5213,7 @@ updateSpellbladeOverlays() {
     this.playerEquipmentStats.omniVampPct = omniVampPct;
     this.playerEquipmentStats.thornsBase = Math.max(0, thornsBase);
     this.playerEquipmentStats.thornsArmorRatio = Math.max(0, thornsArmorRatio);
+    this.playerEquipmentStats.thornsHealArmorRatio = Math.max(0, thornsHealArmorRatio);
 
     // —— 出售叠层装备时：清理遗留的层数数值 —— //
     if (heartsteelCount === 0) {
@@ -5114,6 +5314,16 @@ updateSpellbladeOverlays() {
       this.auraNextTickAt = 0;
     }
 
+    if (!hasFrostfireGauntlet) {
+      this.frostfireArmorBuffPct = 0;
+      this.frostfireArmorBuffExpiresAt = 0;
+    }
+    if (!hasSpellbladeItem) {
+      this.nextAttackTriggersSpellblade = false;
+      this.spellbladeChargesRemaining = 0;
+      this.spellbladeExpiresAt = 0;
+    }
+
     this.hasGuinsoo = hasGuinsoo;
     if (!this.hasGuinsoo) {
       this.guinsooKillStacks = 0;
@@ -5151,24 +5361,27 @@ updateSpellbladeOverlays() {
     this.refreshEquipmentUI();
   }
 
-  // 杀人书：按击杀叠层；100小兵=1层，击杀Boss额外+1层。
+  // 杀人书：按击杀进度叠层；默认每10次击杀=1层，支持Boss按进度计数。
   applyDarkSealKillProgress(enemy) {
     if (!this.hasItemEquipped(DARK_SEAL_ID)) return;
     const eff = EQUIPMENT_DATA[DARK_SEAL_ID]?.effects || {};
     const maxStacks = Number.isFinite(eff.maxStacks) ? Math.max(0, eff.maxStacks) : 0;
     if (maxStacks <= 0) return;
     const killsPerStack = Number.isFinite(eff.killsPerStack) ? Math.max(1, eff.killsPerStack) : 100;
-    const bossBonus = Number.isFinite(eff.bossStackBonus) ? Math.max(0, eff.bossStackBonus) : 1;
+    const bossKillProgress = Number.isFinite(eff.bossKillProgress)
+      ? Math.max(0, eff.bossKillProgress)
+      : killsPerStack;
     let stacks = this.darkSealStacks || 0;
     let prog = this.darkSealKillProgress || 0;
     if (enemy?.isBoss) {
-      stacks += bossBonus;
+      prog += bossKillProgress;
     } else {
       prog += 1;
-      if (prog >= killsPerStack) {
-        const gained = Math.floor(prog / killsPerStack);
-        stacks += gained; prog = prog % killsPerStack;
-      }
+    }
+    if (prog >= killsPerStack) {
+      const gained = Math.floor(prog / killsPerStack);
+      stacks += gained;
+      prog %= killsPerStack;
     }
     stacks = Math.min(stacks, maxStacks);
     this.darkSealStacks = stacks;
@@ -6390,9 +6603,9 @@ this.events.once("destroy", offPointer);
     }
     if (this.spawnTimer) this.spawnTimer.remove();
     const rankValue = Math.max(Number.isFinite(this.rank) ? this.rank : 0, 0);
-    const highRank = rankValue >= 10;
+    const highRank = rankValue >= 15;
     const delay = highRank
-      ? Math.max(50, Math.round((0.8 * 1000) / Math.max(1, rankValue)))
+      ? Math.max(50, Math.round((0.9 * 1000) / Math.max(1, rankValue)))
       : Math.max(50, Math.round((2 * 1000) / Math.max(1, rankValue + 1)));
     const spawnBatch = 1;
     this.spawnTimer = this.time.addEvent({
@@ -6579,6 +6792,12 @@ this.events.once("destroy", offPointer);
       this.rebuildAttackTimer();
     }
 
+    if (this.nextAttackTriggersSpellblade && this.spellbladeExpiresAt && this.time.now >= this.spellbladeExpiresAt) {
+      this.nextAttackTriggersSpellblade = false;
+      this.spellbladeChargesRemaining = 0;
+      this.spellbladeExpiresAt = 0;
+    }
+
     this.updatePlayerMovement();
     this.updateWeapon(delta);
     this.updateYinYangOrbs(delta);
@@ -6610,6 +6829,7 @@ this.updateMikoOrbs(delta);
 
     // 白楼剑动量过期处理
     this.updateBailouMomentum(delta);
+    this.updateFrostfireArmorBuff();
 
     this.updateRoundTimer(delta);
     this.updateAmbientMusicVolumes();
@@ -6628,6 +6848,15 @@ this.updateMikoOrbs(delta);
       this.bailouMomentumStacks = after;
       this.recalculateEquipmentEffects();
     }
+  }
+
+  updateFrostfireArmorBuff() {
+    if (!this.frostfireArmorBuffExpiresAt) return;
+    if (this.time.now < this.frostfireArmorBuffExpiresAt) return;
+    this.frostfireArmorBuffExpiresAt = 0;
+    if ((this.frostfireArmorBuffPct || 0) <= 0) return;
+    this.frostfireArmorBuffPct = 0;
+    this.recalculateEquipmentEffects();
   }
 
   // —— 每帧更新基础/装备带来的生命与法力回复 —— //
@@ -6963,15 +7192,19 @@ onSpellCastComplete() {
   const item = this.getEquipmentDefinition(spellbladeItem);
   if (!item) return;
 
-  // 设置耀光效果标记，表示下次普攻将触发耀光效果
-  this.nextAttackTriggersSpellblade = true;
+  const effectCharges = Number.isFinite(item.effects?.spellbladeCharges)
+    ? Math.max(1, Math.floor(item.effects.spellbladeCharges))
+    : 1;
+  const effectWindowMs = Number.isFinite(item.effects?.spellbladeWindowMs)
+    ? Math.max(0, item.effects.spellbladeWindowMs)
+    : 0;
+  this.spellbladeChargesRemaining = effectCharges;
+  this.nextAttackTriggersSpellblade = effectCharges > 0;
+  this.spellbladeExpiresAt = effectWindowMs > 0 ? now + effectWindowMs : 0;
 
   // 更新装备栏显示
 
   this.refreshEquipmentUI();
-
-  // 标记可以对下一个攻击目标触发耀光伤害
-  this.nextAttackTriggersSpellblade = true;
 
   // 找到触发的装备槽并添加动画效果
   const slotIndex = this.playerEquipmentSlots.indexOf(spellbladeItem);
@@ -7259,6 +7492,7 @@ isPlayerInvulnerable() {
       const fusionExtra = this.getQuestFusionExtraDamage(enemy);
       enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
       if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
+      this.applyFrozenHeartMark(enemy);
       this.showDamageNumber(enemy.x, enemy.y, dealt, typeToShow);
       if (enemy.isBoss && typeof enemy.setData === "function") {
         enemy.setData("hp", enemy.hp);
@@ -7289,6 +7523,10 @@ isPlayerInvulnerable() {
   clearEnemies() {
     this.enemies.getChildren().forEach((enemy) => {
       this.destroyEnemyHealthBar(enemy);
+      if (enemy?.liandryTimer) {
+        enemy.liandryTimer.remove(false);
+        enemy.liandryTimer = null;
+      }
       enemy?.ringSprite?.destroy?.();
       enemy?.destroy?.();
     });
@@ -7799,7 +8037,14 @@ showHealNumber(x, y, amount) {
     damageMultiplier = Math.max(0, damageMultiplier);
 
     const mitigated = afterDef * damageMultiplier;
-    const rounded = Math.max(0, Math.round(mitigated));
+    let rounded = Math.max(0, Math.round(mitigated));
+
+    const bossProtectedUntil = targetStatsOrObj?.bossDamageReductionUntil ?? 0;
+    if (targetStatsOrObj?.isBoss && bossProtectedUntil > (this.time?.now ?? 0)) {
+      rounded = Math.max(0, Math.round(rounded * (1 - BOSS_INTRO_DAMAGE_REDUCTION_PCT)));
+      rounded = Math.min(BOSS_INTRO_DAMAGE_CAP, rounded);
+    }
+
     return Math.max(rounded, minOutput);
   }
 
@@ -7840,30 +8085,10 @@ applyMagicDamageToPlayer(amount, sourceStats = null) {
   this.updateResourceBars();
   const now = this.time.now;
   this.lastDamageTimestamp = now;
+  this.applyFrozenHeartMark(sourceStats);
 
   // 反甲："受到攻击时"也对施法者反伤（魔法伤害）
-  if (sourceStats && typeof sourceStats === "object" && sourceStats.active) {
-    const thBase = Math.max(0, this.playerEquipmentStats?.thornsBase || 0);
-    const thRatio = Math.max(0, this.playerEquipmentStats?.thornsArmorRatio || 0);
-      if (thBase > 0 || thRatio > 0) {
-        const armor = Math.max(0, this.playerStats?.armor || 0);
-        const raw = Math.round(thBase + armor * thRatio);
-        if (raw > 0) {
-          const dealt = this.applyMitigationToTarget(raw, sourceStats, this.playerStats, "magic", 1);
-          if (dealt > 0) {
-            const fusionExtra = this.getQuestFusionExtraDamage(sourceStats);
-            sourceStats.hp = Math.max(0, (sourceStats.hp || 0) - dealt);
-            if (fusionExtra > 0) this.applyQuestTrueDamage(sourceStats, fusionExtra);
-            this.showDamageNumber(sourceStats.x, sourceStats.y, dealt, "magic");
-            if (sourceStats.isBoss && typeof sourceStats.setData === "function") {
-              sourceStats.setData("hp", sourceStats.hp);
-              this.updateBossUI(sourceStats);
-            }
-          if (sourceStats.hp <= 0) this.killEnemy(sourceStats);
-        }
-      }
-    }
-  }
+  this.applyPlayerThornsToAttacker(sourceStats);
 
   // 伤害后尝试自动喝药
   this.tryAutoUsePotions?.();
@@ -8144,6 +8369,7 @@ castR() {
         const fusionExtra = this.getQuestFusionExtraDamage(enemy);
         enemy.hp = Math.max(0, enemy.hp - dealt);
         if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
+        this.applyFrozenHeartMark(enemy);
         this.showDamageNumber(enemy.x, enemy.y, dealt, dtype);
         if (enemy.hp<=0) this.killEnemy(enemy); else this.maybeExecuteTheCollector(enemy);
         // Omnivamp（单次命中）
@@ -8731,6 +8957,7 @@ castR() {
     const fusionExtra = this.getQuestFusionExtraDamage(enemy);
     enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
     if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
+    this.applyFrozenHeartMark(enemy);
     this.showDamageNumber(enemy.x, enemy.y, dealt, "magic");
     if (enemy.isBoss && typeof enemy.setData === "function") enemy.setData("hp", enemy.hp);
     if (enemy.isBoss) this.updateBossUI(enemy);
@@ -8934,12 +9161,17 @@ castR() {
 
     if (this.hasItemEquipped(WITS_END_ID)) {
       const eff = EQUIPMENT_DATA[WITS_END_ID]?.effects || {};
-      if (Number.isFinite(eff.witsMagicOnHit) && eff.witsMagicOnHit > 0) {
+      const flat = Number.isFinite(eff.witsMagicFlat) ? Math.max(0, eff.witsMagicFlat) : 0;
+      const armorRatio = Number.isFinite(eff.witsArmorRatio) ? Math.max(0, eff.witsArmorRatio) : 0;
+      if (flat > 0 || armorRatio > 0) {
         specs.push({
           source: "wits",
           textureKey: "item_effect_wit",
           damageType: "magic",
-          computeDamage: () => Math.round(eff.witsMagicOnHit),
+          computeDamage: () => {
+            const armor = Math.max(0, this.playerStats?.armor || 0);
+            return Math.round(flat + armor * armorRatio);
+          },
         });
       }
     }
@@ -9305,6 +9537,7 @@ castR() {
     enemy.hitComboExpireAt = 0;
     enemy.slowPct = 0;
     enemy.slowUntil = 0;
+    enemy.frozenHeartMarked = false;
     enemy.lastDamageTick = 0;
     enemy.spawnedAt = this.time.now;
     enemy.idleRotationSpeed = tierConfig.idleRotationSpeed ?? 0;
@@ -9326,7 +9559,7 @@ castR() {
     enemy.proximityActive = false;
 
     if (this.currentRoom?.usesRankSpawns && this.rank >= 10) {
-      const bonusHpPct = Math.max(0, this.rank - 10) / 100;
+      const bonusHpPct = Math.max(0, this.rank) / 100;
       if (bonusHpPct > 0) {
         enemy.maxHp = Math.max(1, Math.round(enemy.maxHp * (1 + bonusHpPct)));
         enemy.hp = enemy.maxHp;
@@ -9465,6 +9698,7 @@ handleQTalismanEnemyOverlap(projectile, enemy) {
   const fusionExtra = this.getQuestFusionExtraDamage(enemy);
   enemy.hp = Math.max(0, enemy.hp - dealt);
   if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
+  this.applyFrozenHeartMark(enemy);
   this.showDamageNumber(enemy.x, enemy.y, dealt, "physical");
   if (enemy.hp <= 0) this.killEnemy(enemy);
   else this.maybeExecuteTheCollector(enemy);
@@ -9511,6 +9745,7 @@ handleQMeleeSlashOverlap(slash, enemy) {
   const fusionExtra = this.getQuestFusionExtraDamage(enemy);
   enemy.hp = Math.max(0, enemy.hp - dealt);
   if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
+  this.applyFrozenHeartMark(enemy);
   this.showDamageNumber(enemy.x, enemy.y, dealt, showType);
   if (enemy.hp <= 0) this.killEnemy(enemy);
   else this.maybeExecuteTheCollector(enemy);
@@ -9556,6 +9791,7 @@ handleQMeleeSlashOverlap(slash, enemy) {
       const fusionExtra = this.getQuestFusionExtraDamage(enemy);
       enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
       if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
+      this.applyFrozenHeartMark(enemy);
       this.showDamageNumber(enemy.x, enemy.y, dealt, showType);
       if (enemy.isBoss && typeof enemy.setData === "function") {
         enemy.setData("hp", enemy.hp);
@@ -9777,6 +10013,7 @@ const totalDamage =
   const fusionExtra = this.getQuestFusionExtraDamage(enemy);
   enemy.hp = Math.max(0, (enemy.hp ?? 0) - totalDamage);
   if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
+  if (totalDamage > 0) this.applyFrozenHeartMark(enemy);
   if (enemy.isBoss && typeof enemy.setData === "function") {
     enemy.setData("hp", enemy.hp);
   }
@@ -9796,6 +10033,7 @@ const totalDamage =
   }
   // 讯刃：普攻命中返还技能冷却
   this.applyNavoriQuickbladesOnHitRefund();
+  this.applyAutoAttackManaRestore();
 
   const effectOriginX = Number.isFinite(bullet?.originX) ? bullet.originX : (Number.isFinite(bullet?.x) ? bullet.x : this.player.x);
   const effectOriginY = Number.isFinite(bullet?.originY) ? bullet.originY : (Number.isFinite(bullet?.y) ? bullet.y : this.player.y);
@@ -9928,6 +10166,7 @@ const totalDamage =
       const fusionExtra = this.getQuestFusionExtraDamage(enemy);
       enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
       if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
+      this.applyFrozenHeartMark(enemy);
       this.showDamageNumber(enemy.x, enemy.y, dealt, damageType);
       if (enemy.isBoss && typeof enemy.setData === "function") { enemy.setData("hp", enemy.hp); this.updateBossUI(enemy); }
       if (enemy.hp <= 0) this.killEnemy(enemy);
@@ -9980,6 +10219,7 @@ const totalDamage =
       const fusionExtra = this.getQuestFusionExtraDamage(enemy);
       enemy.hp = Math.max(0, (enemy.hp ?? 0) - dealt);
       if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
+      this.applyFrozenHeartMark(enemy);
       this.showDamageNumber(enemy.x, enemy.y, dealt, damageType);
       if (enemy.isBoss && typeof enemy.setData === "function") {
         enemy.setData("hp", enemy.hp);
@@ -10000,28 +10240,33 @@ const totalDamage =
 
   handleBrokenKingsBladeOnHit(_context) { return null; }
 
-  // Apply/refresh Liandry's burn (DoT every 0.25s, total matches description)
+  // Apply/stack Liandry burn: every 0.1s until target dies, magic hits add more DoT.
   applyLiandryBurn(enemy) {
     if (!enemy || !enemy.active) return;
     if (!this.hasItemEquipped(LIANDRYS_ANGUISH_ID)) return;
     const eff = EQUIPMENT_DATA[LIANDRYS_ANGUISH_ID]?.effects || {};
-    const durationMs = Number.isFinite(eff.burnDurationMs) ? eff.burnDurationMs : 3000;
-    const basePctPS = Number.isFinite(eff.burnPercentBasePerSecond) ? eff.burnPercentBasePerSecond : 0.01; // of target max HP
-    const apRatioPctPS = Number.isFinite(eff.burnPercentApRatio) ? eff.burnPercentApRatio : 0.0001;         // per AP (percentage per second)
+    const tickMs = Number.isFinite(eff.burnTickMs) ? Math.max(50, eff.burnTickMs) : 100;
+    const basePerTick = Number.isFinite(eff.burnBasePerTick) ? Math.max(0, eff.burnBasePerTick) : 1;
+    const apRatioPerTick = Number.isFinite(eff.burnApRatioPerTick) ? Math.max(0, eff.burnApRatioPerTick) : 0.0005;
+    const ap = Math.max(0, this.playerStats?.abilityPower || 0);
+    const burnIncrement = basePerTick + ap * apRatioPerTick;
+    if (burnIncrement <= 0) return;
 
-    // Cancel prior timer and refresh
-    if (enemy.liandryTimer) { enemy.liandryTimer.remove(false); enemy.liandryTimer = null; }
-    enemy.liandryBurnAcc = 0; // fractional accumulator
+    enemy.liandryBurnPerTickRaw = Math.max(0, enemy.liandryBurnPerTickRaw || 0) + burnIncrement;
+    enemy.liandryBurnAcc = enemy.liandryBurnAcc || 0;
 
-    const ap = this.playerStats?.abilityPower || 0;
-    const perSecondRaw = (enemy.maxHp || 0) * (basePctPS + ap * apRatioPctPS);
-    const tickMs = 250;
-    const ticks = Math.max(1, Math.round(durationMs / tickMs));
-    const perTickRaw = perSecondRaw * (tickMs / 1000);
+    if (enemy.liandryTimer) return;
 
     const doTick = () => {
-      if (!enemy || !enemy.active) return;
-      // Accumulate raw and round down only the integer portion
+      if (!enemy || !enemy.active) {
+        if (enemy?.liandryTimer) {
+          enemy.liandryTimer.remove(false);
+          enemy.liandryTimer = null;
+        }
+        return;
+      }
+      const perTickRaw = Math.max(0, enemy.liandryBurnPerTickRaw || 0);
+      if (perTickRaw <= 0) return;
       enemy.liandryBurnAcc = (enemy.liandryBurnAcc || 0) + perTickRaw;
       let rawDamage = Math.floor(enemy.liandryBurnAcc);
       enemy.liandryBurnAcc -= rawDamage;
@@ -10044,12 +10289,16 @@ const totalDamage =
       const fusionExtra = this.getQuestFusionExtraDamage(enemy);
       enemy.hp = Math.max(0, (enemy.hp || 0) - dealt);
       if (fusionExtra > 0) this.applyQuestTrueDamage(enemy, fusionExtra);
+      this.applyFrozenHeartMark(enemy);
       this.showDamageNumber(enemy.x, enemy.y, dealt, typeToShow);
       if (enemy.isBoss && typeof enemy.setData === "function") {
         enemy.setData("hp", enemy.hp);
         this.updateBossUI(enemy);
       }
-      if (enemy.hp <= 0) { this.killEnemy(enemy); return; }
+      if (enemy.hp <= 0) {
+        this.killEnemy(enemy);
+        return;
+      }
 
       // Omnivamp heal from DoT
       const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
@@ -10061,7 +10310,7 @@ const totalDamage =
       }
     };
 
-    enemy.liandryTimer = this.time.addEvent({ delay: 250, repeat: ticks - 1, callback: doTick });
+    enemy.liandryTimer = this.time.addEvent({ delay: tickMs, loop: true, callback: doTick });
   }
 
   // 收集者：若目标未死且血量低于处决阈值，则强制击杀并掉落额外金币。
@@ -10140,7 +10389,7 @@ const totalDamage =
   // 处理耀光装备的伤害
 // ===【替换】原 dealSpellbladeDamage，并新增 consumeSpellbladeIfReady ===
 
-// 计算耀光伤害（按装备effects通用字段组合）
+  // 计算耀光伤害（按装备effects通用字段组合）
 computeSpellbladeDamageFor(item, enemy) {
   if (!item?.effects || !enemy) return null;
   const eff = item.effects;
@@ -10197,27 +10446,46 @@ computeSpellbladeDamageFor(item, enemy) {
   }
 
   // 结算减伤，得出实际伤害
-  const dealt = this.applyMitigationToTarget(Math.round(raw), enemy, this.playerStats, dmgType, 1);
+  const rawAmount = Math.max(0, Math.round(raw));
+  const dealt = this.applyMitigationToTarget(rawAmount, enemy, this.playerStats, dmgType, 1);
 
-  return { amount: dealt, type: dmgType, isCrit, isSpellCrit };
+  return { amount: dealt, rawAmount, type: dmgType, isCrit, isSpellCrit };
 }
 
-// 消耗“下一击触发耀光”标记并返回结算条目（供命中流程合并）
+  // 消耗“下一击触发耀光”标记并返回结算条目（供命中流程合并）
 consumeSpellbladeIfReady(enemy) {
   if (!this.nextAttackTriggersSpellblade) return null;
   const now = this.time?.now ?? Date.now();
+  if (this.spellbladeExpiresAt && now > this.spellbladeExpiresAt) {
+    this.nextAttackTriggersSpellblade = false;
+    this.spellbladeChargesRemaining = 0;
+    this.spellbladeExpiresAt = 0;
+    return null;
+  }
 
   const itemId = this.playerEquipmentSlots.find(id => this.isSpellbladeItem(id));
-  if (!itemId) return null;
+  if (!itemId) {
+    this.nextAttackTriggersSpellblade = false;
+    this.spellbladeChargesRemaining = 0;
+    this.spellbladeExpiresAt = 0;
+    return null;
+  }
 
   const item = this.getEquipmentDefinition(itemId);
-  if (!item) return null;
+  if (!item) {
+    this.nextAttackTriggersSpellblade = false;
+    this.spellbladeChargesRemaining = 0;
+    this.spellbladeExpiresAt = 0;
+    return null;
+  }
 
   // 生成伤害
   const result = this.computeSpellbladeDamageFor(item, enemy);
   if (!result || result.amount <= 0) {
     // 即便没有伤害，也要消耗标记
-    this.nextAttackTriggersSpellblade = false;
+    this.spellbladeChargesRemaining = Math.max(0, (this.spellbladeChargesRemaining || 1) - 1);
+    this.nextAttackTriggersSpellblade = this.spellbladeChargesRemaining > 0;
+    if (!this.nextAttackTriggersSpellblade) this.spellbladeExpiresAt = 0;
     this.lastSpellbladeUsedAt = now;
     return null;
   }
@@ -10228,24 +10496,69 @@ consumeSpellbladeIfReady(enemy) {
   if (eff.spellbladeMoveSpeed && eff.spellbladeMoveSpeedDurationMs) {
     this.addPlayerSpeedBuff(eff.spellbladeMoveSpeed, eff.spellbladeMoveSpeedDurationMs);
   }
-  // 冰拳：减速圈
-  if (item.id === "frostfireGauntlet" || eff.frostSlowRadiusBase != null || eff.frostSlowRadiusArmorRatio != null) {
-    const adDamage = (this.playerStats?.attackDamage || 0) * (eff.spellbladeAdRatio || 0);
-    const armorDamage = (this.playerStats?.armor || 0) * (eff.spellbladeArmorRatio || 0);
-    // 旧数据兼容：如果上面已经在 compute 阶段算过，就不重复加；这里只处理范围减速与视觉
-    const slowR = (eff.frostSlowRadiusBase || 0) + (this.playerStats?.armor || 0) * (eff.frostSlowRadiusArmorRatio || 0);
-    if (slowR > 0) {
-      this.createIceEffect(enemy.x, enemy.y, slowR);
-      if (eff.frostSlowPct != null) this.applySlowInArea(enemy.x, enemy.y, slowR, eff.frostSlowPct);
+
+  let splashDamageTotal = 0;
+  let splashHitCount = result.amount > 0 ? 1 : 0;
+  if (item.id === FROSTFIRE_GAUNTLET_ID) {
+    const radius = Math.max(
+      0,
+      (eff.frostfireAoERadiusBase || 0) + (this.playerStats?.armor || 0) * (eff.frostfireAoERadiusArmorRatio || 0),
+    );
+    if (radius > 0) {
+      this.createIceEffect(enemy.x, enemy.y, radius);
+      const radiusSq = radius * radius;
+      const enemies = this.enemies?.getChildren?.() || [];
+      for (let i = 0; i < enemies.length; i += 1) {
+        const extraEnemy = enemies[i];
+        if (!extraEnemy || !extraEnemy.active || extraEnemy === enemy) continue;
+        const distSq = Phaser.Math.Distance.Squared(enemy.x, enemy.y, extraEnemy.x, extraEnemy.y);
+        if (distSq > radiusSq) continue;
+        const dealt = this.applyMitigationToTarget(result.rawAmount, extraEnemy, this.playerStats, "physical", 1);
+        if (dealt <= 0) continue;
+        const fusionExtra = this.getQuestFusionExtraDamage(extraEnemy);
+        extraEnemy.hp = Math.max(0, (extraEnemy.hp ?? 0) - dealt);
+        if (fusionExtra > 0) this.applyQuestTrueDamage(extraEnemy, fusionExtra);
+        this.showDamageNumber(extraEnemy.x, extraEnemy.y, dealt, "physical");
+        if (extraEnemy.isBoss && typeof extraEnemy.setData === "function") {
+          extraEnemy.setData("hp", extraEnemy.hp);
+          this.updateBossUI(extraEnemy);
+        }
+        this.applyFrozenHeartMark(extraEnemy);
+        splashDamageTotal += dealt;
+        splashHitCount += 1;
+        if (extraEnemy.hp <= 0) this.killEnemy(extraEnemy);
+        else this.maybeExecuteTheCollector(extraEnemy);
+      }
+    }
+    this.applyFrostfireArmorBuff(splashHitCount);
+    const omni = Math.max(0, this.playerEquipmentStats?.omniVampPct || 0);
+    if (omni > 0 && splashDamageTotal > 0) {
+      const heal = Math.max(0, Math.round(splashDamageTotal * omni));
+      if (heal > 0) this.applyPlayerHealing(heal, { offsetY: -18 });
     }
   }
 
+  if (item.id === DIVINE_SUNDERER_ID) {
+    const healPct = Number.isFinite(eff.spellbladeHealPctOfDamage) ? Math.max(0, eff.spellbladeHealPctOfDamage) : 0;
+    if (healPct > 0) {
+      const heal = Math.max(0, Math.round(result.amount * healPct));
+      if (heal > 0) this.applyPlayerHealing(heal, { offsetY: -24 });
+    }
+  }
+
+  if (item.id === LICH_BANE_ID) {
+    const refundPct = Number.isFinite(eff.spellbladeCooldownRefundPct) ? Math.max(0, eff.spellbladeCooldownRefundPct) : 0;
+    this.refundCurrentCooldownsByPct(refundPct);
+  }
+
   // 消耗标记
-  this.nextAttackTriggersSpellblade = false;
+  this.spellbladeChargesRemaining = Math.max(0, (this.spellbladeChargesRemaining || 1) - 1);
+  this.nextAttackTriggersSpellblade = this.spellbladeChargesRemaining > 0;
+  if (!this.nextAttackTriggersSpellblade) this.spellbladeExpiresAt = 0;
   this.lastSpellbladeUsedAt = now;
 
   // 返回一个供命中流程合并与独立显示的“耀光”条目
-  return { ...result, isSpellblade: true };
+  return { ...result, splashDamageTotal, splashHitCount, isSpellblade: true };
 }
 
   // 创建冰冻效果的视觉表现
@@ -10350,30 +10663,10 @@ consumeSpellbladeIfReady(enemy) {
     this.updateResourceBars();
     const now = this.time.now;
     this.lastDamageTimestamp = now;
+    this.applyFrozenHeartMark(sourceStats);
 
     // 反甲：反伤给攻击者（魔法伤害）
-    if (sourceStats && typeof sourceStats === "object" && sourceStats.active) {
-      const thBase = Math.max(0, this.playerEquipmentStats?.thornsBase || 0);
-      const thRatio = Math.max(0, this.playerEquipmentStats?.thornsArmorRatio || 0);
-      if (thBase > 0 || thRatio > 0) {
-        const armor = Math.max(0, this.playerStats?.armor || 0);
-        const raw = Math.round(thBase + armor * thRatio);
-        if (raw > 0) {
-          const dealt = this.applyMitigationToTarget(raw, sourceStats, this.playerStats, "magic", 1);
-          if (dealt > 0) {
-            const fusionExtra = this.getQuestFusionExtraDamage(sourceStats);
-            sourceStats.hp = Math.max(0, (sourceStats.hp || 0) - dealt);
-            if (fusionExtra > 0) this.applyQuestTrueDamage(sourceStats, fusionExtra);
-            this.showDamageNumber(sourceStats.x, sourceStats.y, dealt, "magic");
-            if (sourceStats.isBoss && typeof sourceStats.setData === "function") {
-              sourceStats.setData("hp", sourceStats.hp);
-              this.updateBossUI(sourceStats);
-            }
-            if (sourceStats.hp <= 0) this.killEnemy(sourceStats);
-          }
-        }
-      }
-    }
+    this.applyPlayerThornsToAttacker(sourceStats);
 
     // 伤害后尝试自动喝药
     this.tryAutoUsePotions?.();
@@ -10383,6 +10676,12 @@ consumeSpellbladeIfReady(enemy) {
 
 
   killEnemy(enemy) {
+    if (enemy?.liandryTimer) {
+      enemy.liandryTimer.remove(false);
+      enemy.liandryTimer = null;
+    }
+    enemy.liandryBurnPerTickRaw = 0;
+    enemy.liandryBurnAcc = 0;
     this.destroyEnemyHealthBar(enemy);
     this.playSfx("enemyexploded");
     // Rin 第三阶段：连锁召唤逻辑
@@ -10484,20 +10783,11 @@ consumeSpellbladeIfReady(enemy) {
       this.showDamageNumber(enemy.x, enemy.y, "真伤9999", "true");
     }
 
-    // Soulstealer Codex: refund 25% of current remaining cooldowns
+    // Soulstealer Codex: refund a portion of current remaining cooldowns
     if (this.hasItemEquipped(SOULSTEALER_CODEX_ID)) {
       const eff = EQUIPMENT_DATA[SOULSTEALER_CODEX_ID]?.effects || {};
-      const refundPct = Number.isFinite(eff.killCooldownRefundPct) ? eff.killCooldownRefundPct : 0.25;
-      const now = this.time.now;
-      Object.keys(this.skillReadyAt || {}).forEach((key) => {
-        const readyAt = this.skillReadyAt[key] || 0;
-        if (readyAt > now) {
-          const remaining = readyAt - now;
-          const reduce = Math.round(remaining * refundPct);
-          this.skillReadyAt[key] = Math.max(now, readyAt - reduce);
-        }
-      });
-      this.updateSkillCooldownUI?.();
+      const refundPct = Number.isFinite(eff.killCooldownRefundPct) ? eff.killCooldownRefundPct : 0.15;
+      this.refundCurrentCooldownsByPct(refundPct);
     }
 
     // Boss死亡收尾
@@ -10763,9 +11053,10 @@ maybeDropPoint(enemyOrX, maybeY) {
           const uy = b.uy || 0;
           const side = b.sideSpeed || 0;
           const fs = b.forwardSpeed || 0;
+          const bulletSlowMultiplier = this.getFrozenHeartBulletSlowMultiplier();
 
-          const vx = ux * fs + (-uy) * side;
-          const vy = uy * fs + (ux) * side;
+          const vx = (ux * fs + (-uy) * side) * bulletSlowMultiplier;
+          const vy = (uy * fs + (ux) * side) * bulletSlowMultiplier;
           b.body.setVelocity(vx, vy);
 
           // 让 Rin 的 needle 子弹贴图方向与运动方向一致（贴图正方向为正上）
@@ -11156,6 +11447,7 @@ castDash() {
       this.refreshEquipmentTooltip(tooltipIndex);
       this.updateHUD();
       this.updateResourceBars();
+      if (this.isRewardSelectionActive) this.renderRewardSelection();
       if (this.isShopOpen()) {
         this.updateShopGoldLabel();
         this.renderShop();
@@ -11175,6 +11467,7 @@ castDash() {
     this.refreshEquipmentTooltip(tooltipIndex);
     this.updateHUD();
     this.updateResourceBars();
+    if (this.isRewardSelectionActive) this.renderRewardSelection();
     if (this.isShopOpen()) {
       this.updateShopGoldLabel();
       this.renderShop();
@@ -11351,7 +11644,7 @@ castDash() {
         this.roundComplete = false;
         this.roundAwaitingDecision = false;
         this.resumeGameplayAfterShop();
-        if (!this.spawnTimer) this.scheduleSpawnTimer();
+        this.startWorldMapRun();
       } else {
         this.resumeGameplayAfterShop();
         this.scene.start("StartScene");
@@ -11381,15 +11674,6 @@ castDash() {
       this.setShopMessage(SHOP_TEXT.selectShopPrompt);
       return;
     }
-    const currentCost = Math.max(1, Math.floor(this.shopState?.refreshCost ?? SHOP_REFRESH_COST));
-    if (this.playerPoints < currentCost) {
-      this.setShopMessage(SHOP_TEXT.notEnoughGold);
-      return;
-    }
-    // 扣除当前刷新费用
-    this.playerPoints -= currentCost;
-    // 刷新费用按1.8倍增长并向下取整
-    this.shopState.refreshCost = Math.max(1, Math.floor(currentCost * 1.8));
     this.updateHUD();
     this.updateShopGoldLabel();
     this.generateShopOffers();
@@ -11426,15 +11710,14 @@ castDash() {
   updateShopGoldLabel() {
     if (this.shopUi?.goldValue) this.shopUi.goldValue.textContent = `${this.playerPoints}`;
     const selecting = this.isShopSelectionStage();
-    const cost = Math.max(1, Math.floor(this.shopState?.refreshCost ?? SHOP_REFRESH_COST));
     if (this.shopUi?.refreshBtn) {
       // 动态更新刷新按钮的文案与可用状态
       if (selecting) {
         this.shopUi.refreshBtn.textContent = SHOP_TEXT.selectShopLabel;
         this.shopUi.refreshBtn.disabled = true;
       } else {
-        this.shopUi.refreshBtn.textContent = `刷新 (-${cost})`;
-        this.shopUi.refreshBtn.disabled = this.playerPoints < cost;
+        this.shopUi.refreshBtn.textContent = SHOP_TEXT.refresh;
+        this.shopUi.refreshBtn.disabled = false;
       }
     }
     if (this.shopUi?.backBtn) {
@@ -12456,6 +12739,7 @@ castDash() {
     boss.contactDamage = cfg.contactDamage || boss.contactDamage || 0;
     boss.state = "idle";
     boss.attackCooldownUntil = this.time.now + 1000;
+    boss.bossDamageReductionUntil = this.time.now + BOSS_INTRO_DAMAGE_REDUCTION_WINDOW_MS;
 
     this.boss = boss;
     this.bossKind = boss.bossKind;
@@ -12498,6 +12782,7 @@ castDash() {
       boss.def = 0;
       boss.contactDamage = BOSS_UTSUHO_CONFIG.contactDamage;
       boss.state = "idle";
+      boss.bossDamageReductionUntil = this.time.now + BOSS_INTRO_DAMAGE_REDUCTION_WINDOW_MS;
       boss.setDataEnabled();
       boss.setData("hp", boss.hp);
       boss.setData("maxHp", boss.maxHp);
@@ -12886,7 +13171,7 @@ updateBossUI(target) {
           this.tweens.add({
               targets: s, 
               alpha: 0, 
-              duration: 400, 
+              duration: 40, 
               onComplete: () => {
                   // 生成20个 nuclearhazard：速度10，方向随机，带粒子特效
                   const count = 20;
@@ -12904,9 +13189,9 @@ updateBossUI(target) {
                           judgeTiles: BOSS_UTSUHO_CONFIG.hitboxes.bullets.nuclearhazard.judge,
                           from: { x: bx, y: by },
                           dirAngleDeg: Phaser.Math.Between(0, 359),
-                          forwardSpeed: 10,
-                          accel: 0,
-                          sideSpeed: 0,
+                          forwardSpeed: -10,
+                          accel: 20,
+                          sideSpeed: 20,
                       }, BOSS_UTSUHO_CONFIG.bulletMagicDamage, true);
                   }
                   s.destroy();
@@ -13003,7 +13288,7 @@ updateBossUI(target) {
             sizeTiles: BOSS_UTSUHO_CONFIG.hitboxes.bullets.yellow.size,
             // 判定范围缩小一半（仅 Mode2 的 yellow）
             judgeTiles: BOSS_UTSUHO_CONFIG.hitboxes.bullets.yellow.judge / 2,
-            count: 60,
+            count: 40,
             phaseDeg: ai.m2_phaseDegFixed,
             forwardSpeed: 100,
             accel: 666,
